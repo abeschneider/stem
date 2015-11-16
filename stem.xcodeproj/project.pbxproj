@@ -9,7 +9,15 @@
 /* Begin PBXBuildFile section */
 		2D1756391BF98678009C397D /* stem.h in Headers */ = {isa = PBXBuildFile; fileRef = 2D1756381BF98678009C397D /* stem.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		2D1756401BF98678009C397D /* stem.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2D1756351BF98678009C397D /* stem.framework */; };
-		2D1756451BF98678009C397D /* stemTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D1756441BF98678009C397D /* stemTests.swift */; };
+		2D1756561BF9869A009C397D /* tensor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D17564F1BF9869A009C397D /* tensor.swift */; };
+		2D1756571BF9869A009C397D /* sharedarray.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D1756501BF9869A009C397D /* sharedarray.swift */; };
+		2D1756581BF9869A009C397D /* extent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D1756511BF9869A009C397D /* extent.swift */; };
+		2D1756591BF9869A009C397D /* storage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D1756521BF9869A009C397D /* storage.swift */; };
+		2D17565A1BF9869A009C397D /* view.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D1756531BF9869A009C397D /* view.swift */; };
+		2D17565B1BF9869A009C397D /* cblas.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D1756541BF9869A009C397D /* cblas.swift */; };
+		2D17565C1BF9869A009C397D /* native.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D1756551BF9869A009C397D /* native.swift */; };
+		2D17565E1BF986B7009C397D /* stemTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D17565D1BF986B7009C397D /* stemTests.swift */; };
+		2D1756611BF9884B009C397D /* README.md in Sources */ = {isa = PBXBuildFile; fileRef = 2D1756601BF9884B009C397D /* README.md */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -27,8 +35,17 @@
 		2D1756381BF98678009C397D /* stem.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = stem.h; sourceTree = "<group>"; };
 		2D17563A1BF98678009C397D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		2D17563F1BF98678009C397D /* stemTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = stemTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		2D1756441BF98678009C397D /* stemTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = stemTests.swift; sourceTree = "<group>"; };
 		2D1756461BF98678009C397D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		2D17564F1BF9869A009C397D /* tensor.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = tensor.swift; sourceTree = "<group>"; };
+		2D1756501BF9869A009C397D /* sharedarray.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = sharedarray.swift; sourceTree = "<group>"; };
+		2D1756511BF9869A009C397D /* extent.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = extent.swift; sourceTree = "<group>"; };
+		2D1756521BF9869A009C397D /* storage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = storage.swift; sourceTree = "<group>"; };
+		2D1756531BF9869A009C397D /* view.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = view.swift; sourceTree = "<group>"; };
+		2D1756541BF9869A009C397D /* cblas.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = cblas.swift; sourceTree = "<group>"; };
+		2D1756551BF9869A009C397D /* native.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = native.swift; sourceTree = "<group>"; };
+		2D17565D1BF986B7009C397D /* stemTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = stemTests.swift; sourceTree = "<group>"; };
+		2D17565F1BF987DC009C397D /* COPYING */ = {isa = PBXFileReference; lastKnownFileType = text; path = COPYING; sourceTree = "<group>"; };
+		2D1756601BF9884B009C397D /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -53,6 +70,8 @@
 		2D17562B1BF98678009C397D = {
 			isa = PBXGroup;
 			children = (
+				2D1756601BF9884B009C397D /* README.md */,
+				2D17565F1BF987DC009C397D /* COPYING */,
 				2D1756371BF98678009C397D /* stem */,
 				2D1756431BF98678009C397D /* stemTests */,
 				2D1756361BF98678009C397D /* Products */,
@@ -71,6 +90,13 @@
 		2D1756371BF98678009C397D /* stem */ = {
 			isa = PBXGroup;
 			children = (
+				2D17564F1BF9869A009C397D /* tensor.swift */,
+				2D1756501BF9869A009C397D /* sharedarray.swift */,
+				2D1756511BF9869A009C397D /* extent.swift */,
+				2D1756521BF9869A009C397D /* storage.swift */,
+				2D1756531BF9869A009C397D /* view.swift */,
+				2D1756541BF9869A009C397D /* cblas.swift */,
+				2D1756551BF9869A009C397D /* native.swift */,
 				2D1756381BF98678009C397D /* stem.h */,
 				2D17563A1BF98678009C397D /* Info.plist */,
 			);
@@ -80,7 +106,7 @@
 		2D1756431BF98678009C397D /* stemTests */ = {
 			isa = PBXGroup;
 			children = (
-				2D1756441BF98678009C397D /* stemTests.swift */,
+				2D17565D1BF986B7009C397D /* stemTests.swift */,
 				2D1756461BF98678009C397D /* Info.plist */,
 			);
 			path = stemTests;
@@ -194,6 +220,13 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2D1756571BF9869A009C397D /* sharedarray.swift in Sources */,
+				2D17565B1BF9869A009C397D /* cblas.swift in Sources */,
+				2D17565C1BF9869A009C397D /* native.swift in Sources */,
+				2D1756591BF9869A009C397D /* storage.swift in Sources */,
+				2D1756561BF9869A009C397D /* tensor.swift in Sources */,
+				2D17565A1BF9869A009C397D /* view.swift in Sources */,
+				2D1756581BF9869A009C397D /* extent.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -201,7 +234,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				2D1756451BF98678009C397D /* stemTests.swift in Sources */,
+				2D1756611BF9884B009C397D /* README.md in Sources */,
+				2D17565E1BF986B7009C397D /* stemTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -305,6 +339,7 @@
 		2D17564A1BF98678009C397D /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEFINES_MODULE = YES;
 				DYLIB_COMPATIBILITY_VERSION = 1;
@@ -317,12 +352,14 @@
 				PRODUCT_BUNDLE_IDENTIFIER = none.stem;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
 			name = Debug;
 		};
 		2D17564B1BF98678009C397D /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEFINES_MODULE = YES;
 				DYLIB_COMPATIBILITY_VERSION = 1;
@@ -341,17 +378,20 @@
 		2D17564D1BF98678009C397D /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				INFOPLIST_FILE = stemTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = none.stemTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
 			name = Debug;
 		};
 		2D17564E1BF98678009C397D /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				INFOPLIST_FILE = stemTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";

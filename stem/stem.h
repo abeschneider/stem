@@ -3,7 +3,7 @@
 //  stem
 //
 //  Created by Abe Schneider on 11/15/15.
-//  Copyright © 2015 none. All rights reserved.
+//  Copyright © 2015 Abe Schneider. All rights reserved.
 //
 
 #import <Cocoa/Cocoa.h>
