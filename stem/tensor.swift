@@ -96,7 +96,6 @@ extension Tensor {
             // last dimension, convert values to string
             let values:[String] = (0..<shape[dim]).map({(i:Int) -> String in
                 indices[dim] = i
-//                print("\(indices), \(view[indices] as! Double)")
                 return String(format: "%2.3f", view[indices] as! Double)
             })
             return "[\(values.joinWithSeparator(",\t"))]"
@@ -147,7 +146,7 @@ public class Vector<StorageType:Storage>: Tensor<StorageType> {
 }
 
 public class Matrix<StorageType:Storage>: Tensor<StorageType> {
-    var transposed:Bool
+    public var transposed:Bool
     
     public init(_ array:[[StorageType.ElementType]]) {
         transposed = false
@@ -161,8 +160,7 @@ public class Matrix<StorageType:Storage>: Tensor<StorageType> {
         for i in 0..<view.storage.shape[0] {
             for j in 0..<view.storage.shape[1] {
                 let index = indices.next()!
-//                print("** (\(i), \(j)=>\(index)): \(array[i][j])")
-                view.storage[index] = array[i][j]
+                view[i, j] = array[i][j]
             }
         }
     }

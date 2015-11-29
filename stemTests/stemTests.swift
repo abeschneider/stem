@@ -51,13 +51,9 @@ class stemTests: XCTestCase {
     }
     
     func testView2() {
-        let array:[Double] = [0,   1,  2,  3,  4,
-                              5,   6,  7,  8,  9,
-                              10, 11, 12, 13, 14,
-                              15, 16, 17, 18, 19]
-
+        let array = (0..<20).map { Double($0) }
         let storage = NativeStorage<Double>(array: array, shape: Extent(4, 5))
-        let view = StorageView(storage: storage, window: [1..<3, 2..<4], dimIndex: [1, 0])
+        let view = StorageView(storage: storage, window: [1..<3, 2..<4])
         let expected:[Double] = [7, 8, 12, 13]
 
         var k = 0;
@@ -69,13 +65,9 @@ class stemTests: XCTestCase {
     }
     
     func testView2C() {
-        let array:[Double] = [0,   1,  2,  3,  4,
-                              5,   6,  7,  8,  9,
-                              10, 11, 12, 13, 14,
-                              15, 16, 17, 18, 19]
-        
+        let array = (0..<20).map { Double($0) }
         let storage = CBlasStorage<Double>(shape: Extent(4, 5))
-        var view1 = StorageView(storage: storage, window: [0..<4, 0..<5], dimIndex: [1, 0])
+        var view1 = StorageView(storage: storage, window: [0..<4, 0..<5])
         
         var k = 0;
         for i in 0..<view1.shape[0] {
@@ -84,7 +76,7 @@ class stemTests: XCTestCase {
             }
         }
         
-        let view2 = StorageView(storage: storage, window: [1..<3, 2..<4], dimIndex: [1, 0])
+        let view2 = StorageView(storage: storage, window: [1..<3, 2..<4])
         let expected:[Double] = [7, 8, 12, 13]
         
         k = 0
@@ -96,23 +88,17 @@ class stemTests: XCTestCase {
     }
 
     
+    // TODO: currently testing nothing new .. either delete, or update
     func testView3() {
-        let storage = NativeStorage<Double>(shape: Extent(10, 10))
-        let view = StorageView(storage: storage, window: [0..<10, 0..<10], dimIndex: [1, 0])
+        let array = (0..<100).map { Double($0) }
+        let storage = NativeStorage<Double>(array: array, shape: Extent(10, 10))
+        let view = StorageView(storage: storage, window: [0..<10, 0..<10])
         
-        for i in 0..<100 {
-            storage[i] = Double(i)
-        }
-        
-        let expected = NativeStorage<Double>(array: (0..<100).map { Double($0) }, shape: Extent(10, 10))
-        let expectedView = StorageView(storage: expected)
-        
+        var k = 0
         for i in 0..<view.shape[0] {
             for j in 0..<view.shape[1] {
-//                XCTAssertEqual(view[i, j], expectedView[j+2, i+2])
-                print("\(view[i, j]) ", terminator:"")
+                XCTAssertEqual(view[i, j], array[k++])
             }
-            print("")
         }
     }
     
@@ -203,7 +189,7 @@ class stemTests: XCTestCase {
         let a:[Double] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
         let storage1 = NativeStorage<Double>(array: a, shape: Extent(2, 5))
         
-        let view1 = StorageView(storage: storage1, window: [0..<2, 0..<5], dimIndex: [1, 0])
+        let view1 = StorageView(storage: storage1, window: [0..<2, 0..<5])
         
         let window = Array(view1.window.reverse())
         let dimIndex = Array(view1.dimIndex.reverse())
@@ -251,7 +237,7 @@ class stemTests: XCTestCase {
     }
     
     func testCreateTensor1() {
-        let v = Tensor<CBlasStorage<Double>>(array: [1, 2, 3, 4], shape: Extent(4))
+        let v = Tensor<NativeStorage<Double>>(array: [1, 2, 3, 4], shape: Extent(4))
         XCTAssertEqual(v.view.storage.shape.dims(), 1)
         XCTAssertEqual(v.view.storage.shape[0], 4)
         XCTAssertEqual(v.view.shape.dims(), 1)
@@ -262,16 +248,29 @@ class stemTests: XCTestCase {
         }
     }
     
+    func testCreateTensor2() {
+        let array = (0..<20).map { Double($0) }
+        let v = Tensor<NativeStorage<Double>>(array: array, shape: Extent(2, 5))
+        XCTAssertEqual(v.shape, Extent(2, 5))
+        
+        var k = 0
+        for i in 0..<v.shape[0] {
+            for j in 0..<v.shape[1] {
+                XCTAssertEqual(v[i, j], array[k++])
+            }
+        }
+    }
+    
     func testCreateNativeMatrix() {
-        let a:[[Double]] = [[0, 1, 2, 3, 4], [5, 6, 7, 8, 9]]
-        let m = Matrix<NativeStorage<Double>>(a)
+        let array:[[Double]] = [[0, 1, 2, 3, 4], [5, 6, 7, 8, 9]]
+        let m = Matrix<NativeStorage<Double>>(array)
         
         print(m.view.storage.array)
         
         // storage should not affect access
-        for i in 0..<2 {
-            for j in 0..<5 {
-                XCTAssertEqual(m[i, j], a[i][j])
+        for i in 0..<m.shape[0] {
+            for j in 0..<m.shape[1] {
+                XCTAssertEqual(m[i, j], array[i][j])
             }
         }
         

@@ -163,22 +163,24 @@ public struct StorageView<StorageType:Storage> {
         shape = storage.shape
         window = storage.shape.map { 0..<$0 }
         
+        let dims = shape.dims()
         if let idx = dimIndex {
             self.dimIndex = idx
         } else {
-            self.dimIndex = (0..<storage.shape.dims()).map { $0 }
+            self.dimIndex = (0..<dims).map { dims-$0-1 }
         }
     }
     
     public init(storage:StorageType, window:[Range<Int>], dimIndex:[Int]?=nil) {
         self.storage = storage
-        shape = Extent(window.map { $0.last! - $0.first! + 1})
+        self.shape = Extent(window.map { $0.last! - $0.first! + 1})
         self.window = window
-        
+
+        let dims = shape.dims()
         if let idx = dimIndex {
             self.dimIndex = idx
         } else {
-            self.dimIndex = (0..<storage.shape.dims()).map { $0 }
+            self.dimIndex = (0..<dims).map { dims-$0-1 }
         }
     }
     
@@ -186,8 +188,6 @@ public struct StorageView<StorageType:Storage> {
         var offset = 0
         for i in 0..<indices.count {
             offset += (indices[dimIndex[i]]+window[dimIndex[i]].first!)*storage.stride[i]
-//            print("[dimIndex:\(dimIndex[i]), indices:\(indices[dimIndex[i]]), stride:\(stride[i]), offset:\(offset)]")
-
         }
         
         return offset

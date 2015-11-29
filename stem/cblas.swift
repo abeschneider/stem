@@ -23,7 +23,6 @@ public class CBlasStorage<T:NumericType>: Storage {
         self.shape = shape
         array = SharedArray<ElementType>(count: shape.elements, repeatedValue: ElementType(0))
         stride = Array<Int>(count:self.shape.dims(), repeatedValue: 0)
-//        dimIndex = (0..<shape.dims()).map { $0 }
         
         var mult = 1
         for i in 0..<self.shape.dims()-1 {
@@ -37,7 +36,6 @@ public class CBlasStorage<T:NumericType>: Storage {
         self.shape = shape
         self.array = SharedArray<T>(array)
         stride = Array<Int>(count:self.shape.dims(), repeatedValue: 0)
-//        dimIndex = (0..<shape.dims()).map { $0 }
         
         var mult = 1
         for i in 0..<self.shape.dims()-1 {
@@ -45,8 +43,6 @@ public class CBlasStorage<T:NumericType>: Storage {
             mult *= self.shape[i]
         }
         stride[self.shape.dims()-1] = 1
-        
-        print("stride = \(stride)")
     }
     
     public subscript(index:Int) -> T {

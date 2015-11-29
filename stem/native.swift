@@ -25,11 +25,9 @@ public class NativeStorage<T:NumericType>: Storage {
         var mult = 1
         stride[0] = 1
         for i in 1..<self.shape.dims() {
-            stride[i] = self.shape[i-1]*mult
-            mult *= self.shape[i-1]
+            stride[i] = self.shape[i]*mult
+            mult *= self.shape[i]
         }
-
-//        dimIndex = (0..<shape.dims()).map { shape.dims()-$0-1 }
     }
     
     public required init(array:[T], shape:Extent) {
@@ -43,9 +41,6 @@ public class NativeStorage<T:NumericType>: Storage {
             stride[i] = self.shape[i]*mult
             mult *= self.shape[i]
         }
-//        dimIndex = (0..<shape.dims()).map { shape.dims()-$0-1 }
-        
-        print("stride = \(stride)")
     }
     
     public subscript(index:Int) -> T {
