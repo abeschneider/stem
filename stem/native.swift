@@ -8,32 +8,55 @@
 
 import Foundation
 
-class NativeStorage<T:NumericType>: Storage {
-    typealias ElementType = T
+public class NativeStorage<T:NumericType>: Storage {
+    public typealias ElementType = T
     
-    let order:MatrixOrder = .RowMajor
+    public let order:MatrixOrder = .RowMajor
     var array:SharedArray<T>
-    var shape:Extent
+    public var shape:Extent
     
-    required init(shape:Extent) {
+    public var stride:[Int]
+    
+    public required init(shape:Extent) {
         self.shape = shape
         array = SharedArray<ElementType>(count: shape.elements, repeatedValue: ElementType(0))
+        stride = Array<Int>(count:self.shape.dims(), repeatedValue: 0)
+        
+        var mult = 1
+        stride[0] = 1
+        for i in 1..<self.shape.dims() {
+            stride[i] = self.shape[i-1]*mult
+            mult *= self.shape[i-1]
+        }
+
+//        dimIndex = (0..<shape.dims()).map { shape.dims()-$0-1 }
     }
     
-    required init(array:[T], shape:Extent) {
+    public required init(array:[T], shape:Extent) {
         self.shape = shape
         self.array = SharedArray<T>(array)
+        stride = Array<Int>(count:self.shape.dims(), repeatedValue: 0)
+        
+        var mult = 1
+        stride[0] = 1
+        for i in 1..<self.shape.dims() {
+            stride[i] = self.shape[i]*mult
+            mult *= self.shape[i]
+        }
+//        dimIndex = (0..<shape.dims()).map { shape.dims()-$0-1 }
+        
+        print("stride = \(stride)")
     }
     
-    subscript(index:Int) -> T {
+    public subscript(index:Int) -> T {
         get { return array[index] }
         set { array[index] = newValue }
     }
 }
 
-typealias DTensor = Tensor<StorageRowView<NativeStorage<Double>>>
-typealias DMatrix = Matrix<StorageRowView<NativeStorage<Double>>>
-typealias DVector = Vector<StorageRowView<NativeStorage<Double>>>
-typealias FTensor = Tensor<StorageRowView<NativeStorage<Float>>>
-typealias FMatrix = Matrix<StorageRowView<NativeStorage<Float>>>
-typealias FVector = Vector<StorageRowView<NativeStorage<Float>>>
+public typealias DTensor = Tensor<NativeStorage<Double>>
+public typealias DMatrix = Matrix<NativeStorage<Double>>
+public typealias DVector = Vector<NativeStorage<Double>>
+public typealias FTensor = Tensor<NativeStorage<Float>>
+public typealias FMatrix = Matrix<NativeStorage<Float>>
+public typealias FVector = Vector<NativeStorage<Float>>

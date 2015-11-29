@@ -8,47 +8,37 @@
 
 import Foundation
 
-struct Extent: CollectionType {
+public struct Extent: CollectionType {
     var values: [Int]
     var elements: Int
-//    var effectiveDims:Int
     
-    var count:Int {
+    public var count:Int {
         return values.count
     }
     
     init(_ ex: Int...) {
         values = ex
         elements = values.reduce(1,combine: *)
-        
-        // only count dimensions > 1
-//        effectiveDims = values.reduce(0, combine:{ (total, value) -> Int in
-//            if (value > 1) { return total + value } else { return total }
-//        })
     }
     
     init(_ dims:[Int]) {
         values = dims
         elements = values.reduce(1,combine: *)
-        
-//        effectiveDims = values.reduce(0, combine:{ (total, value) -> Int in
-//            if (value > 1) { return total + value } else { return total }
-//        })
     }
     
     func dims() -> Int {
         return values.count;
     }
     
-    var startIndex:Int { return 0 }
-    var endIndex:Int { return values.count }
+    public var startIndex:Int { return 0 }
+    public var endIndex:Int { return values.count }
     
-    subscript(index: Int) -> Int {
+    public subscript(index: Int) -> Int {
         get { return values[index] }
         set { values[index] = newValue }
     }
     
-    func generate() -> AnyGenerator<Int> {
+    public func generate() -> AnyGenerator<Int> {
         var index:Int = 0
         return anyGenerator {
             if index >= self.values.count { return nil }
@@ -73,7 +63,7 @@ struct Extent: CollectionType {
 
 extension Extent: Equatable {}
 
-func ==(left:Extent, right:Extent) -> Bool{
+public func ==(left:Extent, right:Extent) -> Bool{
     if left.elements != right.elements { return false }
     for i in 0..<left.dims() {
         if left[i] != right[i] { return false }

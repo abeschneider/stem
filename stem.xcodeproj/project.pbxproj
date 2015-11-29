@@ -46,6 +46,7 @@
 		2D17565D1BF986B7009C397D /* stemTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = stemTests.swift; sourceTree = "<group>"; };
 		2D17565F1BF987DC009C397D /* COPYING */ = {isa = PBXFileReference; lastKnownFileType = text; path = COPYING; sourceTree = "<group>"; };
 		2D1756601BF9884B009C397D /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		2D1756621BF9FA7E009C397D /* StemPlayground.playground */ = {isa = PBXFileReference; lastKnownFileType = file.playground; path = StemPlayground.playground; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -70,6 +71,7 @@
 		2D17562B1BF98678009C397D = {
 			isa = PBXGroup;
 			children = (
+				2D1756621BF9FA7E009C397D /* StemPlayground.playground */,
 				2D1756601BF9884B009C397D /* README.md */,
 				2D17565F1BF987DC009C397D /* COPYING */,
 				2D1756371BF98678009C397D /* stem */,
@@ -419,6 +421,7 @@
 				2D17564B1BF98678009C397D /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		2D17564C1BF98678009C397D /* Build configuration list for PBXNativeTarget "stemTests" */ = {
 			isa = XCConfigurationList;
@@ -427,6 +430,7 @@
 				2D17564E1BF98678009C397D /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

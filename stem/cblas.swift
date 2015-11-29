@@ -9,36 +9,58 @@
 import Foundation
 import Accelerate
 
-// put in a separate CBlas with accelerate methods
-class CBlasStorage<T:NumericType>: Storage {
-    typealias ElementType = T
+// TODO: need some way to set dimIndex from storage level (maybe some function
+// to return the index as a default value?)
+public class CBlasStorage<T:NumericType>: Storage {
+    public typealias ElementType = T
     
-    let order:MatrixOrder = .ColumnMajor
+    public let order:MatrixOrder = .ColumnMajor
     var array:SharedArray<T>
-    var shape:Extent
+    public var shape:Extent
+    public var stride:[Int]
     
-    required init(shape:Extent) {
+    public required init(shape:Extent) {
         self.shape = shape
         array = SharedArray<ElementType>(count: shape.elements, repeatedValue: ElementType(0))
+        stride = Array<Int>(count:self.shape.dims(), repeatedValue: 0)
+//        dimIndex = (0..<shape.dims()).map { $0 }
+        
+        var mult = 1
+        for i in 0..<self.shape.dims()-1 {
+            stride[i] = self.shape[i]*mult
+            mult *= self.shape[i]
+        }
+        stride[self.shape.dims()-1] = 1
     }
     
-    required init(array:[T], shape:Extent) {
+    public required init(array:[T], shape:Extent) {
         self.shape = shape
         self.array = SharedArray<T>(array)
+        stride = Array<Int>(count:self.shape.dims(), repeatedValue: 0)
+//        dimIndex = (0..<shape.dims()).map { $0 }
+        
+        var mult = 1
+        for i in 0..<self.shape.dims()-1 {
+            stride[i] = self.shape[i]*mult
+            mult *= self.shape[i]
+        }
+        stride[self.shape.dims()-1] = 1
+        
+        print("stride = \(stride)")
     }
     
-    subscript(index:Int) -> T {
+    public subscript(index:Int) -> T {
         get { return array[index] }
         set { array[index] = newValue }
     }
 }
 
-typealias CDTensor = Tensor<StorageColumnView<CBlasStorage<Double>>>
-typealias CFTensor = Tensor<StorageColumnView<CBlasStorage<Float>>>
-typealias CDMatrix = Matrix<StorageColumnView<CBlasStorage<Double>>>
-typealias CFMatrix = Matrix<StorageColumnView<CBlasStorage<Float>>>
-typealias CDVector = Vector<StorageColumnView<CBlasStorage<Double>>>
-typealias CFVector = Vector<StorageColumnView<CBlasStorage<Float>>>
+public typealias CDTensor = Tensor<CBlasStorage<Double>>
+public typealias CFTensor = Tensor<CBlasStorage<Float>>
+public typealias CDMatrix = Matrix<CBlasStorage<Double>>
+public typealias CFMatrix = Matrix<CBlasStorage<Float>>
+public typealias CDVector = Vector<CBlasStorage<Double>>
+public typealias CFVector = Vector<CBlasStorage<Float>>
 
 // Accelerated versions of the tensor operations
 // TODO: make in-place operation that saves results in `left` (iadd)
@@ -109,12 +131,8 @@ func +=(left:CDVector, right:CDVector) {
 func dot(left left:CDMatrix, right:CDVector, result:CDVector, alpha:Double=1.0, beta:Double=1.0) {
     assert(left.shape[1] == right.shape[0])
     
-    let mPtr = UnsafePointer<Double>(left.view.storage.array.memory) + left.view.calculateOffset()
-    let vPtr = UnsafePointer<Double>(right.view.storage.array.memory) + right.view.calculateOffset()
-    let resultPtr = UnsafeMutablePointer<Double>(result.view.storage.array.memory) + result.view.calculateOffset()
-    
     let leftStride = Int32(left.view.storage.shape[0])
-
+    
     var rightStride:Int32
     if right.shape[0] > 1 && right.shape.dims() > 1 {
         // row major, so need to skip by number of columns
@@ -131,19 +149,17 @@ func dot(left left:CDMatrix, right:CDVector, result:CDVector, alpha:Double=1.0, 
         resultStride = 1
     }
     
-    let transpose = left.transposed ? CblasTrans : CblasNoTrans
-    
     cblas_dgemv(CblasColMajor,
-                transpose,
+                left.transposed ? CblasTrans : CblasNoTrans,
                 Int32(left.shape[0]),
                 Int32(left.shape[1]),
                 alpha,
-                mPtr,
+                UnsafePointer<Double>(left.view.storage.array.memory) + left.view.calculateOffset(),
                 leftStride,
-                vPtr,
+                UnsafePointer<Double>(right.view.storage.array.memory) + right.view.calculateOffset(),
                 rightStride,
                 beta,
-                resultPtr,
+                UnsafeMutablePointer<Double>(result.view.storage.array.memory) + result.view.calculateOffset(),
                 resultStride)
 }
 
