@@ -103,7 +103,7 @@ class stemTests: XCTestCase {
     }
     
     
-    func testColumnIndex1() {
+    func testViewIndex1() {
         let storage = CBlasStorage<Double>(shape: Extent(10))
         let view = StorageView(storage: storage)
         let indices = view.storageIndices()
@@ -113,7 +113,7 @@ class stemTests: XCTestCase {
         }
     }
     
-    func testColumnIndex2() {
+    func testViewIndex2() {
         let storage = NativeStorage<Double>(shape: Extent(10, 10))
         let view = StorageView(storage: storage, window: [5..<10, 5..<10])
         let indices = view.storageIndices()
@@ -128,13 +128,14 @@ class stemTests: XCTestCase {
         for j in 0..<view.shape[0] {
             for k in 0..<view.shape[1] {
                 let idx = indices.next()!
+                print("index = \(idx)")
                 XCTAssertEqual(idx, expected[i++])
                 XCTAssertEqual(storage[idx], view[j, k])
             }
         }
     }
     
-    func testColumnIndex3() {
+    func testViewIndex3() {
         let storage = CBlasStorage<Double>(shape: Extent(10, 10))
         let view = StorageView(storage: storage, window: [5..<10, 5..<10])
         let indices = view.storageIndices()
@@ -155,33 +156,32 @@ class stemTests: XCTestCase {
         }
     }
     
-    func testColumnIndex4() {
+    func testViewIndex4() {
         let storage = NativeStorage<Double>(shape: Extent(5, 10))
         let view1 = StorageView(storage: storage, window: [0..<5, 0..<10])
-        let view2 = StorageView(storage: storage, window: [0..<5, 1..<3]) //, dimIndex: [1, 0])
+        let view2 = StorageView(storage: storage, window: [0..<5, 1..<3])
         let view3 = StorageView(storage: storage, window: [1..<3, 0..<10])
         
         // alter only the values in the view
         for (i, index) in view2.storageIndices().enumerate() {
+            print("index = \(index)")
             storage[index] = Double(i+5)
         }
         
-//        for index in view3.storageIndices() {
-//            storage[index] = 6.0
-//        }
+        for index in view3.storageIndices() {
+            storage[index] = 6.0
+        }
         
-        let expected:[[Double]] = [[0, 5, 10, 0, 0, 0, 0, 0, 0, 0],
+        let expected:[[Double]] = [[0, 5, 6, 0, 0, 0, 0, 0, 0, 0],
                                    [6, 6, 6, 6, 6, 6, 6, 6, 6, 6],
                                    [6, 6, 6, 6, 6, 6, 6, 6, 6, 6],
-                                   [0, 8, 12, 0, 0, 0, 0, 0, 0, 0],
-                                   [0, 9, 13, 0, 0, 0, 0, 0, 0, 0]]
+                                   [0, 11, 12, 0, 0, 0, 0, 0, 0, 0],
+                                   [0, 13, 14, 0, 0, 0, 0, 0, 0, 0]]
         
         for i in 0..<view1.shape[0] {
             for j in 0..<view1.shape[1] {
-//                XCTAssertEqual(view1[i, j], expected[i][j])
-                print("\(view1[i, j]) ", terminator:"")
+                XCTAssertEqual(view1[i, j], expected[i][j])
             }
-            print("")
         }
     }
     
@@ -232,6 +232,27 @@ class stemTests: XCTestCase {
         for i in 0..<view2.shape[0] {
             for j in 0..<view2.shape[1] {
                 XCTAssertEqual(view2[i, j], expected[k++])
+            }
+        }
+    }
+    
+    func testIndexTranspose() {
+        let array:[Double] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+        let storage = NativeStorage<Double>(array: array, shape: Extent(2, 5))
+        let view1 = StorageView(storage: storage, window: [0..<2, 0..<5])
+        
+        let window = Array(view1.window.reverse())
+        let dimIndex = Array(view1.dimIndex.reverse())
+        let view2 = StorageView(storage: view1.storage, window: window, dimIndex: dimIndex)
+        
+        let index = view2.storageIndices()
+        
+        let expected = [0, 5, 1, 6, 2, 7, 3, 8, 4, 9]
+        
+        var k = 0
+        for _ in 0..<view2.shape[0] {
+            for _ in 0..<view2.shape[1] {
+                XCTAssertEqual(index.next()!, expected[k++])
             }
         }
     }

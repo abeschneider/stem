@@ -160,6 +160,8 @@ public class Matrix<StorageType:Storage>: Tensor<StorageType> {
         for i in 0..<view.storage.shape[0] {
             for j in 0..<view.storage.shape[1] {
                 let index = indices.next()!
+                
+                print("index = \(index)")
                 view[i, j] = array[i][j]
             }
         }
