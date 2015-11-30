@@ -39,19 +39,23 @@ public class Tensor<StorageType:Storage> {
     
     // forward shape from view
     public var shape:Extent { return view.shape }
+    public var transposed:Bool
     
     public init(array:[StorageType.ElementType], shape:Extent) {
         let storage = StorageType(array: array, shape: shape)
         view = ViewType(storage: storage)
+        transposed = false
     }
     
     public init(shape:Extent) {
         let storage = StorageType(shape: shape)
         view = ViewType(storage: storage)
+        transposed = false
     }
     
     public init(view:ViewType) {
         self.view = view
+        transposed = false
     }
     
     public subscript(indices:[Int]) -> StorageType.ElementType {
@@ -143,14 +147,21 @@ public class Vector<StorageType:Storage>: Tensor<StorageType> {
     public init(cols:Int) {
         super.init(shape: Extent(cols))
     }
+    
+    public override init(view:ViewType) {
+        super.init(view: view)
+    }
+    
+    public override func transpose() -> Vector {
+        let window = Array(view.window.reverse())
+        let dimIndex = Array(view.dimIndex.reverse())
+        let newView = StorageView(storage: view.storage, window: window, dimIndex: dimIndex)
+        return Vector(view: newView)
+    }
 }
 
 public class Matrix<StorageType:Storage>: Tensor<StorageType> {
-    public var transposed:Bool
-    
     public init(_ array:[[StorageType.ElementType]]) {
-        transposed = false
-        
         // first allocate space
         // TODO: make sure dims are correct
         super.init(shape: Extent(array.count, array[0].count))
@@ -166,39 +177,19 @@ public class Matrix<StorageType:Storage>: Tensor<StorageType> {
     }
     
     public init(rows:Int, cols:Int) {
-        transposed = false
         super.init(shape: Extent(rows, cols))
     }
     
     public override init(view:ViewType) {
-        transposed = false
         super.init(view: view)
     }
     
-//    public init(_ m:Matrix, transpose:Bool=false) {
-//        self.transposed = transpose
-//        // need to make a new view .. this requires something like:
-//        // m.view.make(...)
-//        // alternatively, have view.transpose function?
-////        let type = Mirror(reflecting:m.view)
-////        var view = type.subjectType(storage: m.storage, view: m.window)
-//        let viewType = m.view.dynamicType
-////        let view = viewType.init(storage: m.view.storage, window: [m.view.window[1], m.view.window[0]])
-////        let view:StorageView = m.view.transpose()
-////        let view = transposeView(view: m.view)
-////        let transposeType = m.view.dynamicType.TransposeType(storage: m.view.storage)
-////        let transposeType = viewType.TransposeType.self
-////        transposeType(storage: m.view.storage)
-////        let view = transposeType(storage: m.view.storage)
-////        transposeType.init(storage: m.view.storage, window: m.view.window)
-////        let view = transposeType(storage: m.view.storage, window: [m.view.window[1], m.view.window[0]])
-//        super.init(view: view.transpose())
-//    }
-    
-//    public func transpose() -> Matrix {
-////        let transposeType = view.dynamicType.TransposeType.self.dynamicType
-//        return Matrix(view: view.transpose())
-//    }    
+    public override func transpose() -> Matrix {
+        let window = Array(view.window.reverse())
+        let dimIndex = Array(view.dimIndex.reverse())
+        let newView = StorageView(storage: view.storage, window: window, dimIndex: dimIndex)
+        return Matrix(view: newView)
+    }
 }
 
 func elementwiseBinaryOp<StorageType:Storage>

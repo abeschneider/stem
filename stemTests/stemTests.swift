@@ -270,18 +270,33 @@ class stemTests: XCTestCase {
     
     func testCreateTensor2() {
         let array = (0..<20).map { Double($0) }
-        let v = Tensor<NativeStorage<Double>>(array: array, shape: Extent(2, 5))
-        XCTAssertEqual(v.shape, Extent(2, 5))
+        let t = Tensor<NativeStorage<Double>>(array: array, shape: Extent(2, 5))
+        XCTAssertEqual(t.shape, Extent(2, 5))
         
         var k = 0
-        for i in 0..<v.shape[0] {
-            for j in 0..<v.shape[1] {
-                XCTAssertEqual(v[i, j], array[k++])
+        for i in 0..<t.shape[0] {
+            for j in 0..<t.shape[1] {
+                XCTAssertEqual(t[i, j], array[k++])
             }
         }
     }
     
-    func testCreateNativeVector() {
+    func testTensorTranspose() {
+        let array = (0..<20).map { Double($0) }
+        let t = Tensor<NativeStorage<Double>>(array: array, shape: Extent(2, 5))
+        let tt = t.transpose()
+        
+        let expected:[Double] = [0, 5, 1, 6, 2, 7, 3, 8, 4, 9]
+        
+        var k = 0
+        for i in 0..<tt.shape[0] {
+            for j in 0..<tt.shape[1] {
+                XCTAssertEqual(tt[i, j], expected[k++])
+            }
+        }
+    }
+    
+    func testCreateVector() {
         let array:[Double] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
         let v = Vector<NativeStorage<Double>>(array)
         
@@ -290,7 +305,7 @@ class stemTests: XCTestCase {
         }
     }
     
-    func testCreateNativeMatrix() {
+    func testCreateMatrix() {
         let array:[[Double]] = [[0, 1, 2, 3, 4], [5, 6, 7, 8, 9]]
         let m = Matrix<NativeStorage<Double>>(array)
         
@@ -301,10 +316,27 @@ class stemTests: XCTestCase {
             }
         }
         
-        // however storage should have entries in column-major format
+        // however, storage should have entries in column-major format
         let expected:[Double] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
         for i in 0..<expected.count {
             XCTAssertEqual(m.view.storage.array[i], expected[i])
+        }
+    }
+    
+    func testMatrixTranspose() {
+        let array:[[Double]] = [[0, 1, 2, 3, 4], [5, 6, 7, 8, 9]]
+        let m = Matrix<NativeStorage<Double>>(array)
+        let mt = m.transpose()
+        
+        XCTAssertEqual(mt.shape, Extent(5, 2))
+        
+        let expected:[Double] = [0, 5, 1, 6, 2, 7, 3, 8, 4, 9]
+        
+        var k = 0
+        for i in 0..<mt.shape[0] {
+            for j in 0..<mt.shape[1] {
+                XCTAssertEqual(mt[i, j], expected[k++])
+            }
         }
     }
     
@@ -321,7 +353,7 @@ class stemTests: XCTestCase {
             }
         }
         
-        // however storage should have entries in column-major format
+        // however, storage should have entries in column-major format
         let expected:[Double] = [0, 5, 1, 6, 2, 7, 3, 8, 4, 9]
         for i in 0..<expected.count {
             XCTAssertEqual(m.view.storage.array[i], expected[i])
@@ -342,7 +374,6 @@ class stemTests: XCTestCase {
         let expected = "[[1.000,\t2.000,\t3.000,\t4.000]\n [5.000,\t6.000,\t7.000,\t8.000]]"
         XCTAssertEqual(String(m), expected)
     }
-
     
     func testVectorAdd() {
         let m1 = Vector<NativeStorage<Double>>([1, 2, 3, 4, 5, 6, 7, 8])
@@ -419,16 +450,16 @@ class stemTests: XCTestCase {
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
     }
 
-//    func testCBlasVectorMatrixAdd2() {
-//        let v1 = Vector<CBlasStorage<Double>>([5, 4])
-//        let v2 = Vector<CBlasStorage<Double>>([4, 5])
-//        let result = Vector<CBlasStorage<Double>>(rows: v1.shape[0])
-//        
-//        add(left: v1.transpose(), right: v2.transpose(), alpha: 1.0, result: result)
-//        
-//        let expected = Vector<CBlasStorage<Double>>([9, 9])
-//        XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
-//    }
+    func testCBlasVectorMatrixAdd2() {
+        let v1 = Vector<CBlasStorage<Double>>([5, 4])
+        let v2 = Vector<CBlasStorage<Double>>([4, 5])
+        let result = Vector<CBlasStorage<Double>>(rows: v1.shape[0])
+        
+        add(left: v1.transpose(), right: v2.transpose(), alpha: 1.0, result: result)
+        
+        let expected = Vector<CBlasStorage<Double>>([9, 9])
+        XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
+    }
 
     func testCVectorDotProduct() {
         let m = Matrix<CBlasStorage<Double>>([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
@@ -443,11 +474,6 @@ class stemTests: XCTestCase {
     
     /*
     
-    
-    
-
-    
-
     func testBenchmarkCBlas() {
         let v1 = CDVector(rows: 1000000)
         
