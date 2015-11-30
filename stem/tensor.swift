@@ -156,12 +156,10 @@ public class Matrix<StorageType:Storage>: Tensor<StorageType> {
         super.init(shape: Extent(array.count, array[0].count))
         
         // next copy array
-        let indices = view.storageIndices()
+//        let indices = view.storageIndices()
         for i in 0..<view.storage.shape[0] {
             for j in 0..<view.storage.shape[1] {
-                let index = indices.next()!
-                
-                print("index = \(index)")
+//                let index = indices.next()!
                 view[i, j] = array[i][j]
             }
         }
@@ -214,10 +212,12 @@ func elementwiseBinaryOp<StorageType:Storage>
     
     let indexLeft = left.view.storageIndices()
     let indexRight = right.view.storageIndices()
-    
-    var i:Int = 0
+    let indexResult = result.view.storageIndices()
+
+    // TODO: There should be better syntax to support this use-case
     for (l, r) in Zip2Sequence(GeneratorSequence(indexLeft), GeneratorSequence(indexRight)) {
-        result[i++] = op(left: left[l], right: right[r])
+        let idx = indexResult.next()!
+        result.view.storage[idx] = op(left: left.view.storage[l], right: right.view.storage[r])
     }
 }
 
@@ -254,18 +254,16 @@ public func +<StorageType:Storage where StorageType.ElementType:NumericType>
 public func dot<StorageType:Storage where StorageType.ElementType:NumericType>
     (left left:Matrix<StorageType>, right:Vector<StorageType>, result:Vector<StorageType>)
 {
-    print(left.shape)
-    print(right.shape)
-//    assert(left.shape[1] == right.shape[0])
-//    assert(right.shape.elements == result.shape.elements)
-//
-//    // per row
-//    for i in 0..<left.shape[0] {
-//        // per column
-//        for j in 0..<right.shape.elements {
-//            result[j] = result[j] + left[i, j]*right[j]
-//        }
-//    }
+    assert(left.shape[1] == right.shape[0])
+    assert(right.shape.elements == result.shape.elements)
+
+    // per row
+    for i in 0..<left.shape[0] {
+        // per column
+        for j in 0..<right.shape.elements {
+            result[j] = result[j] + left[i, j]*right[j]
+        }
+    }
 }
 
 public func *<StorageType:Storage where StorageType.ElementType:NumericType>

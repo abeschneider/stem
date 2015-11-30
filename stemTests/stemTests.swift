@@ -164,7 +164,6 @@ class stemTests: XCTestCase {
         
         // alter only the values in the view
         for (i, index) in view2.storageIndices().enumerate() {
-            print("index = \(index)")
             storage[index] = Double(i+5)
         }
         
@@ -282,11 +281,18 @@ class stemTests: XCTestCase {
         }
     }
     
+    func testCreateNativeVector() {
+        let array:[Double] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+        let v = Vector<NativeStorage<Double>>(array)
+        
+        for i in 0..<v.shape[0] {
+            XCTAssertEqual(v[i], array[i])
+        }
+    }
+    
     func testCreateNativeMatrix() {
         let array:[[Double]] = [[0, 1, 2, 3, 4], [5, 6, 7, 8, 9]]
         let m = Matrix<NativeStorage<Double>>(array)
-        
-        print(m.view.storage.array)
         
         // storage should not affect access
         for i in 0..<m.shape[0] {
@@ -321,131 +327,126 @@ class stemTests: XCTestCase {
             XCTAssertEqual(m.view.storage.array[i], expected[i])
         }
     }
-
     
-//    func testVectorToString() {
-//        let v = Vector<CBlasStorage<Double>>([1, 2, 3, 4, 5])
-//        
-//        let expected = "[1.000,\t2.000,\t3.000,\t4.000,\t5.000]"
-//        XCTAssertEqual(String(v), expected)
-//    }
-    
-//    func testNMatrixToString() {
-//        let m = Matrix<NativeStorage<Double>>([[1, 2, 3, 4], [5, 6, 7, 8]])
-//        
-//        // layout should be row-major
-//        let expected = "[[1.000,\t2.000,\t3.000,\t4.000]\n [5.000,\t6.000,\t7.000,\t8.000]]"
-//        XCTAssertEqual(String(m), expected)
-//    }
-//    
-//    func testCMatrixToString() {
-//        let m = Matrix<CBlasStorage<Double>>([[1, 2, 3, 4], [5, 6, 7, 8]])
-//        
-//        // layout should be column-major
-//        let expected = "[[1.000,\t3.000,\t5.000,\t7.000]\n [2.000,\t4.000,\t6.000,\t8.000]]"
-//
-//        XCTAssertEqual(String(m), expected)
-//    }
-    
-    /*func testMatrixTranspose() {
-        let m = DMatrix([[1, 2, 3, 4],
-                         [5, 6, 7, 8],
-                         [9, 10, 11, 12]])
+    func testVectorToString() {
+        let v = Vector<CBlasStorage<Double>>([1, 2, 3, 4, 5])
         
-        let n = m.transpose()
-        print(m.view.shape)
-        print(n.view.shape)
+        let expected = "[1.000,\t2.000,\t3.000,\t4.000,\t5.000]"
+        XCTAssertEqual(String(v), expected)
     }
     
-    func testNVectorAdd() {
-        let m1 = DVector([1, 2, 3, 4, 5, 6, 7, 8])
-        let m2 = DVector([8, 7, 6, 5, 4, 3, 2, 1])
-        let result = DVector(rows: m1.shape[0])
+    func testMatrixToString() {
+        let m = Matrix<NativeStorage<Double>>([[1, 2, 3, 4], [5, 6, 7, 8]])
+        
+        // layout should be row-major
+        let expected = "[[1.000,\t2.000,\t3.000,\t4.000]\n [5.000,\t6.000,\t7.000,\t8.000]]"
+        XCTAssertEqual(String(m), expected)
+    }
+
+    
+    func testVectorAdd() {
+        let m1 = Vector<NativeStorage<Double>>([1, 2, 3, 4, 5, 6, 7, 8])
+        let m2 = Vector<NativeStorage<Double>>([8, 7, 6, 5, 4, 3, 2, 1])
+        let result = Vector<NativeStorage<Double>>(rows: m1.shape[0])
         
         add(left: m1, right: m2, result: result)
         
-        let expected = DVector([9, 9, 9, 9, 9, 9, 9, 9])
+        let expected = Vector<NativeStorage<Double>>([9, 9, 9, 9, 9, 9, 9, 9])
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
     }
     
-    func testCVectorAdd() {
-        let m1 = CDVector([1, 2, 3, 4, 5, 6, 7, 8])
-        let m2 = CDVector([8, 7, 6, 5, 4, 3, 2, 1])
-        let result = CDVector(rows: m1.shape[0])
+    func testVectorAdd2() {
+        let m1 = Vector<NativeStorage<Double>>([1, 2, 3, 4, 5, 6, 7, 8])
+        let m2 = Vector<NativeStorage<Double>>([8, 7, 6, 5, 4, 3, 2, 1])
+        
+        let result = m1 + m2
+        
+        let expected = Vector<NativeStorage<Double>>([9, 9, 9, 9, 9, 9, 9, 9])
+        XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
+    }
+    
+    func testVectorMatrixAdd1() {
+        let m1 = Matrix<NativeStorage<Double>>([[1, 2, 3, 4], [5, 6, 7, 8]])
+        let m2 = Matrix<NativeStorage<Double>>([[8, 7, 6, 5], [4, 3, 2, 1]])
+        let result = Matrix<NativeStorage<Double>>(rows: m1.shape[0], cols: m1.shape[1])
+        
+        add(left: m1, right: m2, result: result)
+
+        let expected = Matrix<NativeStorage<Double>>([[9, 9, 9, 9], [9, 9, 9, 9]])
+        XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
+    }
+    
+    func testVectorDotProduct() {
+        let m = Matrix<NativeStorage<Double>>([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+        let v = Vector<NativeStorage<Double>>([1, 2, 3])
+        
+        let result = Vector<NativeStorage<Double>>(rows: 3)
+        dot(left: m, right: v, result: result)
+        
+        let expected = Vector<NativeStorage<Double>>([1, 2, 3])
+        XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
+    }
+
+    func testCBlasVectorAdd1() {
+        let m1 = Vector<CBlasStorage<Double>>([1, 2, 3, 4, 5, 6, 7, 8])
+        let m2 = Vector<CBlasStorage<Double>>([8, 7, 6, 5, 4, 3, 2, 1])
+        let result = Vector<CBlasStorage<Double>>(rows: m1.shape[0])
         
         add(left: m1, right: m2, alpha: 1.0, result: result)
         
-        let expected = CDVector([9, 9, 9, 9, 9, 9, 9, 9])
+        let expected = Vector<CBlasStorage<Double>>([9, 9, 9, 9, 9, 9, 9, 9])
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
     }
     
-    func testNVectorAdd2() {
-        let m1 = DVector([1, 2, 3, 4, 5, 6, 7, 8])
-        let m2 = DVector([8, 7, 6, 5, 4, 3, 2, 1])
+    func testCBlasVectorAdd2() {
+        let m1 = Vector<CBlasStorage<Double>>([1, 2, 3, 4, 5, 6, 7, 8])
+        let m2 = Vector<CBlasStorage<Double>>([8, 7, 6, 5, 4, 3, 2, 1])
         
         let result = m1 + m2
         
-        let expected = DVector([9, 9, 9, 9, 9, 9, 9, 9])
+        let expected = Vector<CBlasStorage<Double>>([9, 9, 9, 9, 9, 9, 9, 9])
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
     }
     
-    func testCDVectorAdd2() {
-        let m1 = CDVector([1, 2, 3, 4, 5, 6, 7, 8])
-        let m2 = CDVector([8, 7, 6, 5, 4, 3, 2, 1])
-        
-        let result = m1 + m2
-        
-        let expected = CDVector([9, 9, 9, 9, 9, 9, 9, 9])
-        XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
-    }
-
-    // test a column-major vector
-    func testNVectorMatrixAdd1() {
-        let m1 = DMatrix([[1, 2, 3, 4], [5, 6, 7, 8]])
-        let m2 = DMatrix([[8, 7, 6, 5], [4, 3, 2, 1]])
-        let result = DVector(rows: m1.shape[1])
-        
-        add(left: m1[0,0..<4], right: m2[0,0..<4], result: result)
-        
-        let expected = DVector([9, 9, 9, 9])
-        XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
-    }
-    
-    // test a row-major vector
-    func testCVectorMatrixAdd2() {
-        let m = CDMatrix([[1, 2, 3, 4], [5, 6, 7, 8]])
-
-        let v1 = CDVector(m[0..<2, 1])
-        let v2 = CDVector(m[0..<2, 2])
-        let result = CDVector(rows: v1.shape[0])
+    func testCBlasVectorMatrixAdd1() {
+        let v1 = Vector<CBlasStorage<Double>>([5, 4])
+        let v2 = Vector<CBlasStorage<Double>>([4, 5])
+        let result = Vector<CBlasStorage<Double>>(rows: v1.shape[0])
         
         add(left: v1, right: v2, alpha: 1.0, result: result)
-        
-        let expected = CDVector([8, 10])
+
+        let expected = Vector<CBlasStorage<Double>>([9, 9])
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
     }
-    
-    func testNVectorDotProduct() {
-        let m = DMatrix([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
-        let v = DVector([1, 2, 3])
-        
-        let result = DVector(rows: 3)
-        dot(left: m, right: v, result: result)
-        
-        let expected = DVector([1, 2, 3])
-        XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
-    }
-    
+
+//    func testCBlasVectorMatrixAdd2() {
+//        let v1 = Vector<CBlasStorage<Double>>([5, 4])
+//        let v2 = Vector<CBlasStorage<Double>>([4, 5])
+//        let result = Vector<CBlasStorage<Double>>(rows: v1.shape[0])
+//        
+//        add(left: v1.transpose(), right: v2.transpose(), alpha: 1.0, result: result)
+//        
+//        let expected = Vector<CBlasStorage<Double>>([9, 9])
+//        XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
+//    }
+
     func testCVectorDotProduct() {
-        let m = CDMatrix([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
-        let v = CDVector([1, 2, 3])
+        let m = Matrix<CBlasStorage<Double>>([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+        let v = Vector<CBlasStorage<Double>>([1, 2, 3])
         
-        let result = CDVector(rows: 3)
+        let result = Vector<CBlasStorage<Double>>(rows: 3)
         dot(left: m, right: v, result: result)
         
-        let expected = CDVector([1, 2, 3])
+        let expected = Vector<CBlasStorage<Double>>([1, 2, 3])
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
     }
+    
+    /*
+    
+    
+    
+
+    
 
     func testBenchmarkCBlas() {
         let v1 = CDVector(rows: 1000000)
