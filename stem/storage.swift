@@ -31,13 +31,10 @@ public protocol Storage {
     var order:MatrixOrder { get }
     var shape:Extent { get }
     var stride:[Int] { get }
-//    var dimIndex:[Int] { get }
     
     // creates new storage with given shape
     init(shape:Extent)
     init(array:[ElementType], shape:Extent)
     
     subscript(index:Int) -> ElementType {get set}
-    
-    //    func copy(storage:Self)
 }

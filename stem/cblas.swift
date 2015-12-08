@@ -127,6 +127,44 @@ func +=(left:CDVector, right:CDVector) {
 func dot(left left:CDMatrix, right:CDVector, result:CDVector, alpha:Double=1.0, beta:Double=1.0) {
     assert(left.shape[1] == right.shape[0])
     
+//    let leftStride = Int32(left.view.storage.shape[0])
+//    
+//    var rightStride:Int32
+//    if right.shape[0] > 1 && right.shape.dims() > 1 {
+//        // row major, so need to skip by number of columns
+//        rightStride = Int32(left.view.storage.shape[1])
+//    } else {
+//        // column major, so use a stride of 1
+//        rightStride = 1
+//    }
+//    
+//    var resultStride:Int32
+//    if result.shape[0] > 1 && result.shape.dims() > 1 {
+//        resultStride = Int32(result.view.storage.shape[1])
+//    } else {
+//        resultStride = 1
+//    }
+    
+    cblas_dgemv(CblasColMajor,
+                left.transposed ? CblasTrans : CblasNoTrans,
+                Int32(left.shape[0]),
+                Int32(left.shape[1]),
+                alpha,
+                UnsafePointer<Double>(left.view.storage.array.memory) + left.view.calculateOffset(),
+                Int32(left.view.storage.stride[0]),
+                UnsafePointer<Double>(right.view.storage.array.memory) + right.view.calculateOffset(),
+                Int32(right.view.storage.stride[0]),
+                beta,
+                UnsafeMutablePointer<Double>(result.view.storage.array.memory) + result.view.calculateOffset(),
+                Int32(result.view.storage.stride[0]))
+}
+
+public func outer(left left:CDVector, right:CDVector, result:CDTensor)
+{
+    assert(left.shape[0] == result.shape[0])
+    assert(right.shape[0] == result.shape[1])
+
+    /*
     let leftStride = Int32(left.view.storage.shape[0])
     
     var rightStride:Int32
@@ -143,20 +181,18 @@ func dot(left left:CDMatrix, right:CDVector, result:CDVector, alpha:Double=1.0, 
         resultStride = Int32(result.view.storage.shape[1])
     } else {
         resultStride = 1
-    }
+    }*/
     
-    cblas_dgemv(CblasColMajor,
-                left.transposed ? CblasTrans : CblasNoTrans,
-                Int32(left.shape[0]),
-                Int32(left.shape[1]),
-                alpha,
-                UnsafePointer<Double>(left.view.storage.array.memory) + left.view.calculateOffset(),
-                leftStride,
-                UnsafePointer<Double>(right.view.storage.array.memory) + right.view.calculateOffset(),
-                rightStride,
-                beta,
-                UnsafeMutablePointer<Double>(result.view.storage.array.memory) + result.view.calculateOffset(),
-                resultStride)
+    cblas_dger( CblasColMajor,
+                Int32(result.shape[0]),
+                Int32(result.shape[1]),
+                1.0,
+                UnsafePointer<Double>(left.view.storage.array.memory),
+                Int32(left.view.storage.stride[0]),
+                UnsafePointer<Double>(right.view.storage.array.memory),
+                Int32(right.view.storage.stride[0]),
+                UnsafeMutablePointer<Double>(result.view.storage.array.memory),
+                Int32(result.view.storage.stride[0]))
 }
 
 

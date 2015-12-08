@@ -2,43 +2,53 @@
 
 ## Overview
 
-STEM provides an extensible Tensor library with a primary focus for Swift. While there are many Tensor libraries out there (Numpy, TensorFlow, Torch, etc.), there currently do not directly support Swift. Direct support of Swift is important for speed and to fully take advantage of the language.
+STEM provides an extensible Tensor library with a primary focus for Swift. While there are many Tensor libraries out there (Numpy, TensorFlow, Torch, etc.), they do not support Swift.
+
 
 ### Why Swift?
-There are a properties of Swift that make it a good candidate for developing machine learning algorithms:
 
-1. Runs on the LLVM
-2. Allows for advanced operator overloading
-3. Has support of a large company
+There are several reasons Swift is a good candidate for writing Machine Learning algorithms:
 
-#### LLVM support
-Julia was on the first language to demonstrate the advantages of running on the LLVM. The language can be treated as both interpreted and compiled. This means that code can be written and tested easily while the end result can be optimized and fast.
+1. It's compiled:
 
-While languages such as Python have had a lot of work to make them faster (Numba, Psyco, Theano, etc.), the language is still ultimately interpreted. Optimizations can also be added by writing a library in C/C++ (e.g. TensorFlow). However, this requires a bridge between the compiled library and Python to be maintained. While the work can be minimized by either using tools like Swig or Boost::Python, debugging can still be a pain because it can be difficult to debug both Python and C/C++ at the same time.
+ a. None of the overhead normally associated with interpreted languages
+ b. It's easy to call compiled libraries
 
-By writing for a language that runs on the LLVM means that development can be significantly increased through faster feedback and debugging tools and the resulting code can be optimized.
 
-Finally, by not having to deal with language bridges means that there are no speed penalties from making calls between languages. These penalties exist for libraries such as Numpy, Torch, and TensorFlow (if used in Python).
+2. It's simple to use, but has powerful syntax:
 
-#### Why not Julia?
-Julia is a great language. However, to date it currently does not have the same support for developing large applications. Julia's type system is still evolving to allow for features that Swift already supports and the tools for developing in Julia are still works in progress. Swift, on the the other hand, has XCode, which can provide advanced debugging as well as the ability to compile as you type. Both of these features makes finding and fixing bug take much less time.
+	a. Operator overloading
+	b. Generics have much of the same power that templates have, but without having to resort to messy template hacking
 
-### Operator overloading
-Swift allows custom operators to be defined. Anyone who has used or develop a math library will recognize the ability to define operators can make writing equations much easier. It can be argued that Python's ability to overload operators is one of the important features that made it popular for machine learning.
+3. It's strongly typed:
 
-### Support
+	a. Mistakes can be discovered quickly
+	b. Can dispatch based on argument type
 
-In it's current state, Swift is not perfect. However, Apple has a vested interest in fixing Swift bugs and making it fast enough to run on embedded systems.
+4. It supports good design
+
+	a. Important for writing machine-learning algorithms for real-world problems
+
+5. Playground provides a very nice method to document algorithms
+
 
 ## Design
-The design of *STEM* came from looking at how many different libraries work and going through many different iterations. The focus on the design was on both flexibility and speed over features. The plan is to keep STEM simple and allow other libraries layered on top to provide more complex functionality.
+The design of *STEM* is to provide a fast and flexible library. Rather than focus on a creating large framework with a million features, the goal is to provide the tools necessary to create those frameworks. Much of the code was inspired by Numpy, Theano, and Torch.
 
 ### Tensors
-`Tensor`s in STEM is defined as a set of method that operator on a `StorageView`, where the `StorageView` maintains a window into a given `Storage`. The flexibility in STEM comes from the fact that `Storage` is a generic parameter to the `Tensor` class. This allows new types of `Storage` to be defined (e.g. BLAS, GPU, etc.) while still maintaining the same interface.
+A `Tensor` in STEM is defined as a set of methods that operator on a `StorageView`, where the `StorageView` is defined as a window into a given `Storage`. The flexibility in STEM comes from the fact that `Storage` is a generic parameter to the `Tensor` class. This allows new types of `Storage` to be defined (e.g. BLAS, GPU, etc.) while still maintaining the same interface by allowing how the data is stored as well as providing a mechanism for dispatching to different methods based on each `Storage` type (e.g. `CBlasStorage` will cause CBlas methods to be called on the `Tensor` operations).
 
 ### Vectors and Matrices
 
-Both the `Vector` and `Matrix` class are subclasses of `Tensor`. They provide two things:
+STEM defines the following types:
+
+* Vector
+* RowVector
+* ColumnVector
+* Matrix
+
+Each type is a subclass of `Tensor`, and provide:
 
 1. Constraints on the `Tensor`s
 2. Initializers that use those constraints to simplify construction
+3. The correct methods will be called based on the type (e.g. vector*vector could mean dot product or outer product depending on whether they are `RowVectors` or `ColumnVectors`)

@@ -38,6 +38,8 @@ public struct StorageViewIndex<StorageType:Storage>: GeneratorType {
             }
         }
         
+        // TODO: This is expensive if the next index gives currentOffset+1.
+        // Need to figure out a way of shortcuting this calculation when possible.
         let value = view.calculateOffset(indices)
         ++indices[last]
         return value
@@ -83,7 +85,6 @@ public struct StorageView<StorageType:Storage> {
             offset += (indices[dimIndex[i]]+window[dimIndex[i]].first!)*storage.stride[i]
         }
         
-//        print("calculateOffset: \(indices), offset: \(offset)")
         return offset
     }
     
@@ -102,8 +103,8 @@ public struct StorageView<StorageType:Storage> {
     }
     
     // generates indices of view in storage
-    public func storageIndices() -> AnyGenerator<Int> {
-        var igen = StorageViewIndex(self)
-        return anyGenerator { return igen.next() }
+    public func storageIndices() -> GeneratorSequence<StorageViewIndex<StorageType>> {
+//        StorageViewIndex<StorageType> {
+        return GeneratorSequence<StorageViewIndex<StorageType>>(StorageViewIndex<StorageType>(self))
     }
 }
