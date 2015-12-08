@@ -1,4 +1,4 @@
-# Swift Tensor Extensions for Machine-learning STEM
+# Swift Tensor Engine for Machine-learning STEM
 
 ## Overview
 
