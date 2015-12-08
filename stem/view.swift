@@ -51,7 +51,7 @@ public struct StorageView<StorageType:Storage> {
     public var shape:Extent
     public var window:[Range<Int>]
     public var dimIndex:[Int]
-
+    public var stride:[Int]
     
     public init(storage:StorageType, dimIndex:[Int]?=nil) {
         self.storage = storage
@@ -64,25 +64,33 @@ public struct StorageView<StorageType:Storage> {
         } else {
             self.dimIndex = (0..<dims).map { dims-$0-1 }
         }
+        
+        stride = storage.calculateStride(shape)
     }
     
-    public init(storage:StorageType, window:[Range<Int>], dimIndex:[Int]?=nil) {
+    public init(storage:StorageType, window:[Range<Int>], dimIndex:[Int]?=nil, shape:Extent?=nil) {
         self.storage = storage
         self.shape = Extent(window.map { $0.last! - $0.first! + 1})
         self.window = window
+        
+        let s:Extent = (shape == nil) ? storage.shape : shape!
 
-        let dims = shape.dims()
+        let dims = s.dims()
         if let idx = dimIndex {
             self.dimIndex = idx
         } else {
             self.dimIndex = (0..<dims).map { dims-$0-1 }
         }
+        
+        stride = storage.calculateStride(s)
+        print("?? \(window), \(s), \(stride)")
     }
     
     public func calculateOffset(indices:[Int]) -> Int {
         var offset = 0
         for i in 0..<indices.count {
-            offset += (indices[dimIndex[i]]+window[dimIndex[i]].first!)*storage.stride[i]
+            let s = i < stride.count ? stride[i] : 1
+            offset += (indices[dimIndex[i]]+window[dimIndex[i]].first!)*s
         }
         
         return offset
@@ -104,7 +112,6 @@ public struct StorageView<StorageType:Storage> {
     
     // generates indices of view in storage
     public func storageIndices() -> GeneratorSequence<StorageViewIndex<StorageType>> {
-//        StorageViewIndex<StorageType> {
         return GeneratorSequence<StorageViewIndex<StorageType>>(StorageViewIndex<StorageType>(self))
     }
 }

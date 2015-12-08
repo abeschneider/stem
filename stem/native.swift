@@ -15,37 +15,34 @@ public class NativeStorage<T:NumericType>: Storage {
     var array:SharedArray<T>
     public var shape:Extent
     
-    public var stride:[Int]
+//    public var stride:[Int]
     
     public required init(shape:Extent) {
         self.shape = shape
         array = SharedArray<ElementType>(count: shape.elements, repeatedValue: ElementType(0))
-        stride = Array<Int>(count:self.shape.dims(), repeatedValue: 0)
-        
-        var mult = 1
-        stride[0] = 1
-        for i in 1..<self.shape.dims() {
-            stride[i] = self.shape[i]*mult
-            mult *= self.shape[i]
-        }
     }
     
     public required init(array:[T], shape:Extent) {
         self.shape = shape
         self.array = SharedArray<T>(array)
-        stride = Array<Int>(count:self.shape.dims(), repeatedValue: 0)
-        
-        var mult = 1
-        stride[0] = 1
-        for i in 1..<self.shape.dims() {
-            stride[i] = self.shape[i]*mult
-            mult *= self.shape[i]
-        }
     }
     
     public subscript(index:Int) -> T {
         get { return array[index] }
         set { array[index] = newValue }
+    }
+    
+    public func calculateStride(shape:Extent) -> [Int] {
+        var stride = Array<Int>(count:shape.dims(), repeatedValue: 0)
+        
+        var mult = 1
+        stride[0] = 1
+        for i in 1..<shape.dims() {
+            stride[i] = shape[i]*mult
+            mult *= shape[i]
+        }
+        
+        return stride
     }
 }
 

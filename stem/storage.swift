@@ -30,11 +30,13 @@ public protocol Storage {
     
     var order:MatrixOrder { get }
     var shape:Extent { get }
-    var stride:[Int] { get }
+//    var stride:[Int] { get }
     
     // creates new storage with given shape
     init(shape:Extent)
     init(array:[ElementType], shape:Extent)
     
     subscript(index:Int) -> ElementType {get set}
+    
+    func calculateStride(shape:Extent) -> [Int]
 }

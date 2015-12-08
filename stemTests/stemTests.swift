@@ -295,6 +295,33 @@ class stemTests: XCTestCase {
         }
     }
     
+    func testTensorReshape1() {
+        let array = (0..<20).map { Double($0) }
+        let t = Tensor<NativeStorage<Double>>(array: array, shape: Extent(2, 5))
+        let s = t.reshape(Extent(1, 10))
+        
+        XCTAssertEqual(s.shape, Extent(1, 10))
+        for i in 0..<s.shape[1] {
+            XCTAssertEqual(s[0, i], Double(i))
+        }
+    }
+    
+    func testTensorReshape2() {
+        let array = (0..<400).map { Double($0) }
+        let t = Tensor<NativeStorage<Double>>(array: array, shape: Extent(10, 40))
+        let s = t.reshape(Extent(20, 20))
+        
+        XCTAssertEqual(s.shape, Extent(20, 20))
+        
+        print(s.view.stride)
+        var k:Double = 0.0
+        for i in 0..<s.shape[0] {
+            for j in 0..<s.shape[1] {
+                XCTAssertEqual(s[i, j], k++)
+            }
+        }
+    }
+    
     func testCreateVector() {
         let array:[Double] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
         let v = Vector<NativeStorage<Double>>(array)

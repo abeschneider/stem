@@ -21,7 +21,7 @@ import Foundation
 //    }
 //}
 
-struct MultiTensorIndex<StorageType:Storage>: GeneratorType {
+/*struct MultiTensorIndex<StorageType:Storage>: GeneratorType {
     typealias Element = (StorageView<StorageType>, Int)
     
     var views:[StorageView<StorageType>]
@@ -47,25 +47,22 @@ struct MultiTensorIndex<StorageType:Storage>: GeneratorType {
         if offset == nil { return nil }
         return (views[currentView], offset!)
     }
-}
+}*/
 
 protocol Module {
     typealias StorageType:Storage
-    
-    // Q: what if a general Tensor version is made .. can specialized versions be made in
-    // child classes and have them correctly selected at run time?
+
+    // general form -- specialized forms can appear in child classes
     func forward(input:Tensor<StorageType>) throws -> Tensor<StorageType>
-//    func forward(input:Matrix<StorageType>) -> Tensor<StorageType>
 }
 
 protocol GradientModule {
     typealias StorageType:Storage
-    func backward(input:Tensor<StorageType>, grad_output:Tensor<StorageType>) throws -> Tensor<StorageType>
-//    func backward(input:Matrix<StorageType>, grad_output:Matrix<StorageType>) throws -> Tensor<StorageType>
-}
-
-protocol TestModule {
     
+    // general form -- specialized forms can appear in child classes
+    func backward(input:Tensor<StorageType>, grad_output:Tensor<StorageType>) throws -> Tensor<StorageType>
+    
+    func clear()
 }
 
 class LinearModule<S:Storage>: Module, GradientModule {
@@ -73,20 +70,39 @@ class LinearModule<S:Storage>: Module, GradientModule {
     
     var weight:Matrix<StorageType>
     var bias:RowVector<StorageType>
+    
+    var grad_weight:Matrix<StorageType>
+    var grad_bias:RowVector<StorageType>
+    
     var output:Tensor<StorageType>?
     var grad_input:Tensor<StorageType>?
     
     init(input_size:Int, output_size:Int) {
         weight = Matrix<StorageType>(rows: input_size, cols: output_size)
         bias = RowVector<StorageType>(rows: output_size)
+        
+        grad_weight = Matrix<StorageType>(rows: input_size, cols: output_size)
+        grad_bias = RowVector<StorageType>(rows: output_size)
     }
     
-    init(weight:Matrix<StorageType>, bias:RowVector<StorageType>?=nil) {
+    init(weight:Matrix<StorageType>, bias:RowVector<StorageType>?=nil, gradWeight:Matrix<StorageType>?=nil, gradBias:RowVector<StorageType>?=nil) {
         self.weight = weight
         if let b = bias {
             self.bias = b
         } else {
             self.bias = RowVector<StorageType>(rows: self.weight.shape[1])
+        }
+        
+        if let gw = gradWeight {
+            grad_weight = gw
+        } else {
+            grad_weight = Matrix(rows: self.weight.shape[0], cols: self.weight.shape[1])
+        }
+        
+        if let gb = gradBias {
+            grad_bias = gb
+        } else {
+            grad_bias = RowVector(rows: self.bias.shape[0])
         }
     }
     
@@ -141,18 +157,20 @@ class LinearModule<S:Storage>: Module, GradientModule {
         }
 
         // grad_input += W*grad_output
-        print("weight.shape = \(weight.shape)")
-        print("grad_output = \(grad_output.shape)")
-        print("grad_input = \(grad_input!.shape)")
         dot(left: weight, right: grad_output, result: grad_input!)
         
-        // W += grad_output*input'
-        outer(left: input, right: grad_output, result: weight)
+        // dW += grad_output*input'
+        outer(left: input, right: grad_output, result: grad_weight)
         
         // bias += grad_output
-        add(left: bias, right: grad_output, result: bias)
+        add(left: grad_bias, right: grad_output, result: grad_bias)
         
         return grad_input! as! Vector
+    }
+    
+    func clear() {
+        fill(grad_weight, value: 0)
+        fill(grad_bias, value: 0)
     }
     
 //    func backward(input:Matrix<StorageType>, grad_output:Matrix<StorageType>) -> Matrix<StorageType> {

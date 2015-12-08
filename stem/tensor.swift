@@ -91,6 +91,18 @@ public class Tensor<StorageType:Storage> {
         
         return Tensor(view: newView)
     }
+    
+    public func reshape(newShape:Extent) -> Tensor {
+        // verify the total number of elements is conserved
+        assert(newShape.elements == shape.elements)
+        
+        // create a new view that matches newShape
+        let newWindow = newShape.map { 0..<$0 }
+        let newView = StorageView(storage: view.storage, window: newWindow, dimIndex: view.dimIndex, shape: newShape)
+        
+        // return a tensor that encapsulate the new view
+        return Tensor(view: newView)
+    }
 }
 
 extension Tensor {
@@ -274,6 +286,31 @@ public class Matrix<StorageType:Storage>: Tensor<StorageType> {
         let newView = StorageView(storage: view.storage, window: window, dimIndex: dimIndex)
         return Matrix(view: newView)
     }
+}
+
+func copy<StorageType:Storage>(source:Tensor<StorageType>, _ destination:Tensor<StorageType>) {
+    assert(destination.shape == source.shape)
+    for i in source.view.storageIndices() {
+        destination.view.storage[i] = source.view.storage[i]
+    }
+}
+
+func fill<StorageType:Storage>(tensor:Tensor<StorageType>, value:StorageType.ElementType) {
+    for i in tensor.view.storageIndices() {
+        tensor.view.storage[i] = 0
+    }
+}
+
+func map<StorageType:Storage>(
+    tensor:Tensor<StorageType>,
+    fn:(StorageType.ElementType) -> StorageType.ElementType) -> Tensor<StorageType>
+{
+    let result = Tensor<StorageType>(shape: tensor.shape)
+    for i in tensor.view.storageIndices() {
+        result.view.storage[i] = fn(tensor.view.storage[i])
+    }
+    
+    return result
 }
 
 func elementwiseBinaryOp<StorageType:Storage>

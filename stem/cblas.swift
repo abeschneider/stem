@@ -17,25 +17,25 @@ public class CBlasStorage<T:NumericType>: Storage {
     public let order:MatrixOrder = .ColumnMajor
     var array:SharedArray<T>
     public var shape:Extent
-    public var stride:[Int]
+//    public var stride:[Int]
     
     public required init(shape:Extent) {
         self.shape = shape
         array = SharedArray<ElementType>(count: shape.elements, repeatedValue: ElementType(0))
-        stride = Array<Int>(count:self.shape.dims(), repeatedValue: 0)
-        
-        var mult = 1
-        for i in 0..<self.shape.dims()-1 {
-            stride[i] = self.shape[i]*mult
-            mult *= self.shape[i]
-        }
-        stride[self.shape.dims()-1] = 1
     }
     
     public required init(array:[T], shape:Extent) {
         self.shape = shape
         self.array = SharedArray<T>(array)
-        stride = Array<Int>(count:self.shape.dims(), repeatedValue: 0)
+    }
+    
+    public subscript(index:Int) -> T {
+        get { return array[index] }
+        set { array[index] = newValue }
+    }
+    
+    public func calculateStride(shape:Extent) -> [Int] {
+        var stride = Array<Int>(count:self.shape.dims(), repeatedValue: 0)
         
         var mult = 1
         for i in 0..<self.shape.dims()-1 {
@@ -43,11 +43,8 @@ public class CBlasStorage<T:NumericType>: Storage {
             mult *= self.shape[i]
         }
         stride[self.shape.dims()-1] = 1
-    }
-    
-    public subscript(index:Int) -> T {
-        get { return array[index] }
-        set { array[index] = newValue }
+
+        return stride
     }
 }
 
@@ -151,12 +148,12 @@ func dot(left left:CDMatrix, right:CDVector, result:CDVector, alpha:Double=1.0, 
                 Int32(left.shape[1]),
                 alpha,
                 UnsafePointer<Double>(left.view.storage.array.memory) + left.view.calculateOffset(),
-                Int32(left.view.storage.stride[0]),
+                Int32(left.view.stride[0]),
                 UnsafePointer<Double>(right.view.storage.array.memory) + right.view.calculateOffset(),
-                Int32(right.view.storage.stride[0]),
+                Int32(right.view.stride[0]),
                 beta,
                 UnsafeMutablePointer<Double>(result.view.storage.array.memory) + result.view.calculateOffset(),
-                Int32(result.view.storage.stride[0]))
+                Int32(result.view.stride[0]))
 }
 
 public func outer(left left:CDVector, right:CDVector, result:CDTensor)
@@ -188,11 +185,11 @@ public func outer(left left:CDVector, right:CDVector, result:CDTensor)
                 Int32(result.shape[1]),
                 1.0,
                 UnsafePointer<Double>(left.view.storage.array.memory),
-                Int32(left.view.storage.stride[0]),
+                Int32(left.view.stride[0]),
                 UnsafePointer<Double>(right.view.storage.array.memory),
-                Int32(right.view.storage.stride[0]),
+                Int32(right.view.stride[0]),
                 UnsafeMutablePointer<Double>(result.view.storage.array.memory),
-                Int32(result.view.storage.stride[0]))
+                Int32(result.view.stride[0]))
 }
 
 
