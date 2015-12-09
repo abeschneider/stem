@@ -2,7 +2,8 @@
 
 ## Overview
 
-STEM provides an extensible Tensor library with a primary focus for Swift. While there are many Tensor libraries out there (Numpy, TensorFlow, Torch, etc.), they do not support Swift.
+STEM provides an extensible Tensor library for Swift with a primary focus on the development of Machine Learning algorithms.
+
 
 
 ### Why Swift?
@@ -36,16 +37,17 @@ There are several reasons Swift is a good candidate for writing Machine Learning
 The design of *STEM* is to provide a fast and flexible library. Rather than focus on a creating large framework with a million features, the goal is to provide the tools necessary to create those frameworks. Much of the code was inspired by Numpy, Theano, and Torch.
 
 ### Tensors
-A `Tensor` in STEM is defined as a set of methods that operator on a `StorageView`, where the `StorageView` is defined as a window into a given `Storage`. The flexibility in STEM comes from the fact that `Storage` is a generic parameter to the `Tensor` class. This allows new types of `Storage` to be defined (e.g. BLAS, GPU, etc.) while still maintaining the same interface by allowing how the data is stored as well as providing a mechanism for dispatching to different methods based on each `Storage` type (e.g. `CBlasStorage` will cause CBlas methods to be called on the `Tensor` operations).
+A `Tensor` is defined as a `Storage` tied together with a `StorageView`.The flexibility in STEM comes from the fact that `Storage` is a generic parameter to the `Tensor` class. This allows new types of Storage to be defined (e.g. BLAS, GPU, etc.) while still maintaining the same interface by allowing how the data is stored as well as providing a mechanism for dispatching to different methods based on each Storage type (e.g. `CBlasStorage` will cause CBlas methods to be called on the `Tensor` operations).
+
 
 ### Vectors and Matrices
 
 STEM defines the following types:
 
-* Vector
-* RowVector
-* ColumnVector
-* Matrix
+* `Vector`
+* `RowVector`
+* `ColumnVector`
+* `Matrix`
 
 Each type is a subclass of `Tensor`, and provide:
 
