@@ -11,19 +11,13 @@ import Foundation
 public class NativeStorage<T:NumericType>: Storage {
     public typealias ElementType = T
     
-    public let order:MatrixOrder = .RowMajor
     var array:SharedArray<T>
-//    public var shape:Extent
-    
-//    public var stride:[Int]
     
     public required init(size:Int) {
-//        self.shape = shape
         array = SharedArray<ElementType>(count: size, repeatedValue: ElementType(0))
     }
     
     public required init(array:[T]) {
-//        self.shape = shape
         self.array = SharedArray<T>(array)
     }
     
@@ -45,10 +39,3 @@ public class NativeStorage<T:NumericType>: Storage {
         return stride
     }
 }
-
-//public typealias DTensor = Tensor<NativeStorage<Double>>
-//public typealias DMatrix = Matrix<NativeStorage<Double>>
-//public typealias DVector = Vector<NativeStorage<Double>>
-//public typealias FTensor = Tensor<NativeStorage<Float>>
-//public typealias FMatrix = Matrix<NativeStorage<Float>>
-//public typealias FVector = Vector<NativeStorage<Float>>

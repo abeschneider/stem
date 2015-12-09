@@ -8,10 +8,6 @@
 
 import Foundation
 
-public enum MatrixOrder {
-    case ColumnMajor, RowMajor
-}
-
 public protocol NumericType: AbsoluteValuable, FloatingPointType, Comparable {
     func +(lhs: Self, rhs: Self) -> Self
     func -(lhs: Self, rhs: Self) -> Self
@@ -28,12 +24,6 @@ extension Float: NumericType {}
 public protocol Storage {
     typealias ElementType:NumericType
     
-    var order:MatrixOrder { get }
-//    var shape:Extent { get }
-//    var stride:[Int] { get }
-    
-    // creates new storage with given shape
-//    init(shape:Extent)
     init(size:Int)
     init(array:[ElementType])
     

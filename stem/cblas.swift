@@ -14,13 +14,9 @@ import Accelerate
 public class CBlasStorage<T:NumericType>: Storage {
     public typealias ElementType = T
     
-    public let order:MatrixOrder = .ColumnMajor
     var array:SharedArray<T>
-//    public var shape:Extent
-//    public var stride:[Int]
     
     public required init(size:Int) {
-//        self.shape = shape
         array = SharedArray<ElementType>(count: size, repeatedValue: ElementType(0))
     }
     
@@ -47,54 +43,38 @@ public class CBlasStorage<T:NumericType>: Storage {
     }
 }
 
-//public typealias CDTensor = Tensor<CBlasStorage<Double>>
-//public typealias CFTensor = Tensor<CBlasStorage<Float>>
-//public typealias CDMatrix = Matrix<CBlasStorage<Double>>
-//public typealias CFMatrix = Matrix<CBlasStorage<Float>>
-//public typealias CDVector = Vector<CBlasStorage<Double>>
-//public typealias CFVector = Vector<CBlasStorage<Float>>
-/*
 // Accelerated versions of the tensor operations
 // TODO: make in-place operation that saves results in `left` (iadd)
-func add(left left:CDVector, right:CDVector, alpha:Double, result:CDVector) {
+func add(
+    left left:Vector<CBlasStorage<Double>>,
+    right:Vector<CBlasStorage<Double>>,
+    result:Vector<CBlasStorage<Double>>, alpha:Double=1.0)
+{
     assert(left.shape == right.shape)
 
-    let v1Ptr = UnsafePointer<Double>(left.view.storage.array.memory) + left.view.calculateOffset()
-    let v2Ptr = UnsafePointer<Double>(right.view.storage.array.memory) + right.view.calculateOffset()
-    let resultPtr = UnsafeMutablePointer<Double>(result.view.storage.array.memory) + result.view.calculateOffset()
+    let v1Ptr = UnsafePointer<Double>(left.storage.array.memory) + left.calculateOffset()
+    let v2Ptr = UnsafePointer<Double>(right.storage.array.memory) + right.calculateOffset()
+    let resultPtr = UnsafeMutablePointer<Double>(result.storage.array.memory) + result.calculateOffset()
     
     // need to figure out best way to determine which dimension this will go on .. also,
     // if it's not on the first dimension, then a stride needs to be added on
     let numElements = Int32(left.shape.elements)
     
-    var leftStride:Int32
-    if left.shape[0] > 1 && left.shape.dims() > 1 {
-        // row major, so need to skip by number of columns
-        leftStride = Int32(left.view.shape[1])
-    } else {
-        // column major, so use a stride of 1
-        leftStride = 1
-    }
-    
-    var resultStride:Int32
-    if result.shape[0] > 1 && result.shape.dims() > 1 {
-        resultStride = Int32(result.view.shape[1])
-    } else {
-        resultStride = 1
-    }
-    
-    cblas_dcopy(numElements, v2Ptr, leftStride, resultPtr, resultStride)
-    cblas_daxpy(numElements, alpha, v1Ptr, leftStride, resultPtr, resultStride)
+    cblas_dcopy(numElements, v2Ptr, Int32(left.stride[0]), resultPtr, Int32(result.stride[0]))
+    cblas_daxpy(numElements, alpha, v1Ptr, Int32(left.stride[0]), resultPtr, Int32(result.stride[0]))
 }
 
-func +(left:CDVector, right:CDVector) -> CDVector {
-    let result = CDVector(rows: left.shape[0])
-    add(left: left, right: right, alpha: 1.0, result: result)
+func +(
+    left:Vector<CBlasStorage<Double>>,
+    right:Vector<CBlasStorage<Double>>) -> Vector<CBlasStorage<Double>>
+{
+    let result = Vector<CBlasStorage<Double>>(rows: left.shape[0])
+    add(left: left, right: right, result: result)
     
     return result
 }
 
-func iadd(left left:CDVector, right:CDVector, alpha:Double) {
+/*func iadd(left left:CDVector, right:CDVector, alpha:Double=1.0) {
     assert(left.shape == right.shape)
     
     let v1Ptr = UnsafeMutablePointer<Double>(left.view.storage.array.memory) + left.view.calculateOffset()
@@ -118,77 +98,47 @@ func iadd(left left:CDVector, right:CDVector, alpha:Double) {
 
 func +=(left:CDVector, right:CDVector) {
     iadd(left: left, right: right, alpha: 1.0)
-}
+}*/
 
-func dot(left left:CDMatrix, right:CDVector, result:CDVector, alpha:Double=1.0, beta:Double=1.0) {
+func dot(
+    left left:Matrix<CBlasStorage<Double>>,
+    right:Vector<CBlasStorage<Double>>,
+    result:Vector<CBlasStorage<Double>>,
+    alpha:Double=1.0,
+    beta:Double=1.0)
+{
     assert(left.shape[1] == right.shape[0])
-    
-//    let leftStride = Int32(left.view.storage.shape[0])
-//    
-//    var rightStride:Int32
-//    if right.shape[0] > 1 && right.shape.dims() > 1 {
-//        // row major, so need to skip by number of columns
-//        rightStride = Int32(left.view.storage.shape[1])
-//    } else {
-//        // column major, so use a stride of 1
-//        rightStride = 1
-//    }
-//    
-//    var resultStride:Int32
-//    if result.shape[0] > 1 && result.shape.dims() > 1 {
-//        resultStride = Int32(result.view.storage.shape[1])
-//    } else {
-//        resultStride = 1
-//    }
     
     cblas_dgemv(CblasColMajor,
                 left.transposed ? CblasTrans : CblasNoTrans,
                 Int32(left.shape[0]),
                 Int32(left.shape[1]),
                 alpha,
-                UnsafePointer<Double>(left.view.storage.array.memory) + left.view.calculateOffset(),
-                Int32(left.view.stride[0]),
-                UnsafePointer<Double>(right.view.storage.array.memory) + right.view.calculateOffset(),
-                Int32(right.view.stride[0]),
+                UnsafePointer<Double>(left.storage.array.memory) + left.calculateOffset(),
+                Int32(left.stride[0]),
+                UnsafePointer<Double>(right.storage.array.memory) + right.calculateOffset(),
+                Int32(right.stride[0]),
                 beta,
-                UnsafeMutablePointer<Double>(result.view.storage.array.memory) + result.view.calculateOffset(),
-                Int32(result.view.stride[0]))
+                UnsafeMutablePointer<Double>(result.storage.array.memory) + result.calculateOffset(),
+                Int32(result.stride[0]))
 }
 
-public func outer(left left:CDVector, right:CDVector, result:CDTensor)
+public func outer(
+    left left:Vector<CBlasStorage<Double>>,
+    right:Vector<CBlasStorage<Double>>,
+    result:Tensor<CBlasStorage<Double>>)
 {
     assert(left.shape[0] == result.shape[0])
     assert(right.shape[0] == result.shape[1])
-
-    /*
-    let leftStride = Int32(left.view.storage.shape[0])
-    
-    var rightStride:Int32
-    if right.shape[0] > 1 && right.shape.dims() > 1 {
-        // row major, so need to skip by number of columns
-        rightStride = Int32(left.view.storage.shape[1])
-    } else {
-        // column major, so use a stride of 1
-        rightStride = 1
-    }
-    
-    var resultStride:Int32
-    if result.shape[0] > 1 && result.shape.dims() > 1 {
-        resultStride = Int32(result.view.storage.shape[1])
-    } else {
-        resultStride = 1
-    }*/
     
     cblas_dger( CblasColMajor,
                 Int32(result.shape[0]),
                 Int32(result.shape[1]),
                 1.0,
-                UnsafePointer<Double>(left.view.storage.array.memory),
+                UnsafePointer<Double>(left.storage.array.memory),
                 Int32(left.view.stride[0]),
-                UnsafePointer<Double>(right.view.storage.array.memory),
+                UnsafePointer<Double>(right.storage.array.memory),
                 Int32(right.view.stride[0]),
-                UnsafeMutablePointer<Double>(result.view.storage.array.memory),
+                UnsafeMutablePointer<Double>(result.storage.array.memory),
                 Int32(result.view.stride[0]))
 }
-
-*/

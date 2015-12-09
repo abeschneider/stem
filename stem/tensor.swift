@@ -171,6 +171,14 @@ public class Tensor<StorageType:Storage> {
         
         transposed = false
     }
+    
+    func calculateOffset() -> Int {
+        var pos = offset
+        for i in 0..<shape.dims {
+            let s = i < stride.count ? stride[i] : 1
+            pos += view.offset[dimIndex[i]]*s
+        }
+    }
 
     func calculateOffset(indices:[Int]) -> Int {
         var pos = offset
