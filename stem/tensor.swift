@@ -425,13 +425,13 @@ func fill<StorageType:Storage>(tensor:Tensor<StorageType>, value:StorageType.Ele
     }
 }
 
-/*func map<StorageType:Storage>(
+func map<StorageType:Storage>(
     tensor:Tensor<StorageType>,
     fn:(StorageType.ElementType) -> StorageType.ElementType) -> Tensor<StorageType>
 {
     let result = Tensor<StorageType>(shape: tensor.shape)
-    for i in tensor.view.storageIndices() {
-        result.view.storage[i] = fn(tensor.view.storage[i])
+    for i in tensor.storageIndices() {
+        result.storage[i] = fn(tensor.storage[i])
     }
     
     return result
@@ -446,14 +446,14 @@ func elementwiseBinaryOp<StorageType:Storage>
     assert(left.shape.elements == right.shape.elements)
     assert(left.shape.elements == result.shape.elements)
     
-    let indexLeft = left.view.storageIndices()
-    let indexRight = right.view.storageIndices()
-    var indexResult = result.view.storageIndices()
+    let indexLeft = left.storageIndices()
+    let indexRight = right.storageIndices()
+    var indexResult = result.storageIndices()
 
     // TODO: There should be better syntax to support this use-case
     for (l, r) in Zip2Sequence(GeneratorSequence(indexLeft), GeneratorSequence(indexRight)) {
         let idx = indexResult.next()!
-        result.view.storage[idx] = op(left: left.view.storage[l], right: right.view.storage[r])
+        result.storage[idx] = op(left: left.storage[l], right: right.storage[r])
     }
 }
 
@@ -536,7 +536,6 @@ public func dot<StorageType:Storage where StorageType.ElementType:NumericType>
     // NxM x M -> N
     assert(left.shape[0] == result.shape[0])
     assert(left.shape[1] == right.shape[0])
-//    assert(right.shape.elements == result.shape.elements)
 
     // per row
     for i in 0..<left.shape[0] {
@@ -546,20 +545,6 @@ public func dot<StorageType:Storage where StorageType.ElementType:NumericType>
         }
     }
 }
-
-//public func dot<StorageType:Storage where StorageType.ElementType:NumericType>
-//    (left left:Vector<StorageType>, right:Matrix<StorageType>, result:Tensor<StorageType>)
-//{
-//    // N x NxM -> M
-//    assert(left.shape[0] == right.shape[0])
-//    assert(left.shape[1] == result.shape[0])
-//    
-//    for i in 0..<left.shape[0] {
-//        for j in 0..<left.shape[1] {
-//            result[j] = result[j] + left[i]*right[j, i]
-//        }
-//    }
-//}
 
 public func dot<StorageType:Storage where StorageType.ElementType:NumericType>
     (left left:Matrix<StorageType>, right:Matrix<StorageType>, result:Tensor<StorageType>)
@@ -625,8 +610,8 @@ public func abs<StorageType:Storage where StorageType.ElementType:NumericType>
     (tensor:Tensor<StorageType>) -> Tensor<StorageType>
 {
     let result = Tensor<StorageType>(shape: tensor.shape)
-    for index in tensor.view.storageIndices() {
-        result.view.storage[index] = abs(tensor.view.storage[index])
+    for index in tensor.storageIndices() {
+        result.storage[index] = abs(tensor.storage[index])
     }
     
     return result
@@ -637,8 +622,8 @@ public func isClose<StorageType:Storage where StorageType.ElementType:NumericTyp
 {
     let diff = left - right
     let adiff:Tensor<StorageType> = abs(diff)
-    for i in adiff.view.storageIndices() {
-        if adiff.view.storage[i] >= eps { return false }
+    for i in adiff.storageIndices() {
+        if adiff.storage[i] >= eps { return false }
     }
     return true
 }
@@ -648,4 +633,4 @@ public func isClose<StorageType:Storage where StorageType.ElementType:NumericTyp
 //{
 //    return isClose(left, right, 10e-4) //V.StorageType.ElementType(10e-4))
 //}
-*/
+
