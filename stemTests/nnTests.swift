@@ -8,7 +8,7 @@
 
 import XCTest
 @testable import stem
-
+/*
 class nnTests: XCTestCase {
 
     override func setUp() {
@@ -82,7 +82,7 @@ class nnTests: XCTestCase {
         XCTAssert(isClose(grad_input2, expected2, eps: 10e-4), "Not close")
     }
     
-    func testNativeLinearGradient() {
+/*    func testNativeLinearGradient() {
         typealias S = NativeStorage<Double>
         
         let num_inputs = 100
@@ -92,31 +92,31 @@ class nnTests: XCTestCase {
         let storage = S(shape: Extent(2*num_inputs*num_outputs + num_outputs))
         
         var pos = 0
-        let weight_view = StorageView<S>(storage: storage, window: [0..<(num_inputs*num_outputs)]) //, shape: Extent(num_inputs, num_outputs))
+        let weight_view = StorageView<S>(storage: storage, window: [0..<(num_inputs*num_outputs)], shape: Extent(num_inputs, num_outputs))
         let weight = Matrix<S>(view: weight_view)
         
         pos += num_inputs*num_outputs
-        let bias_view = StorageView<S>(storage: storage, window: [pos..<(pos+num_outputs)]) //, shape: Extent(num_outputs))
+        let bias_view = StorageView<S>(storage: storage, window: [pos..<(pos+num_outputs)], shape: Extent(num_outputs))
         let bias = RowVector<S>(view: bias_view)
         
         pos += num_outputs
-        let grad_weight_view = StorageView<S>(storage: storage, window: [pos..<(pos+num_inputs*num_outputs)]) //, shape: Extent(num_inputs, num_outputs))
+        let grad_weight_view = StorageView<S>(storage: storage, window: [pos..<(pos+num_inputs*num_outputs)], shape: Extent(num_inputs, num_outputs))
         let grad_weight = Matrix<S>(view: grad_weight_view)
         
         pos += num_inputs*num_outputs
-        let grad_bias_view = StorageView<S>(storage: storage, window: [pos..<(pos+num_outputs)]) //, shape: Extent(num_outputs))
+        let grad_bias_view = StorageView<S>(storage: storage, window: [pos..<(pos+num_outputs)], shape: Extent(num_outputs))
         let grad_bias = RowVector<S>(view: grad_bias_view)
         
         // need to provide a method to point to external gradient storage as well
         let linear = LinearModule<S>(weight: weight, bias: bias, gradWeight: grad_weight, gradBias: grad_bias)
-        
-        /*let input = Vector<NativeStorage<Double>>(rows: num_inputs)
+    
+        print("weight.shape = \(weight.shape)")
+        print("bias.shape = \(bias.shape)")
+        let input = Vector<NativeStorage<Double>>(rows: num_inputs)
         let output = linear.forward(input)
-        let grad_output = Vector<NativeStorage<Double>>(rows: num_outputs)
-        let grad_input = linear.backward(input, grad_output: grad_output)
-        
-        print(grad_input)*/
-    }
+//        let grad_output = Vector<NativeStorage<Double>>(rows: num_outputs)
+//        let grad_input = linear.backward(input, grad_output: grad_output)
+    }*/
 
     func testPerformanceExample() {
         // This is an example of a performance test case.
@@ -126,3 +126,4 @@ class nnTests: XCTestCase {
     }
 
 }
+*/

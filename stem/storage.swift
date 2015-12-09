@@ -29,12 +29,13 @@ public protocol Storage {
     typealias ElementType:NumericType
     
     var order:MatrixOrder { get }
-    var shape:Extent { get }
+//    var shape:Extent { get }
 //    var stride:[Int] { get }
     
     // creates new storage with given shape
-    init(shape:Extent)
-    init(array:[ElementType], shape:Extent)
+//    init(shape:Extent)
+    init(size:Int)
+    init(array:[ElementType])
     
     subscript(index:Int) -> ElementType {get set}
     

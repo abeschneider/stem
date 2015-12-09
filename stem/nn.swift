@@ -49,6 +49,8 @@ import Foundation
     }
 }*/
 
+
+/*
 protocol Module {
     typealias StorageType:Storage
 
@@ -119,6 +121,7 @@ class LinearModule<S:Storage>: Module, GradientModule {
         
         if let out = output {
             // output = W'*input
+            print("shapes: \(weight.transpose().shape), \(input.shape), \(out.shape)")
             dot(left: weight.transpose(), right: input, result: out)
             
             // output += bias
@@ -176,3 +179,4 @@ class LinearModule<S:Storage>: Module, GradientModule {
 //    func backward(input:Matrix<StorageType>, grad_output:Matrix<StorageType>) -> Matrix<StorageType> {
 //    }
 }
+*/

@@ -13,6 +13,7 @@ import Foundation
 //const vector_t &input,
 //real_t eps)
 
+/*
 func check_gradient<StorageType:Storage, ModuleType where ModuleType:Module, ModuleType:GradientModule>(
     fn:(Vector<StorageType>) -> StorageType.ElementType,
     module:ModuleType,
@@ -42,7 +43,7 @@ func check_gradient<StorageType:Storage, ModuleType where ModuleType:Module, Mod
         // let diff = abs(numerical_diff - analytical_diff)
         // result.append(diff)
     }
-}
+}*/
 
 /*
 func grad_forward<StorageType:Storage, ModuleType where ModuleType:Module, ModuleType:GradientModule>(

@@ -29,90 +29,219 @@ extension Range : TensorIndex {
     }
 }
 
+public struct TensorStorageIndex<StorageType:Storage>: GeneratorType {
+    var tensor:Tensor<StorageType>
+    var indices:[Int]
+
+    init(_ tensor:Tensor<StorageType>) {
+        self.tensor = tensor
+        indices = [Int](count: tensor.shape.dims, repeatedValue: 0)
+    }
+
+    public mutating func next() -> Int? {
+        let last = tensor.shape.dims-1
+        if indices[last] >= tensor.shape[last] {
+            var d:Int = tensor.shape.dims - 1
+            while d >= 0 && indices[d] >= tensor.shape[d] {
+                // at the end, so return no results left
+                if d == 0 { return nil }
+
+                // reset current index
+                indices[d] = 0
+
+                // increment next offset
+                ++indices[d-1]
+
+                // go to next dimension
+                --d
+            }
+        }
+
+        // TODO: This is expensive if the next index gives currentOffset+1.
+        // Need to figure out a way of shortcuting this calculation when possible.
+        let value = tensor.calculateOffset(indices)
+        ++indices[last]
+        return value
+    }
+}
+
+
 // TODO: can this can be defined as parameterized by Storage, and
 // delegated by view? Otherwise, two Tensors with different view types
 // will also be different Tensor types
 public class Tensor<StorageType:Storage> {
     public typealias ViewType = StorageView<StorageType>
     
+    public var storage:StorageType
+    
+    // reshape affects this
+    // TODO: need to make this into a function-var to allow
+    // dimIndex to affect this.. or some aux. variable
+    var internalShape:Extent
+    
+    // offset within storage
+    var offset:Int
+    
+    // external shape
+    var shape:Extent {
+        get { return view.shape }
+    }
+    
+    // view into storage
     public var view:ViewType
     
+    // order to traverse the dimensions
+    public var dimIndex:[Int]
+    
+    // step size to increment within storage for each dimension
+    public var stride:[Int]
+
+    
     // forward shape from view
-    public var shape:Extent { return view.shape }
+//    public var shape:Extent { return view.shape }
     public var transposed:Bool
     
-    public init(array:[StorageType.ElementType], shape:Extent) {
-        let storage = StorageType(array: array, shape: shape)
-        view = ViewType(storage: storage)
+    public init(array:[StorageType.ElementType], shape:Extent, offset:Int?=nil) {
+        storage = StorageType(array: array)
+        internalShape = shape
+        self.stride = storage.calculateStride(shape)
+        dimIndex = (0..<shape.dims).map { shape.dims-$0-1 }
+
+        if let o = offset {
+            self.offset = o
+        } else {
+            self.offset = 0
+        }
+        
+        view = ViewType(shape: shape, offset: Array<Int>(count: shape.dims, repeatedValue: 0))
+        transposed = false
+    }
+    
+    public init(storage:StorageType, shape:Extent) {
+        self.storage = storage
+        internalShape = shape
+        offset = 0
+        self.stride = storage.calculateStride(shape)
+        dimIndex = (0..<shape.dims).map { shape.dims-$0-1 }
+        
+        view = ViewType(shape: shape, offset: Array<Int>(count: shape.dims, repeatedValue: 0))
         transposed = false
     }
     
     public init(shape:Extent) {
-        let storage = StorageType(shape: shape)
-        view = ViewType(storage: storage)
+        storage = StorageType(size: shape.elements)
+        internalShape = shape
+        offset = 0
+        self.stride = storage.calculateStride(shape)
+        dimIndex = (0..<shape.dims).map { shape.dims-$0-1 }
+
+        view = ViewType(shape: shape, offset: Array<Int>(count: shape.dims, repeatedValue: 0))
         transposed = false
     }
     
-    public init(view:ViewType) {
-        self.view = view
+    public init(tensor:Tensor, window:[Range<Int>]) {
+        storage = tensor.storage
+        internalShape = tensor.internalShape
+        offset = 0
+        stride = tensor.stride
+
+        let viewShape = Extent(window.map { $0.last! - $0.first! + 1 })
+        view = ViewType(shape: viewShape, offset: window.map { $0.first! })
+        dimIndex = (0..<tensor.internalShape.dims).map { tensor.internalShape.dims-$0-1 }
         transposed = false
+    }
+    
+    public init(tensor:Tensor, dimIndex:[Int]?=nil, view:StorageView<StorageType>?=nil) {
+        storage = tensor.storage
+        internalShape = tensor.internalShape
+        offset = 0
+        stride = tensor.stride
+        
+//        let dims = tensor.internalShape.dims
+        
+        // use dimIndex?
+//        let shuffledShape = Extent((0..<dims).map { tensor.view.shape[dims-$0-1] })
+//        view = tensor.view
+        
+        if let d = dimIndex {
+            self.dimIndex = d
+//            let shuffledShape = Extent((0..<dims).map { tensor.view.shape[d[$0]] })
+//            view = ViewType(shape: shuffledShape, offset: Array<Int>(count: internalShape.dims, repeatedValue: 0))
+        } else {
+            self.dimIndex = tensor.dimIndex
+        }
+        
+        if let v = view {
+            self.view = v
+        } else {
+            self.view = ViewType(shape: tensor.shape, offset: tensor.view.offset)
+        }
+//        if let v = view {
+//            view = ViewType(shape: s, offset: Array<Int>(count: internalShape.dims, repeatedValue: 0))
+//        } else {
+//            view = ViewType(shape: tensor.shape, offset: tensor.view.offset) //offset: Array<Int>(count: internalShape.dims, repeatedValue: 0))
+//        }
+        
+        transposed = false
+    }
+
+    func calculateOffset(indices:[Int]) -> Int {
+        var pos = offset
+        for i in 0..<indices.count {
+            let s = i < stride.count ? stride[i] : 1
+            pos += (indices[dimIndex[i]]+view.offset[dimIndex[i]])*s
+        }
+        
+        return pos
     }
     
     public subscript(indices:[Int]) -> StorageType.ElementType {
-        get { return view[indices] }
-        set { view[indices] = newValue }
+        get { return storage[calculateOffset(indices)] }
+        set { storage[calculateOffset(indices)] = newValue }
     }
     
     public subscript(indices:Int...) -> StorageType.ElementType {
-        get { return view[indices] }
-        set { view[indices] = newValue }
+        get { return storage[calculateOffset(indices)] }
+        set { storage[calculateOffset(indices)] = newValue }
     }
     
     public subscript(ranges:[TensorIndex]) -> Tensor {
         get {
-            let v = ViewType(storage: view.storage, window: ranges.map {$0.TensorRange})
-            return Tensor(view:v)
+            return Tensor(tensor: self, window: ranges.map { $0.TensorRange })
         }
-//        set(newValue) {
-//            let s = S(storage:self.storage, view:ranges.map {$0.NDArrayRange})
-//            s.copy(newValue.storage)
-//        }
     }
     
     public subscript(ranges:TensorIndex...) -> Tensor {
         get { return self[ranges] }
-//        set { self[ranges] = newValue }
     }
     
     public func transpose() -> Tensor<StorageType> {
-        let window = Array(view.window.reverse())
-        let dimIndex = Array(view.dimIndex.reverse())
-        let newView = StorageView(storage: view.storage, window: window, dimIndex: dimIndex)
-        
-        return Tensor(view: newView)
+        let newDimIndex = Array(dimIndex.reverse())
+        let newShape = Extent(view.shape.reverse())
+        let newView = StorageView<StorageType>(shape: newShape, offset: view.offset)
+        return Tensor(tensor: self, dimIndex: newDimIndex, view: newView)
     }
     
     public func reshape(newShape:Extent) -> Tensor {
         // verify the total number of elements is conserved
-        assert(newShape.elements == shape.elements)
-        
-        // create a new view that matches newShape
-        let newWindow = newShape.map { 0..<$0 }
-        let newView = StorageView(storage: view.storage, window: newWindow, dimIndex: view.dimIndex, shape: newShape)
-        
-        // return a tensor that encapsulate the new view
-        return Tensor(view: newView)
+        assert(newShape.elements == internalShape.elements)
+        return Tensor(storage: storage, shape: newShape)
+    }
+    
+    // generates indices of view in storage
+    public func storageIndices() -> GeneratorSequence<TensorStorageIndex<StorageType>> {
+        return GeneratorSequence<TensorStorageIndex<StorageType>>(TensorStorageIndex<StorageType>(self))
     }
 }
 
 extension Tensor {
     private func convertToString(var indices:[Int], dim:Int) -> String {
-        if dim == shape.dims() - 1 {
+        if dim == internalShape.dims-1 {
 //        if view.shape[dim] > 1 {
             // last dimension, convert values to string
             let values:[String] = (0..<shape[dim]).map({(i:Int) -> String in
                 indices[dim] = i
-                return String(format: "%2.3f", view[indices] as! Double)
+                return String(format: "%2.3f", self[indices] as! Double)
             })
             return "[\(values.joinWithSeparator(",\t"))]"
         } else {
@@ -136,7 +265,7 @@ extension Tensor {
 extension Tensor: CustomStringConvertible {
     public var description: String {
         get {
-            let indices = (0..<shape.dims()).map { _ in 0 }
+            let indices = (0..<internalShape.dims).map { _ in 0 }
             return convertToString(indices, dim: 0)
         }
     }
@@ -157,8 +286,12 @@ public class Vector<StorageType:Storage>: Tensor<StorageType> {
     }
     
     public init(_ tensor:Tensor<StorageType>) {
-        // TODO: should assert that we're being passed a vector
-        super.init(view: tensor.view)
+        assert(tensor.shape.span == 1)
+        super.init(tensor: tensor)
+    }
+    
+    public init(_ vector:Vector<StorageType>, dimIndex:[Int]?=nil, view:StorageView<StorageType>?=nil) {
+        super.init(tensor: vector, dimIndex: dimIndex, view: view)
     }
     
     public init(rows:Int) {
@@ -170,72 +303,64 @@ public class Vector<StorageType:Storage>: Tensor<StorageType> {
         transposed = true
     }
     
-    public override init(view:ViewType) {
-        super.init(view: view)
-    }
-    
     public override func transpose() -> Vector {
-        let window = Array(view.window.reverse())
-        let dimIndex = Array(view.dimIndex.reverse())
-        let newView = StorageView(storage: view.storage, window: window, dimIndex: dimIndex)
-        return Vector(view: newView)
+        let newDimIndex = Array(dimIndex.reverse())
+        let newShape = Extent(view.shape.reverse())
+        let newOffset = Array(view.offset.reverse())
+        let newView = StorageView<StorageType>(shape: newShape, offset: newOffset)
+        return Vector(self, dimIndex: newDimIndex, view: newView)
+
+//        let newDimIndex = Array(dimIndex.reverse())
+//        return Vector(self, dimIndex: newDimIndex)
     }
 }
 
 // constrained to be just a column vector
-public class ColumnVector<StorageType:Storage>: Vector<StorageType> {
-    public init(_ array:[StorageType.ElementType]) {
-        super.init(array, transposed: false)
-    }
-    
-    public override init(_ tensor:Tensor<StorageType>) {
-        // TODO: should assert that we're being passed a vector
-        super.init(view: tensor.view)
-    }
-    
-    public override init(rows:Int) {
-        super.init(rows: rows)
-    }
-    
-    public override init(view:ViewType) {
-        super.init(view: view)
-    }
-    
-    public override func transpose() -> RowVector<StorageType> {
-        let window = Array(view.window.reverse())
-        let dimIndex = Array(view.dimIndex.reverse())
-        let newView = StorageView(storage: view.storage, window: window, dimIndex: dimIndex)
-        return RowVector(view: newView)
-    }
-}
-
-// constrained to be just a row vector
-public class RowVector<StorageType:Storage>: Vector<StorageType> {
-    public init(_ array:[StorageType.ElementType]) {
-        super.init(array, transposed: true)
-    }
-    
-    public override init(_ tensor:Tensor<StorageType>) {
-        // TODO: should assert that we're being passed a vector
-        super.init(view: tensor.view)
-        transposed = true
-    }
-    
-    public override init(rows:Int) {
-        super.init(rows: rows)
-    }
-    
-    public override init(view:ViewType) {
-        super.init(view: view)
-    }
-    
-    public override func transpose() -> ColumnVector<StorageType> {
-        let window = Array(view.window.reverse())
-        let dimIndex = Array(view.dimIndex.reverse())
-        let newView = StorageView(storage: view.storage, window: window, dimIndex: dimIndex)
-        return ColumnVector(view: newView)
-    }
-}
+//public class ColumnVector<StorageType:Storage>: Vector<StorageType> {
+//    public init(_ array:[StorageType.ElementType]) {
+//        super.init(array, transposed: false)
+//    }
+//    
+//    public override init(_ tensor:Tensor<StorageType>) {
+//        assert(tensor.shape.span == 1)
+//        super.init(tensor)
+//    }
+//    
+//    public override init(_ vector:Vector<StorageType>, dimIndex:[Int]?=nil) {
+//        super.init(vector, dimIndex: dimIndex)
+//    }
+//    
+//    public override init(rows:Int) {
+//        super.init(rows: rows)
+//    }
+//    
+//    public override func transpose() -> RowVector<StorageType> {
+//        let newDimIndex = Array(dimIndex.reverse())
+//        return RowVector<StorageType>(self, dimIndex: newDimIndex)
+//    }
+//}
+//
+//// constrained to be just a row vector
+//public class RowVector<StorageType:Storage>: Vector<StorageType> {
+//    public init(_ array:[StorageType.ElementType]) {
+//        super.init(array, transposed: true)
+//    }
+//    
+//    public override init(_ tensor:Tensor<StorageType>, dimIndex:[Int]?=nil) {
+//        // TODO: should assert that we're being passed a vector
+//        super.init(tensor)
+//        transposed = true
+//    }
+//    
+//    public override init(rows:Int) {
+//        super.init(rows: rows)
+//    }
+//    
+//    public override func transpose() -> ColumnVector<StorageType> {
+//        let newDimIndex = Array(dimIndex.reverse())
+//        return ColumnVector<StorageType>(self, dimIndex: newDimIndex)
+//    }
+//}
 
 public class Matrix<StorageType:Storage>: Tensor<StorageType> {
     public init(_ array:[[StorageType.ElementType]], copyTransposed:Bool=false) {
@@ -253,20 +378,20 @@ public class Matrix<StorageType:Storage>: Tensor<StorageType> {
         }
         
         // copy array
-        var indices = view.storageIndices()
+        var indices = storageIndices()
         
         if (!copyTransposed) {
             for i in 0..<rows {
                 for j in 0..<cols {
                     let index = indices.next()!
-                    view.storage[index] = array[i][j]
+                    storage[index] = array[i][j]
                 }
             }
         } else {
             for j in 0..<cols {
                 for i in 0..<rows {                
                     let index = indices.next()!
-                    view.storage[index] = array[i][j]
+                    storage[index] = array[i][j]
                 }
             }
         }
@@ -276,32 +401,30 @@ public class Matrix<StorageType:Storage>: Tensor<StorageType> {
         super.init(shape: Extent(rows, cols))
     }
     
-    public override init(view:ViewType) {
-        super.init(view: view)
+    public init(_ matrix:Matrix, dimIndex:[Int]?=nil) {
+        super.init(tensor: matrix, dimIndex: dimIndex)
     }
     
     public override func transpose() -> Matrix {
-        let window = Array(view.window.reverse())
-        let dimIndex = Array(view.dimIndex.reverse())
-        let newView = StorageView(storage: view.storage, window: window, dimIndex: dimIndex)
-        return Matrix(view: newView)
+        let newDimIndex = Array(dimIndex.reverse())
+        return Matrix(self, dimIndex: newDimIndex)
     }
 }
 
-func copy<StorageType:Storage>(source:Tensor<StorageType>, _ destination:Tensor<StorageType>) {
+/*func copy<StorageType:Storage>(source:Tensor<StorageType>, _ destination:Tensor<StorageType>) {
     assert(destination.shape == source.shape)
     for i in source.view.storageIndices() {
         destination.view.storage[i] = source.view.storage[i]
     }
-}
+}*/
 
 func fill<StorageType:Storage>(tensor:Tensor<StorageType>, value:StorageType.ElementType) {
-    for i in tensor.view.storageIndices() {
-        tensor.view.storage[i] = 0
+    for i in tensor.storageIndices() {
+        tensor.storage[i] = 0
     }
 }
 
-func map<StorageType:Storage>(
+/*func map<StorageType:Storage>(
     tensor:Tensor<StorageType>,
     fn:(StorageType.ElementType) -> StorageType.ElementType) -> Tensor<StorageType>
 {
@@ -524,3 +647,4 @@ public func isClose<StorageType:Storage where StorageType.ElementType:NumericTyp
 //{
 //    return isClose(left, right, 10e-4) //V.StorageType.ElementType(10e-4))
 //}
+*/

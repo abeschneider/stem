@@ -16,16 +16,15 @@ public class CBlasStorage<T:NumericType>: Storage {
     
     public let order:MatrixOrder = .ColumnMajor
     var array:SharedArray<T>
-    public var shape:Extent
+//    public var shape:Extent
 //    public var stride:[Int]
     
-    public required init(shape:Extent) {
-        self.shape = shape
-        array = SharedArray<ElementType>(count: shape.elements, repeatedValue: ElementType(0))
+    public required init(size:Int) {
+//        self.shape = shape
+        array = SharedArray<ElementType>(count: size, repeatedValue: ElementType(0))
     }
     
-    public required init(array:[T], shape:Extent) {
-        self.shape = shape
+    public required init(array:[T]) {
         self.array = SharedArray<T>(array)
     }
     
@@ -35,26 +34,26 @@ public class CBlasStorage<T:NumericType>: Storage {
     }
     
     public func calculateStride(shape:Extent) -> [Int] {
-        var stride = Array<Int>(count:self.shape.dims(), repeatedValue: 0)
+        var stride = Array<Int>(count:shape.dims, repeatedValue: 0)
         
         var mult = 1
-        for i in 0..<self.shape.dims()-1 {
-            stride[i] = self.shape[i]*mult
-            mult *= self.shape[i]
+        for i in 0..<shape.dims-1 {
+            stride[i] = shape[i]*mult
+            mult *= shape[i]
         }
-        stride[self.shape.dims()-1] = 1
+        stride[shape.dims-1] = 1
 
         return stride
     }
 }
 
-public typealias CDTensor = Tensor<CBlasStorage<Double>>
-public typealias CFTensor = Tensor<CBlasStorage<Float>>
-public typealias CDMatrix = Matrix<CBlasStorage<Double>>
-public typealias CFMatrix = Matrix<CBlasStorage<Float>>
-public typealias CDVector = Vector<CBlasStorage<Double>>
-public typealias CFVector = Vector<CBlasStorage<Float>>
-
+//public typealias CDTensor = Tensor<CBlasStorage<Double>>
+//public typealias CFTensor = Tensor<CBlasStorage<Float>>
+//public typealias CDMatrix = Matrix<CBlasStorage<Double>>
+//public typealias CFMatrix = Matrix<CBlasStorage<Float>>
+//public typealias CDVector = Vector<CBlasStorage<Double>>
+//public typealias CFVector = Vector<CBlasStorage<Float>>
+/*
 // Accelerated versions of the tensor operations
 // TODO: make in-place operation that saves results in `left` (iadd)
 func add(left left:CDVector, right:CDVector, alpha:Double, result:CDVector) {
@@ -71,7 +70,7 @@ func add(left left:CDVector, right:CDVector, alpha:Double, result:CDVector) {
     var leftStride:Int32
     if left.shape[0] > 1 && left.shape.dims() > 1 {
         // row major, so need to skip by number of columns
-        leftStride = Int32(left.view.storage.shape[1])
+        leftStride = Int32(left.view.shape[1])
     } else {
         // column major, so use a stride of 1
         leftStride = 1
@@ -79,7 +78,7 @@ func add(left left:CDVector, right:CDVector, alpha:Double, result:CDVector) {
     
     var resultStride:Int32
     if result.shape[0] > 1 && result.shape.dims() > 1 {
-        resultStride = Int32(result.view.storage.shape[1])
+        resultStride = Int32(result.view.shape[1])
     } else {
         resultStride = 1
     }
@@ -108,7 +107,7 @@ func iadd(left left:CDVector, right:CDVector, alpha:Double) {
     var leftStride:Int32
     if left.shape[0] > 1 && left.shape.dims() > 1 {
         // row major, so need to skip by number of columns
-        leftStride = Int32(left.view.storage.shape[1])
+        leftStride = Int32(left.view.shape[1])
     } else {
         // column major, so use a stride of 1
         leftStride = 1
@@ -192,4 +191,4 @@ public func outer(left left:CDVector, right:CDVector, result:CDTensor)
                 Int32(result.view.stride[0]))
 }
 
-
+*/

@@ -13,17 +13,17 @@ public class NativeStorage<T:NumericType>: Storage {
     
     public let order:MatrixOrder = .RowMajor
     var array:SharedArray<T>
-    public var shape:Extent
+//    public var shape:Extent
     
 //    public var stride:[Int]
     
-    public required init(shape:Extent) {
-        self.shape = shape
-        array = SharedArray<ElementType>(count: shape.elements, repeatedValue: ElementType(0))
+    public required init(size:Int) {
+//        self.shape = shape
+        array = SharedArray<ElementType>(count: size, repeatedValue: ElementType(0))
     }
     
-    public required init(array:[T], shape:Extent) {
-        self.shape = shape
+    public required init(array:[T]) {
+//        self.shape = shape
         self.array = SharedArray<T>(array)
     }
     
@@ -33,11 +33,11 @@ public class NativeStorage<T:NumericType>: Storage {
     }
     
     public func calculateStride(shape:Extent) -> [Int] {
-        var stride = Array<Int>(count:shape.dims(), repeatedValue: 0)
+        var stride = Array<Int>(count:shape.dims, repeatedValue: 0)
         
         var mult = 1
         stride[0] = 1
-        for i in 1..<shape.dims() {
+        for i in 1..<shape.dims {
             stride[i] = shape[i]*mult
             mult *= shape[i]
         }
@@ -46,9 +46,9 @@ public class NativeStorage<T:NumericType>: Storage {
     }
 }
 
-public typealias DTensor = Tensor<NativeStorage<Double>>
-public typealias DMatrix = Matrix<NativeStorage<Double>>
-public typealias DVector = Vector<NativeStorage<Double>>
-public typealias FTensor = Tensor<NativeStorage<Float>>
-public typealias FMatrix = Matrix<NativeStorage<Float>>
-public typealias FVector = Vector<NativeStorage<Float>>
+//public typealias DTensor = Tensor<NativeStorage<Double>>
+//public typealias DMatrix = Matrix<NativeStorage<Double>>
+//public typealias DVector = Vector<NativeStorage<Double>>
+//public typealias FTensor = Tensor<NativeStorage<Float>>
+//public typealias FMatrix = Matrix<NativeStorage<Float>>
+//public typealias FVector = Vector<NativeStorage<Float>>
