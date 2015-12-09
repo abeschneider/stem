@@ -22,11 +22,26 @@ class stemTests: XCTestCase {
     }
     
     func testStorageCreate() {
-        _ = CBlasStorage<Double>(size: 9)
+        _ = NativeStorage<Double>(size: 9)
     }
     
+    func testCBlasStorageCreate() {
+        _ = CBlasStorage<Double>(size: 9)
+    }
+
     func testStorageIndexing1() {
         let storage = NativeStorage<Double>(size: 5)
+        for i in 0..<5 {
+            storage[i] = Double(i)
+        }
+        
+        for i in 0..<5 {
+            XCTAssertEqual(storage.array[i], Double(i))
+        }
+    }
+    
+    func testCBlasStorageIndexing1() {
+        let storage = CBlasStorage<Double>(size: 5)
         for i in 0..<5 {
             storage[i] = Double(i)
         }
@@ -50,12 +65,41 @@ class stemTests: XCTestCase {
         }
     }
     
+    func testCBlasTensorCreate() {
+        let array:[Double] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+        let tensor = Tensor<CBlasStorage<Double>>(array: array, shape: Extent(2, 5))
+        
+        XCTAssertEqual(tensor.shape, Extent(2, 5))
+        
+        let expected:[Double] = [0, 2, 4, 6, 8, 1, 3, 5, 7, 9]
+        
+        var k = 0
+        for i in 0..<tensor.shape[0] {
+            for j in 0..<tensor.shape[1] {
+                XCTAssertEqual(tensor[i, j], expected[k++])
+            }
+        }
+    }
+    
     func testTensorView1() {
         let array = (0..<100).map { Double($0) }
         let tensor1 = Tensor<NativeStorage<Double>>(array: array, shape: Extent(10, 10))
         let tensor2 = tensor1[1..<3, 1..<3]
         
         let expected:[Double] = [11, 12, 21, 22]
+        
+        var k = 0
+        for i in tensor2.storageIndices() {
+            XCTAssertEqual(tensor2.storage[i], expected[k++])
+        }
+    }
+    
+    func testCBlasTensorView1() {
+        let array = (0..<100).map { Double($0) }
+        let tensor1 = Tensor<CBlasStorage<Double>>(array: array, shape: Extent(10, 10))
+        let tensor2 = tensor1[1..<3, 1..<3]
+        
+        let expected:[Double] = [11, 21, 12, 22]
         
         var k = 0
         for i in tensor2.storageIndices() {
@@ -350,7 +394,7 @@ class stemTests: XCTestCase {
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
     }
     
-        
+    
     /*
     
     func testBenchmarkCBlas() {

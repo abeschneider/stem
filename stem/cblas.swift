@@ -136,9 +136,9 @@ public func outer(
                 Int32(result.shape[1]),
                 1.0,
                 UnsafePointer<Double>(left.storage.array.memory),
-                Int32(left.view.stride[0]),
+                Int32(left.stride[0]),
                 UnsafePointer<Double>(right.storage.array.memory),
-                Int32(right.view.stride[0]),
+                Int32(right.stride[0]),
                 UnsafeMutablePointer<Double>(result.storage.array.memory),
-                Int32(result.view.stride[0]))
+                Int32(result.stride[0]))
 }

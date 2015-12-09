@@ -178,6 +178,8 @@ public class Tensor<StorageType:Storage> {
             let s = i < stride.count ? stride[i] : 1
             pos += view.offset[dimIndex[i]]*s
         }
+        
+        return pos
     }
 
     func calculateOffset(indices:[Int]) -> Int {
