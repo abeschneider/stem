@@ -29,5 +29,6 @@ public protocol Storage {
     
     subscript(index:Int) -> ElementType {get set}
     
+    // returns the stride for each dimension to traverse memory
     func calculateStride(shape:Extent) -> [Int]
 }

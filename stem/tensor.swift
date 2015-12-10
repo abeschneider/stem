@@ -105,7 +105,7 @@ public class Tensor<StorageType:Storage> {
         storage = StorageType(array: array)
         internalShape = shape
         self.stride = storage.calculateStride(shape)
-        dimIndex = (0..<shape.dims).map { shape.dims-$0-1 }
+        dimIndex = Tensor.calculateOrder(shape.dims)
 
         if let o = offset {
             self.offset = o
@@ -122,7 +122,8 @@ public class Tensor<StorageType:Storage> {
         internalShape = shape
         offset = 0
         self.stride = storage.calculateStride(shape)
-        dimIndex = (0..<shape.dims).map { shape.dims-$0-1 }
+        dimIndex = Tensor.calculateOrder(shape.dims)
+
         
         view = ViewType(shape: shape, offset: Array<Int>(count: shape.dims, repeatedValue: 0))
         transposed = false
@@ -133,7 +134,7 @@ public class Tensor<StorageType:Storage> {
         internalShape = shape
         offset = 0
         self.stride = storage.calculateStride(shape)
-        dimIndex = (0..<shape.dims).map { shape.dims-$0-1 }
+        dimIndex = Tensor.calculateOrder(shape.dims)
 
         view = ViewType(shape: shape, offset: Array<Int>(count: shape.dims, repeatedValue: 0))
         transposed = false
@@ -171,12 +172,15 @@ public class Tensor<StorageType:Storage> {
         
         transposed = false
     }
+
+    static func calculateOrder(dims:Int) -> [Int] {
+        return (0..<dims).map { dims-$0-1 }
+    }
     
     func calculateOffset() -> Int {
         var pos = offset
         for i in 0..<shape.dims {
-            let s = i < stride.count ? stride[i] : 1
-            pos += view.offset[dimIndex[i]]*s
+            pos += view.offset[dimIndex[i]]*stride[i]
         }
         
         return pos
@@ -185,8 +189,7 @@ public class Tensor<StorageType:Storage> {
     func calculateOffset(indices:[Int]) -> Int {
         var pos = offset
         for i in 0..<indices.count {
-            let s = i < stride.count ? stride[i] : 1
-            pos += (indices[dimIndex[i]]+view.offset[dimIndex[i]])*s
+            pos += (indices[dimIndex[i]]+view.offset[dimIndex[i]])*stride[i]
         }
         
         return pos
@@ -498,9 +501,54 @@ public func add<StorageType:Storage where StorageType.ElementType:NumericType>
     let rows = left.shape[0]
     let cols = left.shape[1]
     for i in 0..<cols {
-        print("left: \(left[0..<rows, i])")
-        print("right: \(right)")
         elementwiseBinaryOp(left[0..<rows, i], right, result: result[0..<rows, i], op: { $0 + $1 })
+    }
+}
+
+public func add<StorageType:Storage where StorageType.ElementType:NumericType>
+    (left left:Matrix<StorageType>, right:ColumnVector<StorageType>, result:Matrix<StorageType>)
+{
+    // NxM + N
+    assert(left.shape[0] == right.shape[0])
+    
+    let rows = left.shape[0]
+    let cols = left.shape[1]
+    for i in 0..<rows {
+        elementwiseBinaryOp(left[i, 0..<cols], right, result: result[i, 0..<cols], op: { $0 + $1 })
+    }
+}
+
+public func iadd<StorageType:Storage where StorageType.ElementType:NumericType>
+    (left left:Vector<StorageType>, right:Vector<StorageType>)
+{
+    // NxM + N
+    assert(left.shape.elements == right.shape.elements)
+    elementwiseBinaryOp(left, right, result: left, op: { $0 + $1 })
+}
+
+public func iadd<StorageType:Storage where StorageType.ElementType:NumericType>
+    (left left:Matrix<StorageType>, right:ColumnVector<StorageType>)
+{
+    // NxM + N
+    assert(left.shape[1] == right.shape[0])
+    
+    let rows = left.shape[0]
+    let cols = left.shape[1]
+    for i in 0..<rows {
+        elementwiseBinaryOp(left[i, 0..<cols], right, result: left[i, 0..<cols], op: { $0 + $1 })
+    }
+}
+
+public func iadd<StorageType:Storage where StorageType.ElementType:NumericType>
+    (left left:Matrix<StorageType>, right:RowVector<StorageType>)
+{
+    // NxM + N
+    assert(left.shape[0] == right.shape[0])
+    
+    let rows = left.shape[0]
+    let cols = left.shape[1]
+    for i in 0..<cols {
+        elementwiseBinaryOp(left[0..<rows, i], right, result: left[0..<rows, i], op: { $0 + $1 })
     }
 }
 
@@ -559,18 +607,14 @@ public func dot<StorageType:Storage where StorageType.ElementType:NumericType>
 public func dot<StorageType:Storage where StorageType.ElementType:NumericType>
     (left left:Matrix<StorageType>, right:Matrix<StorageType>, result:Tensor<StorageType>)
 {
-    print("left.shape = \(left.shape), right.shape = \(right.shape)")
     assert(left.shape[1] == right.shape[0])
-//    assert(right.shape.elements == result.shape.elements)
 
     // NxM x MxK -> NxK
     for n in 0..<left.shape[0] {
         for m in 0..<left.shape[1] {
-//            for k in 0..<right.shape[0] {
             for k in 0..<right.shape[1] {
                 result[n, k] = result[n, k] + left[n, m]*right[m, k]
             }
-//            }
         }
     }
 }

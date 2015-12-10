@@ -28,10 +28,6 @@ public struct Extent: CollectionType {
         span = (values.map { Int($0 > 1) }).reduce(0, combine: +)
     }
     
-//    func dims() -> Int {
-//        return values.count
-//    }
-    
     public var startIndex:Int { return 0 }
     public var endIndex:Int { return values.count }
     

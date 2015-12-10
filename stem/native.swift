@@ -37,5 +37,5 @@ public class NativeStorage<T:NumericType>: Storage {
         }
         
         return stride
-    }
+    }    
 }

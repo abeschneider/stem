@@ -43,25 +43,117 @@ public class CBlasStorage<T:NumericType>: Storage {
     }
 }
 
-// Accelerated versions of the tensor operations
-// TODO: make in-place operation that saves results in `left` (iadd)
 func add(
     left left:Vector<CBlasStorage<Double>>,
     right:Vector<CBlasStorage<Double>>,
-    result:Vector<CBlasStorage<Double>>, alpha:Double=1.0)
+    result:Vector<CBlasStorage<Double>>)
 {
-    assert(left.shape == right.shape)
+    assert(left.shape[0] == right.shape[0])
 
     let v1Ptr = UnsafePointer<Double>(left.storage.array.memory) + left.calculateOffset()
     let v2Ptr = UnsafePointer<Double>(right.storage.array.memory) + right.calculateOffset()
     let resultPtr = UnsafeMutablePointer<Double>(result.storage.array.memory) + result.calculateOffset()
     
-    // need to figure out best way to determine which dimension this will go on .. also,
-    // if it's not on the first dimension, then a stride needs to be added on
     let numElements = Int32(left.shape.elements)
     
-    cblas_dcopy(numElements, v2Ptr, Int32(left.stride[0]), resultPtr, Int32(result.stride[0]))
-    cblas_daxpy(numElements, alpha, v1Ptr, Int32(left.stride[0]), resultPtr, Int32(result.stride[0]))
+    // result += left
+    cblas_daxpy(numElements, 1.0, v2Ptr, Int32(right.stride[0]), resultPtr, Int32(result.stride[0]))
+    
+    // result += right
+    cblas_daxpy(numElements, 1.0, v1Ptr, Int32(left.stride[0]), resultPtr, Int32(result.stride[0]))
+}
+
+func add(
+    left left:Matrix<CBlasStorage<Double>>,
+    right:RowVector<CBlasStorage<Double>>,
+    result:Matrix<CBlasStorage<Double>>)
+{
+    // NxM + N
+    assert(left.shape[0] == right.shape[0])
+    
+    let numElements = Int32(right.shape.elements)
+    
+    let v2Ptr = UnsafePointer<Double>(right.storage.array.memory) + right.calculateOffset()
+    
+    let cols = left.shape[1]
+    for i in 0..<cols {
+        let v1Ptr = UnsafePointer<Double>(left.storage.array.memory) + left.calculateOffset([0, i])
+        let resultPtr = UnsafeMutablePointer<Double>(result.storage.array.memory) + result.calculateOffset([0, i])
+
+        // result += left
+        cblas_daxpy(numElements, 1.0, v2Ptr, Int32(right.stride[0]), resultPtr, Int32(result.stride[1]))
+        
+        // result += right
+        cblas_daxpy(numElements, 1.0, v1Ptr, Int32(left.stride[1]), resultPtr, Int32(result.stride[1]))
+    }
+}
+
+func add(
+    left left:Matrix<CBlasStorage<Double>>,
+    right:ColumnVector<CBlasStorage<Double>>,
+    result:Matrix<CBlasStorage<Double>>,
+    alpha:Double=1.0)
+{
+    // NxM + N
+    assert(left.shape[1] == right.shape[0])
+    
+    let numElements = Int32(right.shape.elements)
+    
+    let v2Ptr = UnsafePointer<Double>(right.storage.array.memory) + right.calculateOffset()
+    
+    let rows = left.shape[0]
+    for i in 0..<rows {
+        let v1Ptr = UnsafePointer<Double>(left.storage.array.memory) + left.calculateOffset([i, 0])
+        let resultPtr = UnsafeMutablePointer<Double>(result.storage.array.memory) + result.calculateOffset([i, 0])
+        
+        // result += left
+        cblas_daxpy(numElements, alpha, v1Ptr, Int32(left.stride[0]), resultPtr, Int32(result.stride[0]))
+        
+        // result += right
+        cblas_daxpy(numElements, alpha, v2Ptr, Int32(right.stride[0]), resultPtr, Int32(result.stride[0]))
+    }
+}
+
+func iadd(
+    left left:Matrix<CBlasStorage<Double>>,
+    right:ColumnVector<CBlasStorage<Double>>,
+    alpha:Double=1.0)
+{
+    // NxM + N
+    assert(left.shape[1] == right.shape[0])
+    
+    let numElements = Int32(right.shape.elements)
+    
+    let v2Ptr = UnsafePointer<Double>(right.storage.array.memory) + right.calculateOffset()
+    
+    let rows = left.shape[0]
+    for i in 0..<rows {
+        let leftPtr = UnsafeMutablePointer<Double>(left.storage.array.memory) + left.calculateOffset([i, 0])
+        
+        // result += right
+        cblas_daxpy(numElements, alpha, v2Ptr, Int32(right.stride[0]), leftPtr, Int32(left.stride[0]))
+    }
+}
+
+func iadd(
+    left left:Matrix<CBlasStorage<Double>>,
+    right:RowVector<CBlasStorage<Double>>,
+    alpha:Double=1.0)
+{
+    // NxM + N
+    assert(left.shape[1] == right.shape[0])
+    
+    let numElements = Int32(right.shape.elements)
+    
+    let v2Ptr = UnsafePointer<Double>(right.storage.array.memory) + right.calculateOffset()
+    
+    let cols = left.shape[1]
+    for i in 0..<cols {
+        let leftPtr = UnsafeMutablePointer<Double>(left.storage.array.memory) + left.calculateOffset([0, i])
+        
+        // result += right
+        cblas_daxpy(numElements, alpha, v2Ptr, Int32(right.stride[0]), leftPtr, Int32(left.stride[1]))
+    }
 }
 
 func +(

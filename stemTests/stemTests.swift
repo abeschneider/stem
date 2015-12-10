@@ -66,12 +66,13 @@ class stemTests: XCTestCase {
     }
     
     func testCBlasTensorCreate() {
-        let array:[Double] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+        // NB: storage for CBlas follows a column-major format
+        let array:[Double] = asColumnMajor((0..<10).map { Double($0) }, rows: 2, cols: 5)
         let tensor = Tensor<CBlasStorage<Double>>(array: array, shape: Extent(2, 5))
         
         XCTAssertEqual(tensor.shape, Extent(2, 5))
-        
-        let expected:[Double] = [0, 2, 4, 6, 8, 1, 3, 5, 7, 9]
+
+        let expected = (0..<10).map { Double($0) }
         
         var k = 0
         for i in 0..<tensor.shape[0] {
@@ -94,12 +95,26 @@ class stemTests: XCTestCase {
         }
     }
     
+    func asColumnMajor(array:[Double], rows:Int, cols:Int) -> [Double] {
+        let m = Tensor<NativeStorage<Double>>(array: array, shape: Extent(rows, cols))
+        var result = Array<Double>(count: m.shape.elements, repeatedValue: Double(0))
+        
+        var k = 0
+        for i in 0..<m.shape[1] {
+            for j in 0..<m.shape[0] {
+                result[k++] = m[j, i]
+            }
+        }
+        
+        return result
+    }
+    
     func testCBlasTensorView1() {
-        let array = (0..<100).map { Double($0) }
+        let array = asColumnMajor((0..<100).map { Double($0) }, rows: 10, cols: 10)
         let tensor1 = Tensor<CBlasStorage<Double>>(array: array, shape: Extent(10, 10))
         let tensor2 = tensor1[1..<3, 1..<3]
         
-        let expected:[Double] = [11, 21, 12, 22]
+        let expected:[Double] = [11, 12, 21, 22]
         
         var k = 0
         for i in tensor2.storageIndices() {
@@ -110,6 +125,37 @@ class stemTests: XCTestCase {
     func testTensorView2() {
         let tensor1 = Tensor<NativeStorage<Double>>(shape: Extent(3, 5))
 
+        // top row
+        let tensor2 = tensor1[0, 0..<5]
+        for i in tensor2.storageIndices() {
+            tensor2.storage[i] = 1
+        }
+        
+        // second column
+        let tensor3 = tensor1[0..<3, 1]
+        for i in tensor3.storageIndices() {
+            tensor3.storage[i] = 2
+        }
+        
+        // lower right area
+        let tensor4 = tensor1[1..<3, 2..<5]
+        for i in tensor4.storageIndices() {
+            tensor4.storage[i] = 3
+        }
+        
+        let expected:[Double] = [1, 2, 1, 1, 1,
+                                 0, 2, 3, 3, 3,
+                                 0, 2, 3, 3, 3]
+        
+        var k = 0
+        for i in tensor1.storageIndices() {
+            XCTAssertEqual(tensor1.storage[i], expected[k++])
+        }
+    }
+    
+    func testCBlasTensorView2() {
+        let tensor1 = Tensor<CBlasStorage<Double>>(shape: Extent(3, 5))
+        
         // top row
         let tensor2 = tensor1[0, 0..<5]
         for i in tensor2.storageIndices() {
@@ -154,6 +200,22 @@ class stemTests: XCTestCase {
         }
     }
     
+    func testCBlasTensorTranspose() {
+        let array = asColumnMajor((0..<10).map { Double($0) }, rows: 2, cols: 5)
+        let tensor1 = Tensor<CBlasStorage<Double>>(array: array, shape: Extent(2, 5))
+        let tensor2 = tensor1.transpose()
+        
+        // verify dimensions are correct
+        XCTAssertEqual(tensor2.shape, Extent(5, 2))
+        
+        let expected:[Double] = [0, 5, 1, 6, 2, 7, 3, 8, 4, 9]
+        var k = 0
+        
+        for i in tensor2.storageIndices() {
+            XCTAssertEqual(tensor2.storage[i], expected[k++])
+        }
+    }
+    
     func testTensorReshape() {
         let array = (0..<20).map { Double($0) }
         let tensor1 = Tensor<NativeStorage<Double>>(array: array, shape: Extent(2, 10))
@@ -166,6 +228,24 @@ class stemTests: XCTestCase {
         var k = 0
         for i in tensor2.storageIndices() {
             XCTAssertEqual(tensor2.storage[i], array[k++])
+        }
+    }
+    
+    func testCBlasTensorReshape() {
+        // TODO: check this is correct
+        let array = asColumnMajor((0..<20).map { Double($0) }, rows: 4, cols: 5)
+        let tensor1 = Tensor<CBlasStorage<Double>>(array: array, shape: Extent(2, 10))
+        let tensor2 = tensor1.reshape(Extent(4, 5))
+        
+        // verify dimensions are correct
+        XCTAssertEqual(tensor2.shape, Extent(4, 5))
+        
+        let expected = (0..<20).map { Double($0) }
+        
+        // verify contents are still valid
+        var k = 0
+        for i in tensor2.storageIndices() {
+            XCTAssertEqual(tensor2.storage[i], expected[k++])
         }
     }
     
@@ -340,6 +420,17 @@ class stemTests: XCTestCase {
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
     }
     
+    func testCBlasVectorAdd() {
+        let m1 = Vector<CBlasStorage<Double>>([1, 2, 3, 4, 5, 6, 7, 8])
+        let m2 = Vector<CBlasStorage<Double>>([8, 7, 6, 5, 4, 3, 2, 1])
+        let result = Vector<CBlasStorage<Double>>(rows: m1.shape[0])
+        
+        add(left: m1, right: m2, result: result)
+        
+        let expected = Vector<CBlasStorage<Double>>([9, 9, 9, 9, 9, 9, 9, 9])
+        XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
+    }
+    
     func testVectorAdd2() {
         let m1 = Vector<NativeStorage<Double>>([1, 2, 3, 4, 5, 6, 7, 8])
         let m2 = Vector<NativeStorage<Double>>([8, 7, 6, 5, 4, 3, 2, 1])
@@ -347,6 +438,16 @@ class stemTests: XCTestCase {
         let result = m1 + m2
         
         let expected = Vector<NativeStorage<Double>>([9, 9, 9, 9, 9, 9, 9, 9])
+        XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
+    }
+    
+    func testCBlasVectorAdd2() {
+        let m1 = Vector<CBlasStorage<Double>>([1, 2, 3, 4, 5, 6, 7, 8])
+        let m2 = Vector<CBlasStorage<Double>>([8, 7, 6, 5, 4, 3, 2, 1])
+        
+        let result = m1 + m2
+        
+        let expected = Vector<CBlasStorage<Double>>([9, 9, 9, 9, 9, 9, 9, 9])
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
     }
     
@@ -361,14 +462,40 @@ class stemTests: XCTestCase {
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
     }
     
-    func testMatrixVectorAdd1() {
-        let m1 = Matrix<NativeStorage<Double>>([[1, 2, 3, 4], [5, 6, 7, 8]])
-        let m2 = RowVector<NativeStorage<Double>>([1, 1])
-        let result = Matrix<NativeStorage<Double>>(rows: m1.shape[0], cols: m1.shape[1])
+    func testCBlasMatrixAdd1() {
+        let m1 = Matrix<CBlasStorage<Double>>([[1, 2, 3, 4], [5, 6, 7, 8]])
+        let m2 = Matrix<CBlasStorage<Double>>([[8, 7, 6, 5], [4, 3, 2, 1]])
+        let result = Matrix<CBlasStorage<Double>>(rows: m1.shape[0], cols: m1.shape[1])
         
         add(left: m1, right: m2, result: result)
         
-        let expected = Matrix<NativeStorage<Double>>([[2, 3, 4, 5], [6, 7, 8, 9]])
+        let expected = Matrix<CBlasStorage<Double>>([[9, 9, 9, 9], [9, 9, 9, 9]])
+        XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
+    }
+    
+    func testMatrixVectorAdd1() {
+        let m1 = Matrix<NativeStorage<Double>>([[1, 2, 3, 4], [5, 6, 7, 8]])
+        let v1 = RowVector<NativeStorage<Double>>([0.5, 0.5])
+        let v2 = ColumnVector<NativeStorage<Double>>([1, 1, 1, 1])
+        let result = Matrix<NativeStorage<Double>>(rows: m1.shape[0], cols: m1.shape[1])
+        
+        add(left: m1, right: v1, result: result)
+        iadd(left: result, right: v2)
+        
+        let expected = Matrix<NativeStorage<Double>>([[2.5, 3.5, 4.5, 5.5], [6.5, 7.5, 8.5, 9.5]])
+        XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
+    }
+    
+    func testCBlasMatrixVectorAdd1() {
+        let m = Matrix<CBlasStorage<Double>>([[1, 2, 3, 4], [5, 6, 7, 8]])
+        let v1 = RowVector<CBlasStorage<Double>>([0.5, 0.5])
+        let v2 = ColumnVector<CBlasStorage<Double>>([1, 1, 1, 1])
+        let result = Matrix<CBlasStorage<Double>>(rows: m.shape[0], cols: m.shape[1])
+        
+        add(left: m, right: v1, result: result)
+        iadd(left: result, right: v2)
+        
+        let expected = Matrix<CBlasStorage<Double>>([[2.5, 3.5, 4.5, 5.5], [6.5, 7.5, 8.5, 9.5]])
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
     }
     
