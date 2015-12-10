@@ -3,13 +3,16 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to stem's documentation!
+Welcome to STEM's documentation!
 ================================
 
 Contents:
 
 .. toctree::
    :maxdepth: 2
+
+   intro
+   getting_started
 
 
 
@@ -20,3 +23,13 @@ Indices and tables
 * :ref:`modindex`
 * :ref:`search`
 
+Status
+======
+STEM is very much a work in progress. It should not be considered stable yet. The status will be kept updated for when the design of STEM has settled down.
+
+If a Tensor library for Swift interests you, please help by contributing code.
+
+
+********
+test
+********
