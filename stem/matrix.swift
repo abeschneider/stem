@@ -44,12 +44,17 @@ public class Matrix<StorageType:Storage>: Tensor<StorageType> {
         super.init(shape: Extent(rows, cols))
     }
     
-    public init(_ matrix:Matrix, dimIndex:[Int]?=nil) {
-        super.init(matrix, dimIndex: dimIndex)
+    public init(_ matrix:Matrix, dimIndex:[Int]?=nil, view:StorageView<StorageType>?=nil) {
+        super.init(matrix, dimIndex: dimIndex, view: view)
     }
     
     public override func transpose() -> Matrix {
         let newDimIndex = Array(dimIndex.reverse())
-        return Matrix(self, dimIndex: newDimIndex)
+        let newShape = Extent(view.shape.reverse())
+        let newOffset = Array(view.offset.reverse())
+        let newView = StorageView<StorageType>(shape: newShape, offset: newOffset)
+        return Matrix(self, dimIndex: newDimIndex, view: newView)
+//        let newDimIndex = Array(dimIndex.reverse())
+//        return Matrix(self, dimIndex: newDimIndex)
     }
 }

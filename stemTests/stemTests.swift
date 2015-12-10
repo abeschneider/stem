@@ -198,6 +198,15 @@ class stemTests: XCTestCase {
         for i in tensor2.storageIndices() {
             XCTAssertEqual(tensor2.storage[i], expected[k++])
         }
+        
+        // as a sanity check, try transposing back
+        let tensor3 = tensor2.transpose()
+        XCTAssertEqual(tensor3.shape, Extent(2, 5))
+        
+        k = 0
+        for i in tensor3.storageIndices() {
+            XCTAssertEqual(tensor3.storage[i], array[k++])
+        }
     }
     
     func testCBlasTensorTranspose() {
@@ -375,6 +384,32 @@ class stemTests: XCTestCase {
         }
     }
     
+    func testMatrixTranspose() {
+        let array:[[Double]] = [[0, 1, 2, 3, 4], [5, 6, 7, 8, 9]]
+        let matrix1 = Matrix<NativeStorage<Double>>(array)
+        let matrix2 = matrix1.transpose()
+        
+        // verify dimensions are correct
+        XCTAssertEqual(matrix2.shape, Extent(5, 2))
+        
+        let expected:[Double] = [0, 5, 1, 6, 2, 7, 3, 8, 4, 9]
+        var k = 0
+        
+        for i in matrix2.storageIndices() {
+            XCTAssertEqual(matrix2.storage[i], expected[k++])
+        }
+        
+        // as a sanity check, try transposing back
+        let matrix3 = matrix2.transpose()
+        XCTAssertEqual(matrix3.shape, Extent(2, 5))
+        
+        let expected2 = (0..<10).map { Double($0) }
+        
+        k = 0
+        for i in matrix3.storageIndices() {
+            XCTAssertEqual(matrix3.storage[i], expected2[k++])
+        }
+    }
     
     func testMatrixTransposeOnReshape() {
         let array:[[Double]] = [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11]]
