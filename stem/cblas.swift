@@ -166,32 +166,6 @@ func +(
     return result
 }
 
-/*func iadd(left left:CDVector, right:CDVector, alpha:Double=1.0) {
-    assert(left.shape == right.shape)
-    
-    let v1Ptr = UnsafeMutablePointer<Double>(left.view.storage.array.memory) + left.view.calculateOffset()
-    let v2Ptr = UnsafePointer<Double>(right.view.storage.array.memory) + right.view.calculateOffset()
-    
-    // need to figure out best way to determine which dimension this will go on .. also,
-    // if it's not on the first dimension, then a stride needs to be added on
-    let numElements = Int32(left.shape.elements)
-    
-    var leftStride:Int32
-    if left.shape[0] > 1 && left.shape.dims() > 1 {
-        // row major, so need to skip by number of columns
-        leftStride = Int32(left.view.shape[1])
-    } else {
-        // column major, so use a stride of 1
-        leftStride = 1
-    }
-    
-    cblas_daxpy(numElements, alpha, v2Ptr, leftStride, v1Ptr, leftStride)
-}
-
-func +=(left:CDVector, right:CDVector) {
-    iadd(left: left, right: right, alpha: 1.0)
-}*/
-
 func dot(
     left left:Matrix<CBlasStorage<Double>>,
     right:Vector<CBlasStorage<Double>>,
