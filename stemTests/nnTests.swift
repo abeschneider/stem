@@ -8,7 +8,7 @@
 
 import XCTest
 @testable import stem
-/*
+
 class nnTests: XCTestCase {
 
     override func setUp() {
@@ -23,8 +23,10 @@ class nnTests: XCTestCase {
 
     func testLinearForwardVector() {
         let w = Matrix<NativeStorage<Double>>([[1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 0, 0]], copyTransposed: true)
+        XCTAssertEqual(w.shape, Extent(3, 4))
+        
         let linear = LinearModule<NativeStorage<Double>>(weight: w)
-        let input = Vector<NativeStorage<Double>>([1, 2, 3])
+        let input = ColumnVector<NativeStorage<Double>>([1, 2, 3])
         let output = linear.forward(input)
 
         let expected = Vector<NativeStorage<Double>>([1, 2, 3, 0])
@@ -32,7 +34,7 @@ class nnTests: XCTestCase {
 
         let w2 = Matrix<CBlasStorage<Double>>([[1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 0, 0]], copyTransposed: true)
         let linear2 = LinearModule<CBlasStorage<Double>>(weight: w2)
-        let input2 = Vector<CBlasStorage<Double>>([1, 2, 3])
+        let input2 = ColumnVector<CBlasStorage<Double>>([1, 2, 3])
         let output2 = linear2.forward(input2)
         
         let expected2 = Vector<CBlasStorage<Double>>([1, 2, 3, 0])
@@ -60,10 +62,10 @@ class nnTests: XCTestCase {
     func testLinearBackward() {
         let w = Matrix<NativeStorage<Double>>([[1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 0, 0]], copyTransposed: true)
         let linear = LinearModule<NativeStorage<Double>>(weight: w)
-        let input = Vector<NativeStorage<Double>>([1, 2, 3])
+        let input = ColumnVector<NativeStorage<Double>>([1, 2, 3])
         
         linear.forward(input)
-        let grad_output = Vector<NativeStorage<Double>>([1, 1, 1, 1])
+        let grad_output = ColumnVector<NativeStorage<Double>>([1, 1, 1, 1])
         let grad_input = linear.backward(input, grad_output: grad_output)
   
         print(grad_input)
@@ -72,51 +74,46 @@ class nnTests: XCTestCase {
 
         let w2 = Matrix<CBlasStorage<Double>>([[1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 0, 0]], copyTransposed: true)
         let linear2 = LinearModule<CBlasStorage<Double>>(weight: w2)
-        let input2 = Vector<CBlasStorage<Double>>([1, 2, 3])
+        let input2 = ColumnVector<CBlasStorage<Double>>([1, 2, 3])
         linear2.forward(input2)
         
-        let grad_output2 = Vector<CBlasStorage<Double>>([1, 1, 1, 1])
+        let grad_output2 = ColumnVector<CBlasStorage<Double>>([1, 1, 1, 1])
         let grad_input2 = linear2.backward(input2, grad_output: grad_output2)
         
         let expected2 = Vector<CBlasStorage<Double>>([1, 1, 1])
         XCTAssert(isClose(grad_input2, expected2, eps: 10e-4), "Not close")
     }
     
-/*    func testNativeLinearGradient() {
+    func testNativeLinearGradient() {
         typealias S = NativeStorage<Double>
         
         let num_inputs = 100
         let num_outputs = 50
         
         // provides a flat view of all parameters to make gradient testing simple
-        let storage = S(shape: Extent(2*num_inputs*num_outputs + num_outputs))
+        let storage = S(size: 2*num_inputs*num_outputs + 2*num_outputs)
         
         var pos = 0
-        let weight_view = StorageView<S>(storage: storage, window: [0..<(num_inputs*num_outputs)], shape: Extent(num_inputs, num_outputs))
-        let weight = Matrix<S>(view: weight_view)
-        
+        let weight = Matrix<S>(storage: storage, shape: Extent(num_inputs, num_outputs), offset: pos)
+
         pos += num_inputs*num_outputs
-        let bias_view = StorageView<S>(storage: storage, window: [pos..<(pos+num_outputs)], shape: Extent(num_outputs))
-        let bias = RowVector<S>(view: bias_view)
-        
+        let bias = RowVector<S>(storage: storage, shape: Extent(num_outputs), offset: pos)
+
         pos += num_outputs
-        let grad_weight_view = StorageView<S>(storage: storage, window: [pos..<(pos+num_inputs*num_outputs)], shape: Extent(num_inputs, num_outputs))
-        let grad_weight = Matrix<S>(view: grad_weight_view)
-        
+        let grad_weight = Matrix<S>(storage: storage, shape: Extent(num_inputs, num_outputs), offset: pos)
+
         pos += num_inputs*num_outputs
-        let grad_bias_view = StorageView<S>(storage: storage, window: [pos..<(pos+num_outputs)], shape: Extent(num_outputs))
-        let grad_bias = RowVector<S>(view: grad_bias_view)
-        
+        let grad_bias = RowVector<S>(storage: storage, shape: Extent(num_outputs), offset: pos)
+
         // need to provide a method to point to external gradient storage as well
         let linear = LinearModule<S>(weight: weight, bias: bias, gradWeight: grad_weight, gradBias: grad_bias)
-    
-        print("weight.shape = \(weight.shape)")
-        print("bias.shape = \(bias.shape)")
-        let input = Vector<NativeStorage<Double>>(rows: num_inputs)
+
+
+        let input = ColumnVector<S>(rows: num_inputs)
         let output = linear.forward(input)
-//        let grad_output = Vector<NativeStorage<Double>>(rows: num_outputs)
-//        let grad_input = linear.backward(input, grad_output: grad_output)
-    }*/
+        let grad_output = ColumnVector<S>(rows: num_outputs)
+        let grad_input = linear.backward(input, grad_output: grad_output)
+    }
 
     func testPerformanceExample() {
         // This is an example of a performance test case.
@@ -126,4 +123,3 @@ class nnTests: XCTestCase {
     }
 
 }
-*/

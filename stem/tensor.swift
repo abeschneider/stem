@@ -119,15 +119,24 @@ public class Tensor<StorageType:Storage> {
         transposed = false
     }
     
-    public init(storage:StorageType, shape:Extent) {
+    public init(storage:StorageType, shape:Extent, view:StorageView<StorageType>?=nil, offset:Int?=nil) {
         self.storage = storage
         internalShape = shape
-        offset = 0
         self.stride = storage.calculateStride(shape)
         dimIndex = Tensor.calculateOrder(shape.dims)
-
         
-        view = ViewType(shape: shape, offset: Array<Int>(count: shape.dims, repeatedValue: 0))
+        if let o = offset {
+            self.offset = o
+        } else {
+            self.offset = 0
+        }
+
+        if let v = view {
+            self.view = v
+        } else {
+            self.view = ViewType(shape: shape, offset: Array<Int>(count: shape.dims, repeatedValue: 0))
+        }
+        
         transposed = false
     }
     

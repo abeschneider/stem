@@ -119,6 +119,24 @@ public func +=<StorageType:Storage where StorageType.ElementType:NumericType>
     try! iadd(left: left, right: right)
 }
 
+public func +=<StorageType:Storage where StorageType.ElementType:NumericType>
+    (left:Vector<StorageType>, right:Vector<StorageType>)
+{
+    iadd(left: left, right: right)
+}
+
+public func +=<StorageType:Storage where StorageType.ElementType:NumericType>
+    (left:Matrix<StorageType>, right:ColumnVector<StorageType>)
+{
+    iadd(left: left, right: right)
+}
+
+public func +=<StorageType:Storage where StorageType.ElementType:NumericType>
+    (left:Matrix<StorageType>, right:RowVector<StorageType>)
+{
+    iadd(left: left, right: right)
+}
+
 
 //
 // subtraction
@@ -254,7 +272,15 @@ public func *<StorageType:Storage where StorageType.ElementType:NumericType>
 }
 
 public func *<StorageType:Storage where StorageType.ElementType:NumericType>
-    (left:Matrix<StorageType>, right:RowVector<StorageType>) -> Vector<StorageType>
+    (left:Matrix<StorageType>, right:ColumnVector<StorageType>) -> RowVector<StorageType>
+{
+    let result = RowVector<StorageType>(cols: left.shape[0])
+    dot(left: left, right: right, result: result)
+    return result
+}
+
+public func *<StorageType:Storage where StorageType.ElementType:NumericType>
+    (left:Matrix<StorageType>, right:Matrix<StorageType>) -> Vector<StorageType>
 {
     let result = Vector<StorageType>(rows: right.shape[0])
     dot(left: left, right: right, result: result)

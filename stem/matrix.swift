@@ -40,6 +40,10 @@ public class Matrix<StorageType:Storage>: Tensor<StorageType> {
         }
     }
     
+    public override init(storage:StorageType, shape:Extent, view:StorageView<StorageType>?=nil, offset:Int?=nil) {
+        super.init(storage: storage, shape: shape, view: view, offset: offset)
+    }
+    
     public init(rows:Int, cols:Int) {
         super.init(shape: Extent(rows, cols))
     }

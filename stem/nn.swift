@@ -21,36 +21,7 @@ import Foundation
 //    }
 //}
 
-/*struct MultiTensorIndex<StorageType:Storage>: GeneratorType {
-    typealias Element = (StorageView<StorageType>, Int)
-    
-    var views:[StorageView<StorageType>]
-    var currentView:Int
-    var indices:GeneratorSequence<StorageViewIndex<StorageType>>
-    
-    init(views:StorageView<StorageType>...) {
-        self.views = views
-        currentView = 0
-        indices = views[currentView].storageIndices()
-    }
-    
-    mutating func next() -> Element? {
-        var offset:Int?
-        repeat {
-            offset = indices.next()
-            if offset == nil {
-                if ++currentView > views.count { return nil }
-                indices = views[++currentView].storageIndices()
-            }
-        } while offset == nil
-        
-        if offset == nil { return nil }
-        return (views[currentView], offset!)
-    }
-}*/
 
-
-/*
 protocol Module {
     typealias StorageType:Storage
 
@@ -81,10 +52,10 @@ class LinearModule<S:Storage>: Module, GradientModule {
     
     init(input_size:Int, output_size:Int) {
         weight = Matrix<StorageType>(rows: input_size, cols: output_size)
-        bias = RowVector<StorageType>(rows: output_size)
+        bias = RowVector<StorageType>(cols: output_size)
         
         grad_weight = Matrix<StorageType>(rows: input_size, cols: output_size)
-        grad_bias = RowVector<StorageType>(rows: output_size)
+        grad_bias = RowVector<StorageType>(cols: output_size)
     }
     
     init(weight:Matrix<StorageType>, bias:RowVector<StorageType>?=nil, gradWeight:Matrix<StorageType>?=nil, gradBias:RowVector<StorageType>?=nil) {
@@ -92,7 +63,7 @@ class LinearModule<S:Storage>: Module, GradientModule {
         if let b = bias {
             self.bias = b
         } else {
-            self.bias = RowVector<StorageType>(rows: self.weight.shape[1])
+            self.bias = RowVector<StorageType>(cols: self.weight.shape[1])
         }
         
         if let gw = gradWeight {
@@ -104,7 +75,7 @@ class LinearModule<S:Storage>: Module, GradientModule {
         if let gb = gradBias {
             grad_bias = gb
         } else {
-            grad_bias = RowVector(rows: self.bias.shape[0])
+            grad_bias = RowVector(cols: self.bias.shape[0])
         }
     }
     
@@ -112,20 +83,21 @@ class LinearModule<S:Storage>: Module, GradientModule {
         throw IllegalOperation()
     }
     
-    func forward(input:Vector<StorageType>) -> Vector<StorageType> {
+    func forward(input:ColumnVector<StorageType>) -> Vector<StorageType> {
+        assert(input.shape.elements == weight.shape[0])
+        
         // verify that output is the correct shape
         if output == nil || output!.shape[0] != weight.shape[1] {
             // if not, allocate new output storage
-            output = Vector<StorageType>(rows: weight.shape[1])
+            output = RowVector<StorageType>(cols: weight.shape[1])
         }
         
         if let out = output {
-            // output = W'*input
-            print("shapes: \(weight.transpose().shape), \(input.shape), \(out.shape)")
+            // out = weight'*input
             dot(left: weight.transpose(), right: input, result: out)
             
-            // output += bias
-            add(left: out, right: bias, result: out)
+            // out += bias
+            iadd(left: out as! RowVector, right: bias)
         }
         
         return output! as! Vector
@@ -139,11 +111,11 @@ class LinearModule<S:Storage>: Module, GradientModule {
         }
         
         if let out = output {
-            // output = W'*input
+            // out = weight'*input
             dot(left: weight.transpose(), right: input, result: out)
             
-            // output += bias
-            add(left: out as! Matrix, right: bias, result: out as! Matrix)
+            // out += bias
+            iadd(left: out as! Matrix, right: bias)
         }
         
         return output! as! Matrix
@@ -154,19 +126,18 @@ class LinearModule<S:Storage>: Module, GradientModule {
     }
     
     // create a version of backward for Matrix
-    func backward(input:Vector<StorageType>, grad_output:Vector<StorageType>) -> Vector<StorageType> {
-        if grad_input == nil || grad_input!.shape[0] != weight.shape[1] {
-            grad_input = Vector<StorageType>(rows: weight.shape[0])
+    func backward(input:Vector<StorageType>, grad_output:ColumnVector<StorageType>) -> Vector<StorageType> {
+        if grad_input == nil || grad_input!.shape[0] != weight.shape[0] {
+            grad_input = ColumnVector<StorageType>(rows: weight.shape[0])
         }
 
-        // grad_input += W*grad_output
-        dot(left: weight, right: grad_output, result: grad_input!)
+        grad_input! = weight*grad_output
         
         // dW += grad_output*input'
         outer(left: input, right: grad_output, result: grad_weight)
         
-        // bias += grad_output
-        add(left: grad_bias, right: grad_output, result: grad_bias)
+//        grad_bias += grad_output
+        iadd(left: grad_bias , right: grad_output)
         
         return grad_input! as! Vector
     }
@@ -179,4 +150,3 @@ class LinearModule<S:Storage>: Module, GradientModule {
 //    func backward(input:Matrix<StorageType>, grad_output:Matrix<StorageType>) -> Matrix<StorageType> {
 //    }
 }
-*/

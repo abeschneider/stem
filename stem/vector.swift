@@ -40,6 +40,10 @@ public class Vector<StorageType:Storage>: Tensor<StorageType> {
         transposed = true
     }
     
+    public override init(storage:StorageType, shape:Extent, view:StorageView<StorageType>?=nil, offset:Int?=nil) {
+        super.init(storage: storage, shape: shape, view: view, offset: offset)
+    }
+    
     public override func transpose() -> Vector {
         let newDimIndex = Array(dimIndex.reverse())
         let newShape = Extent(view.shape.reverse())
@@ -73,6 +77,10 @@ public class ColumnVector<StorageType:Storage>: Vector<StorageType> {
         super.init(rows: rows)
     }
     
+    public override init(storage:StorageType, shape:Extent, view:StorageView<StorageType>?=nil, offset:Int?=nil) {
+        super.init(storage: storage, shape: shape, view: view, offset: offset)
+    }
+    
     public override func transpose() -> RowVector<StorageType> {
         let newDimIndex = Array(dimIndex.reverse())
         let newShape = Extent(view.shape.reverse())
@@ -103,8 +111,12 @@ public class RowVector<StorageType:Storage>: Vector<StorageType> {
         super.init(vector, dimIndex: dimIndex, view: view)
     }
     
-    public override init(rows:Int) {
-        super.init(rows: rows)
+    public override init(storage:StorageType, shape:Extent, view:StorageView<StorageType>?=nil, offset:Int?=nil) {
+        super.init(storage: storage, shape: shape, view: view, offset: offset)
+    }
+    
+    public override init(cols:Int) {
+        super.init(cols: cols)
     }
     
     public override func transpose() -> ColumnVector<StorageType> {
