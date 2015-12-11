@@ -12,6 +12,7 @@ public class NativeStorage<T:NumericType>: Storage {
     public typealias ElementType = T
     
     var array:SharedArray<T>
+    public var size:Int { return array.memory.count }
     
     public required init(size:Int) {
         array = SharedArray<ElementType>(count: size, repeatedValue: ElementType(0))
@@ -19,6 +20,24 @@ public class NativeStorage<T:NumericType>: Storage {
     
     public required init(array:[T]) {
         self.array = SharedArray<T>(array)
+    }
+    
+    public required init(storage:NativeStorage) {
+        array = SharedArray<ElementType>(storage.array.memory)
+    }
+    
+//    public required init<OtherStorageType:Storage>(storage:OtherStorageType) {
+//        // need to allocate new memory
+//        array = SharedArray<ElementType>(count: storage.size, repeatedValue: ElementType(0))
+//        for i in 0..<storage.size {
+//            let value = storage[i]
+//            array[i] = 0 //unsafeBitCast(value, ElementType.self)
+//        }
+//    }
+    
+    public func transform<NewStorageType:Storage>(fn:(el:ElementType) -> NewStorageType.ElementType) -> NewStorageType {
+        let value:[NewStorageType.ElementType] = array.memory.map(fn)
+        return NewStorageType(array:value)
     }
     
     public subscript(index:Int) -> T {
@@ -37,5 +56,5 @@ public class NativeStorage<T:NumericType>: Storage {
         }
         
         return stride
-    }    
+    }
 }

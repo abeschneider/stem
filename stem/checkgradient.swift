@@ -13,37 +13,42 @@ import Foundation
 //const vector_t &input,
 //real_t eps)
 
-/*
+
 func check_gradient<StorageType:Storage, ModuleType where ModuleType:Module, ModuleType:GradientModule>(
-    fn:(Vector<StorageType>) -> StorageType.ElementType,
     module:ModuleType,
-    var flattenedParams:StorageType,
+    flattenedParams:StorageType,
+    flattenedGradParams:StorageType,
     input:Vector<StorageType>,
-    eps:StorageType.ElementType)
+    eps:StorageType.ElementType,
+    fn:(Vector<StorageType>) -> StorageType.ElementType) -> Vector<StorageType>
 {
+    let result = Vector<StorageType>(rows: flattenedGradParams.size)
+    
+    // make a copy of the paramters
+    var params = StorageType(storage: flattenedGradParams)
+    
     // calculate gradients
     fn(input)
     
     // copy gradients from the last operation -- they will
     // be overwritten from subsequent calls
+    let analytical_diff = Vector<StorageType>(storage: flattenedGradParams, shape: Extent(flattenedGradParams.size))
     
-    
-    
-    for i in 0..<flattenedParams.shape[0] {
+    for i in 0..<flattenedParams.size {
         let old_value = flattenedParams[i]
-        flattenedParams[i] = flattenedParams[i] + eps
+        params[i] = flattenedParams[i] + eps
         let pvalue = fn(input)
         
-        flattenedParams[i] = old_value-eps
+        params[i] = old_value - eps
         let nvalue = fn(input)
-        flattenedParams[i] = old_value
+        params[i] = old_value
         
         let numerical_diff = (pvalue - nvalue) / (2*eps)
-//        let analytical_diff = grad_pos++
-        // let diff = abs(numerical_diff - analytical_diff)
-        // result.append(diff)
+        result[i] = abs(numerical_diff - analytical_diff[i])
     }
-}*/
+    
+    return result
+}
 
 /*
 func grad_forward<StorageType:Storage, ModuleType where ModuleType:Module, ModuleType:GradientModule>(

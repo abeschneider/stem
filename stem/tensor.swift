@@ -247,12 +247,29 @@ public class Tensor<StorageType:Storage> {
 }
 
 extension Tensor {
+    // general case
+    private func elementToString(v:StorageType.ElementType) -> String {
+        return String(v)
+    }
+    
+    private func elementToString(v:Double) -> String {
+        return String(format: "%2.3f", v)
+    }
+    
+    private func elementToString(v:Float) -> String {
+        return String(format: "%2.3f", v)
+    }
+
+    private func elementToString(v:Int) -> String {
+        return String(format: "%d", v)
+    }
+    
     private func convertToString(var indices:[Int], dim:Int) -> String {
         if dim == internalShape.dims-1 {
             // last dimension, convert values to string
             let values:[String] = (0..<shape[dim]).map({(i:Int) -> String in
                 indices[dim] = i
-                return String(format: "%2.3f", self[indices] as! Double)
+                return elementToString(self[indices])
             })
             return "[\(values.joinWithSeparator(",\t"))]"
         } else {

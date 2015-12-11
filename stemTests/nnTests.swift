@@ -91,7 +91,8 @@ class nnTests: XCTestCase {
         let num_outputs = 50
         
         // provides a flat view of all parameters to make gradient testing simple
-        let storage = S(size: 2*num_inputs*num_outputs + 2*num_outputs)
+        let storage = S(size: num_inputs*num_outputs + num_outputs)
+        let grad_storage = S(size: num_inputs*num_outputs + num_outputs)
         
         var pos = 0
         let weight = Matrix<S>(storage: storage, shape: Extent(num_inputs, num_outputs), offset: pos)
@@ -99,20 +100,25 @@ class nnTests: XCTestCase {
         pos += num_inputs*num_outputs
         let bias = RowVector<S>(storage: storage, shape: Extent(num_outputs), offset: pos)
 
-        pos += num_outputs
-        let grad_weight = Matrix<S>(storage: storage, shape: Extent(num_inputs, num_outputs), offset: pos)
+        pos += 0
+        let grad_weight = Matrix<S>(storage: grad_storage, shape: Extent(num_inputs, num_outputs), offset: pos)
 
         pos += num_inputs*num_outputs
-        let grad_bias = RowVector<S>(storage: storage, shape: Extent(num_outputs), offset: pos)
+        let grad_bias = RowVector<S>(storage: grad_storage, shape: Extent(num_outputs), offset: pos)
 
         // need to provide a method to point to external gradient storage as well
         let linear = LinearModule<S>(weight: weight, bias: bias, gradWeight: grad_weight, gradBias: grad_bias)
 
 
         let input = ColumnVector<S>(rows: num_inputs)
-        let output = linear.forward(input)
-        let grad_output = ColumnVector<S>(rows: num_outputs)
-        let grad_input = linear.backward(input, grad_output: grad_output)
+//        check_gradient(linear, storage, grad_storage, input, 10e-4) { (module, input) -> Vector<S> in
+//            let output = module.forward(input)
+//            // cost function
+//        }
+        
+//        let output = linear.forward(input)
+//        let grad_output = ColumnVector<S>(rows: num_outputs)
+//        let grad_input = linear.backward(input, grad_output: grad_output)
     }
 
     func testPerformanceExample() {

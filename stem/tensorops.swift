@@ -26,6 +26,19 @@ func elementwiseBinaryOp<StorageType:Storage>
     }
 }
 
+func elementwiseBinaryOp<StorageType:Storage>
+    (left:Tensor<StorageType>, _ right:StorageType.ElementType, result:Tensor<StorageType>,
+    op:(left:StorageType.ElementType, right:StorageType.ElementType) -> StorageType.ElementType)
+{
+    assert(left.shape.elements == result.shape.elements)
+    
+    var indexResult = result.storageIndices()
+    for i in left.storageIndices() {
+        let idx = indexResult.next()!
+        result.storage[idx] = op(left: left.storage[i], right: right)
+    }
+}
+
 //
 // addition
 //
@@ -206,6 +219,93 @@ public func -=<StorageType:Storage where StorageType.ElementType:NumericType>
 
 
 //
+// division
+//
+
+public func div<StorageType:Storage where StorageType.ElementType:NumericType>
+    (left left:Tensor<StorageType>, right:Tensor<StorageType>, result:Tensor<StorageType>)
+{
+    elementwiseBinaryOp(left, right, result: result, op: { return $0 / $1 })
+}
+
+
+public func div<StorageType:Storage where StorageType.ElementType:NumericType>
+    (left left:Tensor<StorageType>, right:StorageType.ElementType, result:Tensor<StorageType>)
+{
+    elementwiseBinaryOp(left, right, result: result, op: { return $0 / $1 })
+}
+
+
+public func idiv<StorageType:Storage where StorageType.ElementType:NumericType>
+    (left left:Tensor<StorageType>, right:Tensor<StorageType>) throws
+{
+    // general case is currently not supported
+    throw IllegalOperation()
+}
+
+public func idiv<StorageType:Storage where StorageType.ElementType:NumericType>
+    (left left:Vector<StorageType>, right:Vector<StorageType>)
+{
+    // NxM + N
+    assert(left.shape.elements == right.shape.elements)
+    elementwiseBinaryOp(left, right, result: left, op: { $0 / $1 })
+}
+
+public func idiv<StorageType:Storage where StorageType.ElementType:NumericType>
+    (left left:Matrix<StorageType>, right:ColumnVector<StorageType>)
+{
+    // NxM + N
+    assert(left.shape[1] == right.shape[0])
+    
+    let rows = left.shape[0]
+    let cols = left.shape[1]
+    for i in 0..<rows {
+        elementwiseBinaryOp(left[i, 0..<cols], right, result: left[i, 0..<cols], op: { $0 / $1 })
+    }
+}
+
+public func idiv<StorageType:Storage where StorageType.ElementType:NumericType>
+    (left left:Matrix<StorageType>, right:RowVector<StorageType>)
+{
+    // NxM + N
+    assert(left.shape[0] == right.shape[0])
+    
+    let rows = left.shape[0]
+    let cols = left.shape[1]
+    for i in 0..<cols {
+        elementwiseBinaryOp(left[0..<rows, i], right, result: left[0..<rows, i], op: { $0 / $1 })
+    }
+}
+
+public func idiv<StorageType:Storage where StorageType.ElementType:NumericType>
+    (left left:Tensor<StorageType>, right:StorageType.ElementType)
+{
+    elementwiseBinaryOp(left, right, result: left, op: { $0 / $1 })
+}
+
+public func /<StorageType:Storage where StorageType.ElementType:NumericType>
+    (left:Tensor<StorageType>, right:Tensor<StorageType>) -> Tensor<StorageType>
+{
+    let result = Tensor<StorageType>(shape: left.shape)
+    div(left: left, right: right, result: result)
+    
+    return result
+}
+
+public func /=<StorageType:Storage where StorageType.ElementType:NumericType>
+    (left:Tensor<StorageType>, right:Tensor<StorageType>)
+{
+    try! idiv(left: left, right: right)
+}
+
+public func /=<StorageType:Storage where StorageType.ElementType:NumericType>
+    (left:Tensor<StorageType>, right:StorageType.ElementType)
+{
+    try! idiv(left: left, right: right)
+}
+
+
+//
 // dot product
 //
 
@@ -332,4 +432,56 @@ public func isClose<StorageType:Storage where StorageType.ElementType:NumericTyp
         if adiff.storage[i] >= eps { return false }
     }
     return true
+}
+
+// Misc (move?)
+public func hist<StorageType:Storage where StorageType.ElementType == Int>
+    (tensor:Tensor<StorageType>, bins:Int) -> Vector<StorageType>
+{
+    let h = Vector<StorageType>(rows: bins)
+    for i in tensor.storageIndices() {
+        let value:Int = tensor.storage[i]
+        h[value] = h[value] + 1
+    }
+
+    return h
+}
+
+// NB: no attempt was made to optimize these, and they need a lot of work to be fully functional
+
+// axis = nil, means sum everything
+// axis = Int chooses axis to sum along
+public func sum<StorageType:Storage where StorageType.ElementType:NumericType>
+    (tensor:Tensor<StorageType>, axis:Int?=nil) -> StorageType.ElementType
+{
+    if let ax = axis {
+        // TODO
+        return 0
+    } else {
+        var total:StorageType.ElementType = 0
+        for i in tensor.storageIndices() {
+            total = total + tensor.storage[i]
+        }
+        
+        return total
+    }
+}
+
+public func max<StorageType:Storage where StorageType.ElementType:NumericType>
+    (tensor:Tensor<StorageType>, axis:Int?=nil) -> StorageType.ElementType
+{
+    if let ax = axis {
+        // TODO
+        return 0
+    } else {
+        var index = 0
+        var value:StorageType.ElementType?
+        for i in tensor.storageIndices() {
+            if value == nil || tensor.storage[i] > value! {
+                index = i
+                value = tensor.storage[i]
+            }
+        }
+        return value!
+    }
 }

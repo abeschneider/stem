@@ -15,6 +15,7 @@ public class CBlasStorage<T:NumericType>: Storage {
     public typealias ElementType = T
     
     var array:SharedArray<T>
+    public var size:Int { return array.memory.count }
     
     public required init(size:Int) {
         array = SharedArray<ElementType>(count: size, repeatedValue: ElementType(0))
@@ -23,6 +24,19 @@ public class CBlasStorage<T:NumericType>: Storage {
     public required init(array:[T]) {
         self.array = SharedArray<T>(array)
     }
+    
+    public required init(storage:CBlasStorage) {
+        array = SharedArray<ElementType>(storage.array.memory)
+    }
+    
+//    public required init<OtherStorageType:Storage>(storage:OtherStorageType) {
+//        // need to allocate new memory
+//        array = SharedArray<ElementType>(count: storage.size, repeatedValue: ElementType(0))
+//        for i in 0..<storage.size {
+//            let value = storage[i]
+//            array[i] = unsafeBitCast(value, ElementType.self)
+//        }
+//    }
     
     public subscript(index:Int) -> T {
         get { return array[index] }

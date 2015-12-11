@@ -432,7 +432,7 @@ class stemTests: XCTestCase {
     func testVectorToString() {
         let v = Vector<CBlasStorage<Double>>([1, 2, 3, 4, 5])
         
-        let expected = "[1.000,\t2.000,\t3.000,\t4.000,\t5.000]"
+        let expected = "[1.0,\t2.0,\t3.0,\t4.0,\t5.0]"
         XCTAssertEqual(String(v), expected)
     }
     
@@ -440,7 +440,7 @@ class stemTests: XCTestCase {
         let m = Matrix<NativeStorage<Double>>([[1, 2, 3, 4], [5, 6, 7, 8]])
         
         // layout should be row-major
-        let expected = "[[1.000,\t2.000,\t3.000,\t4.000]\n [5.000,\t6.000,\t7.000,\t8.000]]"
+        let expected = "[[1.0,\t2.0,\t3.0,\t4.0]\n [5.0,\t6.0,\t7.0,\t8.0]]"
         XCTAssertEqual(String(m), expected)
     }
 

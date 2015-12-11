@@ -8,7 +8,7 @@
 
 import Foundation
 
-public protocol NumericType: AbsoluteValuable, FloatingPointType, Comparable {
+public protocol NumericType: AbsoluteValuable, Comparable {
     func +(lhs: Self, rhs: Self) -> Self
     func -(lhs: Self, rhs: Self) -> Self
     func *(lhs: Self, rhs: Self) -> Self
@@ -18,14 +18,26 @@ public protocol NumericType: AbsoluteValuable, FloatingPointType, Comparable {
     init(_ v: Int)
 }
 
+// This isn't implemented by default??
+extension Int: AbsoluteValuable {
+    public static func abs(x:Int) -> Int {
+        return abs(x)
+    }
+}
+
+extension Int: NumericType {}
 extension Double: NumericType {}
 extension Float: NumericType {}
 
 public protocol Storage {
     typealias ElementType:NumericType
     
+    var size:Int { get }
+    
     init(size:Int)
     init(array:[ElementType])
+    init(storage:Self)
+//    init<OtherStorageType:Storage>(storage:OtherStorageType)
     
     subscript(index:Int) -> ElementType {get set}
     

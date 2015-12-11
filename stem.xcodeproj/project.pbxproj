@@ -24,6 +24,8 @@
 		2D71DD291C17418B00FA7F16 /* checkgradient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D71DD281C17418B00FA7F16 /* checkgradient.swift */; };
 		2DC0CF831C19A6D3003CB088 /* vector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DC0CF821C19A6D3003CB088 /* vector.swift */; };
 		2DC0CF851C19A6F9003CB088 /* matrix.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DC0CF841C19A6F9003CB088 /* matrix.swift */; };
+		2DC0CF871C19E0C1003CB088 /* random.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DC0CF861C19E0C1003CB088 /* random.swift */; };
+		2DC0CF891C19F25B003CB088 /* randomTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DC0CF881C19F25B003CB088 /* randomTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -59,6 +61,8 @@
 		2D71DD281C17418B00FA7F16 /* checkgradient.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = checkgradient.swift; sourceTree = "<group>"; };
 		2DC0CF821C19A6D3003CB088 /* vector.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = vector.swift; sourceTree = "<group>"; };
 		2DC0CF841C19A6F9003CB088 /* matrix.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = matrix.swift; sourceTree = "<group>"; };
+		2DC0CF861C19E0C1003CB088 /* random.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = random.swift; sourceTree = "<group>"; };
+		2DC0CF881C19F25B003CB088 /* randomTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = randomTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -118,6 +122,7 @@
 				2D17563A1BF98678009C397D /* Info.plist */,
 				2D71DD281C17418B00FA7F16 /* checkgradient.swift */,
 				2D50D0A51C19269000C5A107 /* tensorops.swift */,
+				2DC0CF861C19E0C1003CB088 /* random.swift */,
 			);
 			path = stem;
 			sourceTree = "<group>";
@@ -127,6 +132,7 @@
 			children = (
 				2D17565D1BF986B7009C397D /* stemTests.swift */,
 				2D6A5F461C113A42001838D4 /* nnTests.swift */,
+				2DC0CF881C19F25B003CB088 /* randomTests.swift */,
 				2D1756461BF98678009C397D /* Info.plist */,
 			);
 			path = stemTests;
@@ -250,6 +256,7 @@
 			files = (
 				2DC0CF851C19A6F9003CB088 /* matrix.swift in Sources */,
 				2DC0CF831C19A6D3003CB088 /* vector.swift in Sources */,
+				2DC0CF871C19E0C1003CB088 /* random.swift in Sources */,
 				2D1756571BF9869A009C397D /* sharedarray.swift in Sources */,
 				2D17565B1BF9869A009C397D /* cblas.swift in Sources */,
 				2D17565C1BF9869A009C397D /* native.swift in Sources */,
@@ -267,6 +274,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2DC0CF891C19F25B003CB088 /* randomTests.swift in Sources */,
 				2D1756611BF9884B009C397D /* README.md in Sources */,
 				2D6A5F471C113A42001838D4 /* nnTests.swift in Sources */,
 				2D17565E1BF986B7009C397D /* stemTests.swift in Sources */,
