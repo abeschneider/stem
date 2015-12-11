@@ -13,6 +13,9 @@ Contents:
 
    intro
    getting_started
+   tensor
+   random
+   nn
 
 
 
@@ -28,8 +31,3 @@ Status
 STEM is very much a work in progress. It should not be considered stable yet. The status will be kept updated for when the design of STEM has settled down.
 
 If a Tensor library for Swift interests you, please help by contributing code.
-
-
-********
-test
-********
