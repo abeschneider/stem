@@ -3,23 +3,17 @@
 //  stem
 //
 //  Created by Abe Schneider on 12/8/15.
-//  Copyright © 2015 none. All rights reserved.
+//  Copyright © 2015 Abe Schneider. All rights reserved.
 //
 
 import Foundation
 
-//std::list<real_t> check_gradient(std::function<real_t (const vector_t &)> fn,
-//GradientModule &mod,
-//const vector_t &input,
-//real_t eps)
-
-
-func check_gradient<StorageType:Storage, ModuleType where ModuleType:Module, ModuleType:GradientModule>(
+func check_gradient<StorageType:Storage, ModuleType where ModuleType:Module, ModuleType:GradientModule, StorageType.ElementType:NumericType>(
     module:ModuleType,
     flattenedParams:StorageType,
     flattenedGradParams:StorageType,
     input:Vector<StorageType>,
-    eps:StorageType.ElementType,
+    eps:Double,
     fn:(Vector<StorageType>) -> StorageType.ElementType) -> Vector<StorageType>
 {
     let result = Vector<StorageType>(rows: flattenedGradParams.size)
@@ -36,14 +30,14 @@ func check_gradient<StorageType:Storage, ModuleType where ModuleType:Module, Mod
     
     for i in 0..<flattenedParams.size {
         let old_value = flattenedParams[i]
-        params[i] = flattenedParams[i] + eps
+        params[i] = flattenedParams[i] + StorageType.ElementType(eps)
         let pvalue = fn(input)
         
-        params[i] = old_value - eps
+        params[i] = old_value - StorageType.ElementType(eps)
         let nvalue = fn(input)
         params[i] = old_value
         
-        let numerical_diff = (pvalue - nvalue) / (2*eps)
+        let numerical_diff = (pvalue - nvalue) / StorageType.ElementType(2.0*eps)
         result[i] = abs(numerical_diff - analytical_diff[i])
     }
     

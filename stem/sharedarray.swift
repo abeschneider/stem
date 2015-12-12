@@ -30,6 +30,10 @@ class SharedArray<T where T:Equatable>: CollectionType {
         get { return memory[index] }
         set { memory[index] = newValue }
     }
+    
+    func copy(array:SharedArray<T>) {
+        self.memory = array.memory
+    }
 }
 
 extension SharedArray: CustomStringConvertible {

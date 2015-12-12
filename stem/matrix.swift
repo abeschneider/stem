@@ -58,7 +58,5 @@ public class Matrix<StorageType:Storage>: Tensor<StorageType> {
         let newOffset = Array(view.offset.reverse())
         let newView = StorageView<StorageType>(shape: newShape, offset: newOffset)
         return Matrix(self, dimIndex: newDimIndex, view: newView)
-//        let newDimIndex = Array(dimIndex.reverse())
-//        return Matrix(self, dimIndex: newDimIndex)
     }
 }

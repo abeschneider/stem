@@ -163,8 +163,13 @@ public class Tensor<StorageType:Storage> {
         transposed = false
     }
     
-    public init(_ tensor:Tensor, dimIndex:[Int]?=nil, view:StorageView<StorageType>?=nil) {
-        storage = tensor.storage
+    public init(_ tensor:Tensor, dimIndex:[Int]?=nil, view:StorageView<StorageType>?=nil, copy:Bool=false) {
+        if copy {
+            storage = tensor.storage
+        } else {
+            storage = tensor.storage
+        }
+        
         internalShape = tensor.internalShape
         offset = 0
         stride = tensor.stride
@@ -304,6 +309,10 @@ func copy<StorageType:Storage>(source:Tensor<StorageType>, _ destination:Tensor<
     for i in source.storageIndices() {
         destination.storage[i] = source.storage[i]
     }
+}
+
+public func copy<StorageType>(tensor:Tensor<StorageType>) -> Tensor<StorageType> {
+    return Tensor<StorageType>(tensor, copy: true)
 }
 
 func fill<StorageType:Storage>(tensor:Tensor<StorageType>, value:StorageType.ElementType) {

@@ -29,6 +29,17 @@ public class CBlasStorage<T:NumericType>: Storage {
         array = SharedArray<ElementType>(storage.array.memory)
     }
     
+    public required init(storage:CBlasStorage, copy:Bool) {
+        if copy {
+            array = SharedArray<ElementType>(count: storage.size, repeatedValue: ElementType(0))
+            array.copy(storage.array)
+        } else {
+            array = SharedArray<ElementType>(storage.array.memory)
+        }
+    }
+
+
+    
 //    public required init<OtherStorageType:Storage>(storage:OtherStorageType) {
 //        // need to allocate new memory
 //        array = SharedArray<ElementType>(count: storage.size, repeatedValue: ElementType(0))

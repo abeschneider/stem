@@ -301,9 +301,8 @@ public func /=<StorageType:Storage where StorageType.ElementType:NumericType>
 public func /=<StorageType:Storage where StorageType.ElementType:NumericType>
     (left:Tensor<StorageType>, right:StorageType.ElementType)
 {
-    try! idiv(left: left, right: right)
+    idiv(left: left, right: right)
 }
-
 
 //
 // dot product
@@ -412,6 +411,26 @@ public func *<StorageType:Storage where StorageType.ElementType:NumericType>
     return result
 }
 
+public func *<StorageType:Storage where StorageType.ElementType:NumericType>
+    (left:StorageType.ElementType, right:Tensor<StorageType>) -> Tensor<StorageType>
+{
+    let result = Tensor<StorageType>(shape: right.shape)
+    for i in right.storageIndices() {
+        result.storage[i] = right.storage[i]*left
+    }
+    return result
+}
+
+public func *<StorageType:Storage where StorageType.ElementType:NumericType>
+    (left:Tensor<StorageType>, right:StorageType.ElementType) -> Tensor<StorageType>
+{
+    let result = Tensor<StorageType>(shape: left.shape)
+    for i in left.storageIndices() {
+        result.storage[i] = left.storage[i]*right
+    }
+    return result
+}
+
 public func abs<StorageType:Storage where StorageType.ElementType:NumericType>
     (tensor:Tensor<StorageType>) -> Tensor<StorageType>
 {
@@ -435,17 +454,34 @@ public func isClose<StorageType:Storage where StorageType.ElementType:NumericTyp
 }
 
 // Misc (move?)
-public func hist<StorageType:Storage where StorageType.ElementType == Int>
+//public func hist<StorageType:Storage where StorageType.ElementType == Int>
+//    (tensor:Tensor<StorageType>, bins:Int) -> Vector<StorageType>
+//{
+//    let h = Vector<StorageType>(rows: bins)
+//    for i in tensor.storageIndices() {
+//        let value:Int = tensor.storage[i]
+//        h[value] = h[value] + 1
+//    }
+//
+//    return h
+//}
+
+public func hist<StorageType:Storage where StorageType.ElementType == Double>
     (tensor:Tensor<StorageType>, bins:Int) -> Vector<StorageType>
 {
     let h = Vector<StorageType>(rows: bins)
+    let m = max(tensor)
+    let delta = m/StorageType.ElementType(bins)
     for i in tensor.storageIndices() {
-        let value:Int = tensor.storage[i]
-        h[value] = h[value] + 1
+        let value = tensor.storage[i]
+        var bin = Int(value/delta)
+        if bin >= bins {  bin = bins-1 }
+        h[bin] = h[bin] + 1
     }
 
     return h
 }
+
 
 // NB: no attempt was made to optimize these, and they need a lot of work to be fully functional
 
@@ -484,4 +520,28 @@ public func max<StorageType:Storage where StorageType.ElementType:NumericType>
         }
         return value!
     }
+}
+
+infix operator ^ {}
+
+public func ^<StorageType:Storage where StorageType.ElementType == Double>
+    (tensor:Tensor<StorageType>, power:Double) -> Tensor<StorageType>
+{
+    let result = Tensor<StorageType>(shape: tensor.shape)
+    for i in result.storageIndices() {
+        result.storage[i] = pow(tensor.storage[i], power)
+    }
+    
+    return result
+}
+
+func sqrt<StorageType:Storage where StorageType.ElementType == Double>
+    (tensor:Tensor<StorageType>) -> Tensor<StorageType>
+{
+    let result = Tensor<StorageType>(shape: tensor.shape)
+    for i in result.storageIndices() {
+        result.storage[i] = sqrt(tensor.storage[i])
+    }
+    
+    return result
 }

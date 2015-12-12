@@ -139,6 +139,7 @@ int32: 	return start + (floor([self randomDouble0To1Exclusive] * (double)width))
 extension Tensor where StorageType.ElementType == Float {
     func uniform(rng:RandomNumberGenerator) {
         for i in storageIndices() {
+            // FIXME: this is probably incorrect
             storage[i] = Float(rng.next())*(1.0/4294967295.0)
         }
     }
@@ -152,13 +153,13 @@ extension Tensor where StorageType.ElementType == Double {
     }
 }
 
-extension Tensor where StorageType.ElementType == Int {
-    func uniform(rng:RandomNumberGenerator, first:Int, last:Int, closed:Bool=false) {
-        var width = last - first
-        if closed { --width }
-        
-        for i in storageIndices() {
-            storage[i] = Int(rng.next()) % width + Int(first)
-        }
-    }
-}
+//extension Tensor where StorageType.ElementType == Int {
+//    func uniform(rng:RandomNumberGenerator, first:Int, last:Int, closed:Bool=false) {
+//        var width = last - first
+//        if closed { --width }
+//        
+//        for i in storageIndices() {
+//            storage[i] = Int(rng.next()) % width + Int(first)
+//        }
+//    }
+//}

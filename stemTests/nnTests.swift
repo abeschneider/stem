@@ -68,7 +68,6 @@ class nnTests: XCTestCase {
         let grad_output = ColumnVector<NativeStorage<Double>>([1, 1, 1, 1])
         let grad_input = linear.backward(input, grad_output: grad_output)
   
-        print(grad_input)
         let expected = Vector<NativeStorage<Double>>([1, 1, 1])
         XCTAssert(isClose(grad_input, expected, eps: 10e-4), "Not close")
 
@@ -109,12 +108,14 @@ class nnTests: XCTestCase {
         // need to provide a method to point to external gradient storage as well
         let linear = LinearModule<S>(weight: weight, bias: bias, gradWeight: grad_weight, gradBias: grad_bias)
 
-
-        let input = ColumnVector<S>(rows: num_inputs)
-//        check_gradient(linear, storage, grad_storage, input, 10e-4) { (module, input) -> Vector<S> in
+        let rng = RandomNumberGenerator()
+        let input = Vector<S>(rows: num_inputs)
+        input.uniform(rng)
+//        check_gradient(linear, storage, grad_storage, input, 10e-4, { (module, input) -> Vector<S> in
 //            let output = module.forward(input)
-//            // cost function
-//        }
+////            // cost function
+//            return output
+//        })
         
 //        let output = linear.forward(input)
 //        let grad_output = ColumnVector<S>(rows: num_outputs)

@@ -38,6 +38,13 @@ protocol GradientModule {
     func clear()
 }
 
+protocol CriterionModule {
+    typealias StorageType:Storage
+    
+    func forward(input:Tensor<StorageType>) throws -> StorageType.ElementType
+    func backward(input:Tensor<StorageType>) throws -> Tensor<StorageType>
+}
+
 class LinearModule<S:Storage>: Module, GradientModule {
     typealias StorageType = S
     
@@ -149,4 +156,22 @@ class LinearModule<S:Storage>: Module, GradientModule {
     
 //    func backward(input:Matrix<StorageType>, grad_output:Matrix<StorageType>) -> Matrix<StorageType> {
 //    }
+}
+
+class L2Loss<S:Storage where S.ElementType:NumericType>: CriterionModule {
+    typealias StorageType = S
+    
+    var target:Tensor<StorageType>
+    
+    init(target:Tensor<StorageType>) {
+        self.target = target
+    }
+    
+    func forward(input:Tensor<StorageType>) throws -> StorageType.ElementType {
+        return StorageType.ElementType(0.5)*sum(sqrt((input - target)^2))
+    }
+    
+    func backward(input:Tensor<StorageType>) throws -> Tensor<StorageType> {
+        return input-target
+    }
 }

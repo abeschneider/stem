@@ -25,15 +25,15 @@ public class NativeStorage<T:NumericType>: Storage {
     public required init(storage:NativeStorage) {
         array = SharedArray<ElementType>(storage.array.memory)
     }
-    
-//    public required init<OtherStorageType:Storage>(storage:OtherStorageType) {
-//        // need to allocate new memory
-//        array = SharedArray<ElementType>(count: storage.size, repeatedValue: ElementType(0))
-//        for i in 0..<storage.size {
-//            let value = storage[i]
-//            array[i] = 0 //unsafeBitCast(value, ElementType.self)
-//        }
-//    }
+
+    public required init(storage:NativeStorage, copy:Bool) {
+        if copy {
+            array = SharedArray<ElementType>(count: storage.size, repeatedValue: ElementType(0))
+            array.copy(storage.array)
+        } else {
+            array = SharedArray<ElementType>(storage.array.memory)
+        }
+    }
     
     public func transform<NewStorageType:Storage>(fn:(el:ElementType) -> NewStorageType.ElementType) -> NewStorageType {
         let value:[NewStorageType.ElementType] = array.memory.map(fn)
