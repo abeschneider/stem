@@ -67,18 +67,12 @@ public struct TensorStorageIndex<StorageType:Storage>: GeneratorType {
     }
 }
 
-
-// TODO: can this can be defined as parameterized by Storage, and
-// delegated by view? Otherwise, two Tensors with different view types
-// will also be different Tensor types
 public class Tensor<StorageType:Storage> {
     public typealias ViewType = StorageView<StorageType>
     
     public var storage:StorageType
     
-    // reshape affects this
-    // TODO: need to make this into a function-var to allow
-    // dimIndex to affect this.. or some aux. variable
+    // defined the bounds set within the storage
     var internalShape:Extent
     
     // offset within storage
@@ -97,10 +91,7 @@ public class Tensor<StorageType:Storage> {
     
     // step size to increment within storage for each dimension
     public var stride:[Int]
-
     
-    // forward shape from view
-//    public var shape:Extent { return view.shape }
     public var transposed:Bool
     
     public init(array:[StorageType.ElementType], shape:Extent, offset:Int?=nil) {
