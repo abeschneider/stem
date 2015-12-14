@@ -556,6 +556,24 @@ class stemTests: XCTestCase {
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
     }
     
+    func testNativeVectorSum() {
+        let v = Vector<NativeStorage<Double>>([1, 2, 3, 4, 5, 6, 7, 8, 9])
+        let s = sum(v)
+        XCTAssertEqual(s, 45.0)
+    }
+    
+    func testNativeVectorPower() {
+        let v = Vector<NativeStorage<Double>>([1, 2, 3, 4, 5, 6, 7, 8, 9])
+        let p = pow(v, 2.0)
+        
+        let expected:[Double] = [1, 4, 9, 16, 25, 36, 49, 64, 81]
+        
+        var k = 0
+        for i in p.storageIndices() {
+            XCTAssertEqual(p.storage[i], expected[k++])
+        }
+    }
+    
     
     /*
     

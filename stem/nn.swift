@@ -26,14 +26,14 @@ protocol Module {
     typealias StorageType:Storage
 
     // general form -- specialized forms can appear in child classes
-    func forward(input:Tensor<StorageType>) throws -> Tensor<StorageType>
+    func forward(input:Tensor<StorageType>) -> Tensor<StorageType>
 }
 
 protocol GradientModule {
     typealias StorageType:Storage
     
     // general form -- specialized forms can appear in child classes
-    func backward(input:Tensor<StorageType>, grad_output:Tensor<StorageType>) throws -> Tensor<StorageType>
+    func backward(input:Tensor<StorageType>, gradOutput:Tensor<StorageType>) -> Tensor<StorageType>
     
     func clear()
 }
@@ -41,8 +41,8 @@ protocol GradientModule {
 protocol CriterionModule {
     typealias StorageType:Storage
     
-    func forward(input:Tensor<StorageType>) throws -> StorageType.ElementType
-    func backward(input:Tensor<StorageType>) throws -> Tensor<StorageType>
+    func forward(input:Tensor<StorageType>) -> StorageType.ElementType
+    func backward(input:Tensor<StorageType>) -> Tensor<StorageType>
 }
 
 class LinearModule<S:Storage>: Module, GradientModule {
@@ -51,18 +51,18 @@ class LinearModule<S:Storage>: Module, GradientModule {
     var weight:Matrix<StorageType>
     var bias:RowVector<StorageType>
     
-    var grad_weight:Matrix<StorageType>
-    var grad_bias:RowVector<StorageType>
+    var gradWeight:Matrix<StorageType>
+    var gradBias:RowVector<StorageType>
     
     var output:Tensor<StorageType>?
-    var grad_input:Tensor<StorageType>?
+    var gradInput:Tensor<StorageType>?
     
     init(input_size:Int, output_size:Int) {
         weight = Matrix<StorageType>(rows: input_size, cols: output_size)
         bias = RowVector<StorageType>(cols: output_size)
         
-        grad_weight = Matrix<StorageType>(rows: input_size, cols: output_size)
-        grad_bias = RowVector<StorageType>(cols: output_size)
+        gradWeight = Matrix<StorageType>(rows: input_size, cols: output_size)
+        gradBias = RowVector<StorageType>(cols: output_size)
     }
     
     init(weight:Matrix<StorageType>, bias:RowVector<StorageType>?=nil, gradWeight:Matrix<StorageType>?=nil, gradBias:RowVector<StorageType>?=nil) {
@@ -74,20 +74,20 @@ class LinearModule<S:Storage>: Module, GradientModule {
         }
         
         if let gw = gradWeight {
-            grad_weight = gw
+            self.gradWeight = gw
         } else {
-            grad_weight = Matrix(rows: self.weight.shape[0], cols: self.weight.shape[1])
+            self.gradWeight = Matrix(rows: self.weight.shape[0], cols: self.weight.shape[1])
         }
         
         if let gb = gradBias {
-            grad_bias = gb
+            self.gradBias = gb
         } else {
-            grad_bias = RowVector(cols: self.bias.shape[0])
+            self.gradBias = RowVector(cols: self.bias.shape[0])
         }
     }
     
-    func forward(input:Tensor<StorageType>) throws -> Tensor<StorageType> {
-        throw IllegalOperation()
+    func forward(input:Tensor<StorageType>) -> Tensor<StorageType> {
+        assert(false)
     }
     
     func forward(input:ColumnVector<StorageType>) -> Vector<StorageType> {
@@ -101,8 +101,9 @@ class LinearModule<S:Storage>: Module, GradientModule {
         
         if let out = output {
             // out = weight'*input
+            fill(out, value: 0)
             dot(left: weight.transpose(), right: input, result: out)
-            
+
             // out += bias
             iadd(left: out as! RowVector, right: bias)
         }
@@ -119,6 +120,7 @@ class LinearModule<S:Storage>: Module, GradientModule {
         
         if let out = output {
             // out = weight'*input
+            fill(out, value: 0)
             dot(left: weight.transpose(), right: input, result: out)
             
             // out += bias
@@ -128,34 +130,31 @@ class LinearModule<S:Storage>: Module, GradientModule {
         return output! as! Matrix
     }
     
-    func backward(input:Tensor<StorageType>, grad_output:Tensor<StorageType>) throws -> Tensor<StorageType> {
-        throw IllegalOperation()
+    func backward(input:Tensor<StorageType>, gradOutput:Tensor<StorageType>) -> Tensor<StorageType> {
+        assert(false)
     }
     
     // create a version of backward for Matrix
-    func backward(input:Vector<StorageType>, grad_output:ColumnVector<StorageType>) -> Vector<StorageType> {
-        if grad_input == nil || grad_input!.shape[0] != weight.shape[0] {
-            grad_input = ColumnVector<StorageType>(rows: weight.shape[0])
+    func backward(input:Vector<StorageType>, gradOutput:ColumnVector<StorageType>) -> Vector<StorageType> {
+        if gradInput == nil || gradInput!.shape[0] != weight.shape[0] {
+            gradInput = ColumnVector<StorageType>(rows: weight.shape[0])
         }
 
-        grad_input! = weight*grad_output
+        gradInput! = weight*gradOutput
         
         // dW += grad_output*input'
-        outer(left: input, right: grad_output, result: grad_weight)
+        outer(left: input, right: gradOutput, result: gradWeight)
         
-//        grad_bias += grad_output
-        iadd(left: grad_bias , right: grad_output)
+        // grad_bias += grad_output
+        iadd(left: gradBias, right: gradOutput)
         
-        return grad_input! as! Vector
+        return gradInput! as! Vector
     }
     
     func clear() {
-        fill(grad_weight, value: 0)
-        fill(grad_bias, value: 0)
+        fill(gradWeight, value: 0)
+        fill(gradBias, value: 0)
     }
-    
-//    func backward(input:Matrix<StorageType>, grad_output:Matrix<StorageType>) -> Matrix<StorageType> {
-//    }
 }
 
 class L2Loss<S:Storage where S.ElementType:NumericType>: CriterionModule {
@@ -167,11 +166,15 @@ class L2Loss<S:Storage where S.ElementType:NumericType>: CriterionModule {
         self.target = target
     }
     
-    func forward(input:Tensor<StorageType>) throws -> StorageType.ElementType {
-        return StorageType.ElementType(0.5)*sum(sqrt((input - target)^2))
+    func forward(input:Tensor<StorageType>) -> StorageType.ElementType {
+        let d:Tensor<StorageType> = input - target
+        let p = pow(d, StorageType.ElementType(2.0))
+        let s = sum(p)
+        let result = StorageType.ElementType(0.5)*s
+        return result
     }
     
-    func backward(input:Tensor<StorageType>) throws -> Tensor<StorageType> {
-        return input-target
+    func backward(input:Tensor<StorageType>) -> Tensor<StorageType> {
+        return input - target
     }
 }

@@ -487,11 +487,12 @@ public func hist<StorageType:Storage where StorageType.ElementType == Double>
 
 // axis = nil, means sum everything
 // axis = Int chooses axis to sum along
-public func sum<StorageType:Storage where StorageType.ElementType:NumericType>
+public func sum<StorageType:Storage> // where StorageType.ElementType:NumericType>
     (tensor:Tensor<StorageType>, axis:Int?=nil) -> StorageType.ElementType
 {
     if let ax = axis {
         // TODO
+        assert(false)
         return 0
     } else {
         var total:StorageType.ElementType = 0
@@ -525,23 +526,39 @@ public func max<StorageType:Storage where StorageType.ElementType:NumericType>
 infix operator ^ {}
 
 public func ^<StorageType:Storage where StorageType.ElementType == Double>
-    (tensor:Tensor<StorageType>, power:Double) -> Tensor<StorageType>
+    (tensor:Tensor<StorageType>, p:Double) -> Tensor<StorageType>
+{
+    return pow(tensor, p)
+}
+
+public func pow<StorageType:Storage where StorageType.ElementType:NumericType>
+    (tensor:Tensor<StorageType>, _ power:StorageType.ElementType) -> Tensor<StorageType>
 {
     let result = Tensor<StorageType>(shape: tensor.shape)
     for i in result.storageIndices() {
-        result.storage[i] = pow(tensor.storage[i], power)
+        result.storage[i] = tensor.storage[i]^power
     }
     
     return result
 }
 
-func sqrt<StorageType:Storage where StorageType.ElementType == Double>
-    (tensor:Tensor<StorageType>) -> Tensor<StorageType>
+//public func sqrt<T:NumericType>(v:T) -> T {
+//    assert(false)
+//}
+
+//public func sqrt(v:Double) -> Double {
+//    return Foundation.sqrt(v)
+//}
+//
+//public func sqrt(v:Float) -> Float {
+//    return Foundation.sqrtf(v)
+//}
+
+
+func norm<StorageType:Storage where StorageType.ElementType == Double> // where StorageType.ElementType == Double>
+    (tensor:Tensor<StorageType>) -> StorageType.ElementType
 {
-    let result = Tensor<StorageType>(shape: tensor.shape)
-    for i in result.storageIndices() {
-        result.storage[i] = sqrt(tensor.storage[i])
-    }
-    
-    return result
+    let p = pow(tensor, StorageType.ElementType(2.0))
+    let s:StorageType.ElementType = sum(p)
+    return sqrt(s)
 }

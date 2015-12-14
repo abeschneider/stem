@@ -59,27 +59,26 @@ public class ColumnVector<StorageType:Storage>: Vector<StorageType> {
         super.init(array, transposed: false)
     }
     
-    public override init(_ tensor:Tensor<StorageType>) {
+    public override init(_ tensor:Tensor<StorageType>, dimIndex:[Int]?=nil, view:StorageView<StorageType>?=nil) {
         // verify we're being pass a vector
         assert(tensor.shape.span == 1)
         
-        // verify the vector lies along the column-dimension
-        assert(tensor.shape[1] > 0)
+//        assert(tensor.shape[1] > 0)
         
         super.init(tensor)
     }
     
-    public override init(_ vector:Vector<StorageType>, dimIndex:[Int]?=nil, view:StorageView<StorageType>?=nil) {
-        super.init(vector, dimIndex: dimIndex, view: view)
-    }
+//    public override init(_ vector:Vector<StorageType>, dimIndex:[Int]?=nil, view:StorageView<StorageType>?=nil) {
+//        super.init(vector, dimIndex: dimIndex, view: view)
+//    }
     
     public override init(rows:Int) {
         super.init(rows: rows)
     }
     
-    public override init(storage:StorageType, shape:Extent, view:StorageView<StorageType>?=nil, offset:Int?=nil) {
-        super.init(storage: storage, shape: shape, view: view, offset: offset)
-    }
+//    public override init(storage:StorageType, shape:Extent, view:StorageView<StorageType>?=nil, offset:Int?=nil) {
+//        super.init(storage: storage, shape: shape, view: view, offset: offset)
+//    }
     
     public override func transpose() -> RowVector<StorageType> {
         let newDimIndex = Array(dimIndex.reverse())
