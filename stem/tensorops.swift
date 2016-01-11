@@ -39,6 +39,19 @@ func elementwiseBinaryOp<StorageType:Storage>
     }
 }
 
+func elementwiseBinaryOp<StorageType:Storage>
+    (left:StorageType.ElementType, _ right:Tensor<StorageType>, result:Tensor<StorageType>,
+    op:(left:StorageType.ElementType, right:StorageType.ElementType) -> StorageType.ElementType)
+{
+    assert(right.shape.elements == result.shape.elements)
+    
+    var indexResult = result.storageIndices()
+    for i in right.storageIndices() {
+        let idx = indexResult.next()!
+        result.storage[idx] = op(left: left, right: right.storage[i])
+    }
+}
+
 //
 // addition
 //
@@ -77,10 +90,10 @@ public func add<StorageType:Storage where StorageType.ElementType:NumericType>
 }
 
 public func iadd<StorageType:Storage where StorageType.ElementType:NumericType>
-    (left left:Tensor<StorageType>, right:Tensor<StorageType>) throws
+    (left left:Tensor<StorageType>, right:Tensor<StorageType>)
 {
     // general case is currently not supported
-    throw IllegalOperation()
+    assert(false)
 }
 
 public func iadd<StorageType:Storage where StorageType.ElementType:NumericType>
@@ -161,11 +174,17 @@ public func sub<StorageType:Storage where StorageType.ElementType:NumericType>
     elementwiseBinaryOp(left, right, result: result, op: { return $0 - $1 })
 }
 
+public func sub<StorageType:Storage where StorageType.ElementType:NumericType>
+    (left left:StorageType.ElementType, right:Tensor<StorageType>, result:Tensor<StorageType>)
+{
+    elementwiseBinaryOp(left, right, result: result, op: { return $0 - $1 })
+}
+
 public func isub<StorageType:Storage where StorageType.ElementType:NumericType>
-    (left left:Tensor<StorageType>, right:Tensor<StorageType>) throws
+    (left left:Tensor<StorageType>, right:Tensor<StorageType>)
 {
     // general case is currently not supported
-    throw IllegalOperation()
+    assert(false)
 }
 
 public func isub<StorageType:Storage where StorageType.ElementType:NumericType>
@@ -211,6 +230,16 @@ public func -<StorageType:Storage where StorageType.ElementType:NumericType>
     return result
 }
 
+public func -<StorageType:Storage where StorageType.ElementType:NumericType>
+    (left:StorageType.ElementType, right:Tensor<StorageType>) -> Tensor<StorageType>
+{
+    let result = Tensor<StorageType>(shape: right.shape)
+    sub(left: left, right: right, result: result)
+    
+    return result
+}
+
+
 public func -=<StorageType:Storage where StorageType.ElementType:NumericType>
     (left:Tensor<StorageType>, right:Tensor<StorageType>)
 {
@@ -219,7 +248,7 @@ public func -=<StorageType:Storage where StorageType.ElementType:NumericType>
 
 
 //
-// division
+// elementwise division
 //
 
 public func div<StorageType:Storage where StorageType.ElementType:NumericType>
@@ -237,10 +266,10 @@ public func div<StorageType:Storage where StorageType.ElementType:NumericType>
 
 
 public func idiv<StorageType:Storage where StorageType.ElementType:NumericType>
-    (left left:Tensor<StorageType>, right:Tensor<StorageType>) throws
+    (left left:Tensor<StorageType>, right:Tensor<StorageType>)
 {
     // general case is currently not supported
-    throw IllegalOperation()
+    assert(false)
 }
 
 public func idiv<StorageType:Storage where StorageType.ElementType:NumericType>
@@ -295,7 +324,7 @@ public func /<StorageType:Storage where StorageType.ElementType:NumericType>
 public func /=<StorageType:Storage where StorageType.ElementType:NumericType>
     (left:Tensor<StorageType>, right:Tensor<StorageType>)
 {
-    try! idiv(left: left, right: right)
+    idiv(left: left, right: right)
 }
 
 public func /=<StorageType:Storage where StorageType.ElementType:NumericType>
@@ -305,14 +334,100 @@ public func /=<StorageType:Storage where StorageType.ElementType:NumericType>
 }
 
 //
+// element-wise multiplication
+//
+
+public func mul<StorageType:Storage where StorageType.ElementType:NumericType>
+    (left left:Tensor<StorageType>, right:Tensor<StorageType>, result:Tensor<StorageType>)
+{
+    elementwiseBinaryOp(left, right, result: result, op: { return $0 * $1 })
+}
+
+
+public func mul<StorageType:Storage where StorageType.ElementType:NumericType>
+    (left left:Tensor<StorageType>, right:StorageType.ElementType, result:Tensor<StorageType>)
+{
+    elementwiseBinaryOp(left, right, result: result, op: { return $0 * $1 })
+}
+
+
+public func imul<StorageType:Storage where StorageType.ElementType:NumericType>
+    (left left:Tensor<StorageType>, right:Tensor<StorageType>)
+{
+    // general case is currently not supported
+    assert(false)
+}
+
+public func imul<StorageType:Storage where StorageType.ElementType:NumericType>
+    (left left:Vector<StorageType>, right:Vector<StorageType>)
+{
+    // NxM + N
+    assert(left.shape.elements == right.shape.elements)
+    elementwiseBinaryOp(left, right, result: left, op: { $0 * $1 })
+}
+
+public func imul<StorageType:Storage where StorageType.ElementType:NumericType>
+    (left left:Matrix<StorageType>, right:ColumnVector<StorageType>)
+{
+    // NxM + N
+    assert(left.shape[1] == right.shape[0])
+    
+    let rows = left.shape[0]
+    let cols = left.shape[1]
+    for i in 0..<rows {
+        elementwiseBinaryOp(left[i, 0..<cols], right, result: left[i, 0..<cols], op: { $0 * $1 })
+    }
+}
+
+public func imul<StorageType:Storage where StorageType.ElementType:NumericType>
+    (left left:Matrix<StorageType>, right:RowVector<StorageType>)
+{
+    // NxM + N
+    assert(left.shape[0] == right.shape[0])
+    
+    let rows = left.shape[0]
+    let cols = left.shape[1]
+    for i in 0..<cols {
+        elementwiseBinaryOp(left[0..<rows, i], right, result: left[0..<rows, i], op: { $0 * $1 })
+    }
+}
+
+public func imul<StorageType:Storage where StorageType.ElementType:NumericType>
+    (left left:Tensor<StorageType>, right:StorageType.ElementType)
+{
+    elementwiseBinaryOp(left, right, result: left, op: { $0 * $1 })
+}
+
+public func *<StorageType:Storage where StorageType.ElementType:NumericType>
+    (left:Tensor<StorageType>, right:Tensor<StorageType>) -> Tensor<StorageType>
+{
+    let result = Tensor<StorageType>(shape: left.shape)
+    mul(left: left, right: right, result: result)
+    
+    return result
+}
+
+public func *=<StorageType:Storage where StorageType.ElementType:NumericType>
+    (left:Tensor<StorageType>, right:Tensor<StorageType>)
+{
+    imul(left: left, right: right)
+}
+
+public func *=<StorageType:Storage where StorageType.ElementType:NumericType>
+    (left:Tensor<StorageType>, right:StorageType.ElementType)
+{
+    imul(left: left, right: right)
+}
+
+//
 // dot product
 //
 
 public func dot<StorageType:Storage where StorageType.ElementType:NumericType>
-    (left left:Tensor<StorageType>, right:Tensor<StorageType>, result:Tensor<StorageType>) throws
+    (left left:Tensor<StorageType>, right:Tensor<StorageType>, result:Tensor<StorageType>)
 {
     // completely generic type currently unsupported
-    throw IllegalOperation()
+    assert(false)
 }
 
 public func dot<StorageType:Storage where StorageType.ElementType:NumericType>
@@ -536,29 +651,28 @@ public func pow<StorageType:Storage where StorageType.ElementType:NumericType>
 {
     let result = Tensor<StorageType>(shape: tensor.shape)
     for i in result.storageIndices() {
-        result.storage[i] = tensor.storage[i]^power
+        result.storage[i] = StorageType.ElementType.pow(tensor.storage[i], power)
     }
     
     return result
 }
 
-//public func sqrt<T:NumericType>(v:T) -> T {
-//    assert(false)
-//}
+func exp<StorageType:Storage where StorageType.ElementType:NumericType>
+    (tensor:Tensor<StorageType>) -> Tensor<StorageType>
+{
+    let result = Tensor<StorageType>(shape: tensor.shape)
+    for i in result.storageIndices() {
+        result.storage[i] = StorageType.ElementType.exp(tensor.storage[i])
+    }
+    
+    return result
+}
 
-//public func sqrt(v:Double) -> Double {
-//    return Foundation.sqrt(v)
-//}
-//
-//public func sqrt(v:Float) -> Float {
-//    return Foundation.sqrtf(v)
-//}
 
-
-func norm<StorageType:Storage where StorageType.ElementType == Double> // where StorageType.ElementType == Double>
+func norm<StorageType:Storage where StorageType.ElementType:NumericType>
     (tensor:Tensor<StorageType>) -> StorageType.ElementType
 {
     let p = pow(tensor, StorageType.ElementType(2.0))
     let s:StorageType.ElementType = sum(p)
-    return sqrt(s)
+    return StorageType.ElementType.sqrt(s)
 }

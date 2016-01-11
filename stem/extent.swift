@@ -8,6 +8,13 @@
 
 import Foundation
 
+// TODO: look into adding this to Extent to allow
+// broadcasting (currently directly supported in ops)
+enum ExtentElement {
+    case value(Int)
+    case broadcast
+}
+
 public struct Extent: CollectionType {
     var values:[Int]
     var elements:Int

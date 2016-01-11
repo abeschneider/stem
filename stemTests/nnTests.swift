@@ -20,8 +20,20 @@ class nnTests: XCTestCase {
         // Put teardown code here. This method is called after the invocation of each test method in the class.
         super.tearDown()
     }
+    
+    func testGraph() {
+        typealias S = NativeStorage<Double>
+//        let w = Matrix<NativeStorage<Double>>([[1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 0, 0]], copyTransposed: true)
+        let vec = Vector<S>([1, 2, 3])
+        let v = Variable<S>(variable: vec)
+        let l = Linear<S>(numInputs: 3, numOutputs: 3)
+        
+//        try! connect(from: AnyGraphModule(v), to: AnyGraphModule(l))
+        try! connect(from: v, to: l)
+        print(v.toModule)
+    }
 
-    func testLinearForwardVector() {
+    /*func testLinearForwardVector() {
         let w = Matrix<NativeStorage<Double>>([[1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 0, 0]], copyTransposed: true)
         XCTAssertEqual(w.shape, Extent(3, 4))
         
@@ -61,7 +73,7 @@ class nnTests: XCTestCase {
     
     func testLinearBackward() {
         let w = Matrix<NativeStorage<Double>>([[1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 0, 0]], copyTransposed: true)
-        let linear = LinearModule<NativeStorage<Double>>(weight: w)
+        let linear = LinearGradientModule<NativeStorage<Double>>(weight: w)
         let input = ColumnVector<NativeStorage<Double>>([1, 2, 3])
         
         linear.forward(input)
@@ -72,7 +84,7 @@ class nnTests: XCTestCase {
         XCTAssert(isClose(grad_input, expected, eps: 10e-4), "Not close")
 
         let w2 = Matrix<CBlasStorage<Double>>([[1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 0, 0]], copyTransposed: true)
-        let linear2 = LinearModule<CBlasStorage<Double>>(weight: w2)
+        let linear2 = LinearGradientModule<CBlasStorage<Double>>(weight: w2)
         let input2 = ColumnVector<CBlasStorage<Double>>([1, 2, 3])
         linear2.forward(input2)
         
@@ -120,6 +132,47 @@ class nnTests: XCTestCase {
         }
     }
     
+    func testModule<M:Module, S:Storage where M:Gradient, M.StorageType==S, S.ElementType==Double>(
+        rng:RandomNumberGenerator,
+        module:M,
+        storage:S,
+        gradStorage:M.StorageType,
+        numInputs:Int,
+        numOutputs:Int
+    )
+    {
+        let target = Vector<S>(rows: numOutputs)
+        target.uniform(rng)
+        
+        let loss = L2Loss(target: target)
+        
+        let input = ColumnVector<S>(rows: numInputs)
+        input.uniform(rng)
+        
+        let eps = 10e-6
+        let result = checkGradient(input, params: storage, gradParams: gradStorage, eps: eps) {
+            module.clear()
+            
+            // FIXME: For some reason the wrong forward/backward are getting select (Tensor).
+            // This works, but is not the desired dispatch. If the code is moved into a single
+            // test case, it works as expected. Possible compiler bug?
+            
+            // calculate error
+            let output = ColumnVector<S>(module.forward($0))
+            let error = loss.forward(output)
+            
+            // calculate gradient (for analytical gradient)
+            let grad = loss.backward(output)
+            module.backward($0, gradOutput: ColumnVector(grad))
+            
+            return error
+        }
+        
+        for i in result.storageIndices() {
+            XCTAssertLessThanOrEqual(result.storage[i], eps)
+        }
+    }
+    
     func testNativeLinearGradient() {
         typealias S = NativeStorage<Double>
         
@@ -132,59 +185,38 @@ class nnTests: XCTestCase {
         let storage = S(size: num_inputs*num_outputs + num_outputs)
         let gradStorage = S(size: num_inputs*num_outputs + num_outputs)
         
-        var pos = 0
         let weight = Matrix<S>(storage: storage,
                                shape: Extent(num_inputs, num_outputs),
-                               offset: pos)
+                               offset: 0)
         weight.uniform(rng)
 
-        pos += num_inputs*num_outputs
         let bias = RowVector<S>(storage: storage,
                                 shape: Extent(num_outputs),
-                                offset: pos)
+                                offset: num_inputs*num_outputs)
 
-        pos = 0
         let gradWeight = Matrix<S>(storage: gradStorage,
                                    shape: Extent(num_inputs, num_outputs),
-                                   offset: pos)
+                                   offset: 0)
 
-        pos += num_inputs*num_outputs
         let gradBias = RowVector<S>(storage: gradStorage,
                                     shape: Extent(num_outputs),
-                                    offset: pos)
+                                    offset: num_inputs*num_outputs)
 
         // need to provide a method to point to external gradient storage as well
-        let linear = LinearModule<S>(weight: weight, bias: bias, gradWeight: gradWeight, gradBias: gradBias)
-
-        let target = Vector<S>(rows: num_outputs)
-        target.uniform(rng)
-        
-        let loss = L2Loss(target: target)
-
-        let input = ColumnVector<S>(rows: num_inputs)
-        input.uniform(rng)
-        
-        let eps = 10e-6
-        let result = checkGradient(input, params: storage, gradParams: gradStorage, eps: eps) {//(value:ColumnVector<S>) -> S.ElementType in
-            linear.clear()
-            
-            // calculate error
-            let output = ColumnVector(linear.forward($0))
-            let error = loss.forward(output)
-
-            // calculate gradient (for analytical gradient)
-            let grad = loss.backward(output)
-            linear.backward($0, gradOutput: ColumnVector(grad))
-            
-            return error
-        }
-
-//        XCTAssertLessThan(result, eps)
-        for i in result.storageIndices() {
-            XCTAssertLessThanOrEqual(result.storage[i], eps)
-        }
+        let linear = LinearGradientModule<S>(weight: weight, bias: bias, gradWeight: gradWeight, gradBias: gradBias)
+        testModule(rng, module: linear, storage: storage, gradStorage: gradStorage, numInputs: linear.shape[0], numOutputs: linear.shape[1])
     }
 
+    func testSigmoidGradient() {
+        typealias S = NativeStorage<Double>
+        
+        let rng = RandomNumberGenerator()
+        
+        let num_inputs = 20
+        let num_outputs = 10
+
+    }*/
+    
     func testPerformanceExample() {
         // This is an example of a performance test case.
         self.measureBlock {

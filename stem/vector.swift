@@ -62,9 +62,6 @@ public class ColumnVector<StorageType:Storage>: Vector<StorageType> {
     public override init(_ tensor:Tensor<StorageType>, dimIndex:[Int]?=nil, view:StorageView<StorageType>?=nil) {
         // verify we're being pass a vector
         assert(tensor.shape.span == 1)
-        
-//        assert(tensor.shape[1] > 0)
-        
         super.init(tensor)
     }
     

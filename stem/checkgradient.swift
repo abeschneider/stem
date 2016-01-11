@@ -8,7 +8,7 @@
 
 import Foundation
 
-func checkGradient<StorageType:Storage where StorageType.ElementType == Double>(
+func checkGradient<StorageType:Storage>( //) where StorageType.ElementType == Double>(
     input:ColumnVector<StorageType>,
     var params:StorageType,
     gradParams:StorageType,

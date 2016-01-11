@@ -40,6 +40,12 @@ public class Matrix<StorageType:Storage>: Tensor<StorageType> {
         }
     }
     
+    public init(_ tensor:Tensor<StorageType>) {
+        // verify we're being pass a vector
+        assert(tensor.shape.span == 2)
+        super.init(tensor)
+    }
+    
     public override init(storage:StorageType, shape:Extent, view:StorageView<StorageType>?=nil, offset:Int?=nil) {
         super.init(storage: storage, shape: shape, view: view, offset: offset)
     }
