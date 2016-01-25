@@ -23,14 +23,26 @@ class nnTests: XCTestCase {
     
     func testGraph() {
         typealias S = NativeStorage<Double>
-//        let w = Matrix<NativeStorage<Double>>([[1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 0, 0]], copyTransposed: true)
         let vec = Vector<S>([1, 2, 3])
-        let v = Variable<S>(variable: vec)
-        let l = Linear<S>(numInputs: 3, numOutputs: 3)
+        let weight = Matrix<S>([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+        let target = Vector<S>([2, 4, 6])
         
-//        try! connect(from: AnyGraphModule(v), to: AnyGraphModule(l))
-        try! connect(from: v, to: l)
-        print(v.toModule)
+        let v = Variable<S>()
+        let l = Linear<S>(weight: weight)
+        let c = L2Criterion<S>(target: target)
+
+        let net = Sequence<S>()
+        net.add(v)
+        net.add(l)
+        net.add(c)
+        
+        net.forward(vec)
+        net.backward()
+//        try! connect(from: v, to: l)
+//        try! connect(from: l, to: c)
+//        
+//        v.forward()
+//        c.backward()
     }
 
     /*func testLinearForwardVector() {
