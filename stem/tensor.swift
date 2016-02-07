@@ -9,7 +9,11 @@
 import Foundation
 import Accelerate
 
-struct IllegalOperation: ErrorType {}
+enum TensorError: ErrorType {
+    case IllegalOperation
+    case SizeMismatch(lhs:Extent, rhs:Extent)
+    case IllegalAxis(axis:Int)
+}
 
 public protocol TensorIndex {
     var TensorRange: Range<Int> { get }
@@ -310,6 +314,52 @@ func fill<StorageType:Storage>(tensor:Tensor<StorageType>, value:StorageType.Ele
     for i in tensor.storageIndices() {
         tensor.storage[i] = 0
     }
+}
+
+// concats two tensors along the given axis (0: rows, 1: cols, etc.)
+func concat<StorageType:Storage>(tensor1:Tensor<StorageType>, _ tensor2:Tensor<StorageType>, axis:Int=0) throws -> Tensor<StorageType> {
+    // verify other dimensions match
+    //assert(tensor1.shape.span == tensor2.shape.span)
+    
+    // make sure all dimensions other than axis match
+    
+//    assert(tensor1.shape.dims == tensor2.shape.dims)`
+    // if the number of dimensions aren't equal, try
+    // to add a dimension (with an extent of 1)
+//    if (tensor1.shape.span != tensor2.shape.span) {
+//        if (tensor1.shape.span == tensor2.shape.span-1) {
+//            
+//        }
+//    }
+    let maxDims = max(tensor1.shape.dims, tensor2.shape.dims)
+    
+    if axis >= maxDims {
+        throw TensorError.IllegalAxis(axis: axis)
+    }
+    
+    for i in 0..<maxDims {
+        if (i != axis) {
+            if tensor1.shape[i] != tensor2.shape[i] {
+                throw TensorError.SizeMismatch(lhs: tensor1.shape, rhs: tensor2.shape)
+            }
+        }
+    }
+    
+    var shape = tensor1.shape
+    shape[axis] += tensor2.shape[axis]
+    
+    let result = Tensor<StorageType>(shape: shape)
+    var rpos = result.storageIndices()
+    
+    for pos in tensor1.storageIndices() {
+        result.storage[rpos.next()!] = tensor1.storage[pos]
+    }
+    
+    for pos in tensor2.storageIndices() {
+        result.storage[rpos.next()!] = tensor2.storage[pos]
+    }
+    
+    return result
 }
 
 func map<StorageType:Storage>(
