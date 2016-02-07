@@ -17,8 +17,10 @@ Matrix).
 
 // can be either row or column vector
 public class Vector<StorageType:Storage>: Tensor<StorageType> {
-    public init(_ array:[StorageType.ElementType], transposed:Bool=false) {
-        super.init(array: array, shape: Extent(array.count))
+    public init(_ array:[StorageType.ElementType], axis:Int=0, transposed:Bool=false) {
+        var dims = [Int](count: axis+1, repeatedValue: 1)
+        dims[axis] = array.count
+        super.init(array: array, shape: Extent(dims))
         self.transposed = transposed
     }
     
@@ -56,7 +58,7 @@ public class Vector<StorageType:Storage>: Tensor<StorageType> {
 // constrained to be just a column vector
 public class ColumnVector<StorageType:Storage>: Vector<StorageType> {
     public init(_ array:[StorageType.ElementType]) {
-        super.init(array, transposed: false)
+        super.init(array, axis: 1, transposed: false)
     }
     
     public override init(_ tensor:Tensor<StorageType>, dimIndex:[Int]?=nil, view:StorageView<StorageType>?=nil) {
@@ -89,7 +91,7 @@ public class ColumnVector<StorageType:Storage>: Vector<StorageType> {
 // constrained to be just a row vector
 public class RowVector<StorageType:Storage>: Vector<StorageType> {
     public init(_ array:[StorageType.ElementType]) {
-        super.init(array, transposed: true)
+        super.init(array, axis: 0, transposed: true)
     }
     
     public override init(_ tensor:Tensor<StorageType>) {
