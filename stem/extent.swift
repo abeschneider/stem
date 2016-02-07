@@ -39,8 +39,19 @@ public struct Extent: CollectionType {
     public var endIndex:Int { return values.count }
     
     public subscript(index: Int) -> Int {
-        get { return values[index] }
-        set { values[index] = newValue }
+        get {
+            // if we're beyond the bounds of the extent, always
+            // return 1
+            if index >= values.count {
+                return 1
+            }
+            
+            return values[index]
+        }
+        set {
+            values[index] = newValue
+            elements = values.reduce(1, combine: *)
+        }
     }
     
     public func generate() -> AnyGenerator<Int> {
