@@ -145,7 +145,7 @@ func iadd(
     alpha:Double=1.0)
 {
     // NxM + N
-    assert(left.shape[1] == right.shape[0])
+    assert(left.shape[1] == right.shape[1])
     
     let numElements = Int32(right.shape.elements)
     
@@ -156,7 +156,7 @@ func iadd(
         let leftPtr = UnsafeMutablePointer<Double>(left.storage.array.memory) + left.calculateOffset([i, 0])
         
         // result += right
-        cblas_daxpy(numElements, alpha, v2Ptr, Int32(right.stride[0]), leftPtr, Int32(left.stride[0]))
+        cblas_daxpy(numElements, alpha, v2Ptr, Int32(right.stride[1]), leftPtr, Int32(left.stride[0]))
     }
 }
 
