@@ -108,7 +108,7 @@ public func iadd<StorageType:Storage where StorageType.ElementType:NumericType>
     (left left:Matrix<StorageType>, right:ColumnVector<StorageType>)
 {
     // NxM + N
-    assert(left.shape[1] == right.shape[0])
+    assert(left.shape[1] == right.shape[1])
     
     let rows = left.shape[0]
     let cols = left.shape[1]
