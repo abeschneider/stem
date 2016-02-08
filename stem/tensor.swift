@@ -319,18 +319,6 @@ func fill<StorageType:Storage>(tensor:Tensor<StorageType>, value:StorageType.Ele
 // concats two tensors along the given axis (0: rows, 1: cols, etc.)
 func concat<StorageType:Storage>(tensor1:Tensor<StorageType>, _ tensor2:Tensor<StorageType>, axis:Int=0) throws -> Tensor<StorageType> {
     // verify other dimensions match
-    //assert(tensor1.shape.span == tensor2.shape.span)
-    
-    // make sure all dimensions other than axis match
-    
-//    assert(tensor1.shape.dims == tensor2.shape.dims)`
-    // if the number of dimensions aren't equal, try
-    // to add a dimension (with an extent of 1)
-//    if (tensor1.shape.span != tensor2.shape.span) {
-//        if (tensor1.shape.span == tensor2.shape.span-1) {
-//            
-//        }
-//    }
     let maxDims = max(tensor1.shape.dims, tensor2.shape.dims)
     
     if axis >= maxDims {
@@ -360,6 +348,14 @@ func concat<StorageType:Storage>(tensor1:Tensor<StorageType>, _ tensor2:Tensor<S
     }
     
     return result
+}
+
+func vstack<StorageType:Storage>(tensor1:Tensor<StorageType>, _ tensor2:Tensor<StorageType>) throws -> Tensor<StorageType> {
+    return try concat(tensor1, tensor2, axis: 0)
+}
+
+func hstack<StorageType:Storage>(tensor1:Tensor<StorageType>, _ tensor2:Tensor<StorageType>) throws -> Tensor<StorageType> {
+    return try concat(tensor1, tensor2, axis: 1)
 }
 
 func map<StorageType:Storage>(

@@ -646,6 +646,34 @@ class stemTests: XCTestCase {
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
     }
     
+    func testConcat7() {
+        let v1 = ColumnVector<NativeStorage<Double>>([1, 2, 3, 4])
+        let v2 = RowVector<NativeStorage<Double>>([5, 6, 7, 8])
+        
+        var error = false
+        do {
+            try concat(v1, v2, axis: 0)
+        } catch TensorError.SizeMismatch {
+            error = true
+        } catch {
+            XCTFail()
+        }
+        
+        if !error {
+            XCTFail()
+        }
+    }
+    
+    func testConcat8() {
+        let v1 = Matrix<NativeStorage<Double>>([[1, 2, 3, 4], [5, 6, 7, 8]])
+        let v2 = Matrix<NativeStorage<Double>>([[9, 10, 11, 12], [13, 14, 15, 16]])
+        let result = try! concat(v1, v2, axis: 1)
+        
+        print("\(result)")
+        let expected = Matrix<NativeStorage<Double>>([[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]])
+        XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
+    }
+    
     /*
     
     func testBenchmarkCBlas() {
