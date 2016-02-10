@@ -429,6 +429,59 @@ class stemTests: XCTestCase {
         }
     }
     
+    func testVectorIndexing1() {
+        let v = Vector<NativeStorage<Double>>([1, 2, 3, 4])
+        let expected:[Double] = [1, 2, 3, 4]
+        
+        for i in 0..<v.shape[0] {
+            XCTAssertEqual(v[i], expected[i])
+        }
+    }
+    
+    func testVectorIndexing2() {
+        let v = Vector<NativeStorage<Double>>([1, 2, 3, 4, 5, 6, 7, 8])
+        let expected = Vector<NativeStorage<Double>>([3, 4, 5, 6])
+        
+        let v2 = v[2..<6]
+        XCTAssert(isClose(v2, expected, eps: 10e-4), "Not close")
+    }
+    
+    func testVectorIndexing3() {
+        let v = Vector<NativeStorage<Double>>([1, 2, 3, 4, 5, 6, 7, 8])
+        
+        v[2..<6] = Vector<NativeStorage<Double>>([0, 0, 0, 0])
+        
+        let expected = Vector<NativeStorage<Double>>([1, 2, 0, 0, 0, 0, 7, 8])
+        XCTAssert(isClose(v, expected, eps: 10e-4), "Not close")
+    }
+    
+    func testMatrixIndexing1() {
+        let m = Matrix<NativeStorage<Double>>([[1, 2, 3, 4], [5, 6, 7, 8]])
+        let expected:[[Double]] = [[1, 2, 3, 4], [5, 6, 7, 8]]
+        
+        for i in 0..<m.shape[0] {
+            for j in 0..<m.shape[1] {
+                XCTAssertEqual(m[i, j], expected[i][j])
+            }
+        }
+    }
+    
+    func testMatrixIndexing2() {
+        let m = Matrix<NativeStorage<Double>>([[1, 2, 3, 4], [5, 6, 7, 8]])
+        let expected = Matrix<NativeStorage<Double>>([[2, 3], [6, 7]])
+        
+        let m2 = m[0..<2, 1..<3]
+        XCTAssert(isClose(m2, expected, eps: 10e-4), "Not close")
+    }
+    
+    func testMatrixIndexing3() {
+        let m = Matrix<NativeStorage<Double>>([[1, 2, 3, 4], [5, 6, 7, 8]])
+        let expected = Matrix<NativeStorage<Double>>([[1, 0, 0, 4], [5, 0, 0, 8]])
+        
+        m[0..<2, 1..<3] = Matrix<NativeStorage<Double>>([[0, 0], [0, 0]])
+        XCTAssert(isClose(m, expected, eps: 10e-4), "Not close")
+    }
+    
     func testVectorToString() {
         let v = Vector<CBlasStorage<Double>>([1, 2, 3, 4, 5])
         

@@ -220,10 +220,18 @@ public class Tensor<StorageType:Storage> {
         get {
             return Tensor(self, window: ranges.map { $0.TensorRange })
         }
+        set {
+            let view = Tensor(self, window: ranges.map { $0.TensorRange })
+            copy(from: newValue, to: view)
+        }
     }
     
     public subscript(ranges:TensorIndex...) -> Tensor {
         get { return self[ranges] }
+        set {
+            let view = Tensor(self, window: ranges.map { $0.TensorRange })
+            copy(from: newValue, to: view)
+        }
     }
     
     public func transpose() -> Tensor<StorageType> {
@@ -299,10 +307,12 @@ extension Tensor: CustomStringConvertible {
     }
 }
 
-func copy<StorageType:Storage>(source:Tensor<StorageType>, _ destination:Tensor<StorageType>) {
-    assert(destination.shape == source.shape)
-    for i in source.storageIndices() {
-        destination.storage[i] = source.storage[i]
+func copy<StorageType:Storage>(from from:Tensor<StorageType>, to:Tensor<StorageType>) {
+    assert(to.shape == from.shape)
+    
+    let zippedIndices = zip(from.storageIndices(), to.storageIndices())
+    for (i, j) in zippedIndices {
+        to.storage[j] = from.storage[i]
     }
 }
 
