@@ -46,11 +46,11 @@ public class NativeStorage<T:NumericType>: Storage {
     }
     
     public func calculateStride(shape:Extent) -> [Int] {
-        var stride = Array<Int>(count:shape.dims, repeatedValue: 0)
+        var stride = Array<Int>(count:shape.count, repeatedValue: 0)
         
         var mult = 1
         stride[0] = 1
-        for i in 1..<shape.dims {
+        for i in 1..<shape.count {
             stride[i] = shape[i]*mult
             mult *= shape[i]
         }

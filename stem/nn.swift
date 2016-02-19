@@ -166,15 +166,15 @@ class LinearGradient<S:Storage>: Gradient, Shapeable {
             gradInput = ColumnVector<StorageType>(rows: gradWeight.shape[0])
         }
         
-        // gradInput! = weight*gradOutput
-        let tmp:Vector<StorageType> = gradWeight*gradOutput
-        iadd(left: self.gradInput! as! Vector<StorageType>, right: tmp)
-        
         // dW += grad_output*input'
         outer(left: input, right: gradOutput, result: gradWeight)
         
         // grad_bias += grad_output
         iadd(left: gradBias, right: gradOutput)
+        
+        // gradInput! = weight*gradOutput
+        let tmp:Vector<StorageType> = gradWeight*gradOutput
+        iadd(left: self.gradInput! as! Vector<StorageType>, right: tmp)
         
         return self.gradInput! as! Vector
     }

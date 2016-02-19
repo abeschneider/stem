@@ -71,6 +71,7 @@ TODO:
 //    // is there a way to keep any type of Tensor regardless of StorageType?
 //}
 
+/*
 protocol GraphModule {
     typealias StorageType:Storage
     
@@ -80,10 +81,10 @@ protocol GraphModule {
     var output:Tensor<StorageType>? { get set }
     
     // forward direction
-    func connect(to to:AnyGraphModule<StorageType>) throws
+    func connect<M:GraphModule where M.StorageType==StorageType>(to to:M) throws
     
     // backward direction
-    func connect(from from:AnyGraphModule<StorageType>) throws
+    func connect<M:GraphModule where M.StorageType==StorageType>(from from:M) throws
     
     func forward(input:Tensor<StorageType>?)
     func backward(gradOutput:Tensor<StorageType>?)
@@ -128,16 +129,16 @@ class AnyGraphModule<S:Storage>: GraphModule {
         }
     }
     
-    init<M:GraphModule where M.StorageType == S>(_ base:M) {
+    init<M:GraphModule where M.StorageType==S>(_ base:M) {
         self._box = _AnyGraphModuleBox(base)
     }
     
-    func connect(to to:AnyGraphModule<S>) throws {
+    func connect<M:GraphModule where M.StorageType==S>(to to:M) throws {
         try _box.connect(to:to)
     }
     
-    func connect(from from:AnyGraphModule<S>) throws {
-        try _box.connect(from:from)
+    func connect<M:GraphModule where M.StorageType==S>(from from:M) throws {
+        try _box.connect(from: from)
     }
 
     
@@ -172,8 +173,8 @@ class _AnyGraphModuleBoxBase<S:Storage>:
     
     internal func forward(input:Tensor<S>?=nil) { _abstract() }
     internal func backward(gradOutput:Tensor<S>?) { _abstract() }
-    internal func connect(to to:AnyGraphModule<S>) throws { _abstract() }
-    internal func connect(from from:AnyGraphModule<S>) throws { _abstract() }
+    internal func connect<M:GraphModule where M.StorageType==S>(to to:M) throws { _abstract() }
+    internal func connect<M:GraphModule where M.StorageType==S>(from from:M) throws { _abstract() }
     internal func outputShape(inputShape: Extent) -> Extent { _abstract() }
 }
 
@@ -200,11 +201,11 @@ class _AnyGraphModuleBox<Base:GraphModule>:
         _base.backward(gradOutput)
     }
     
-    internal override func connect(to to:AnyGraphModule<Base.StorageType>) throws {
+    internal override func connect<M:GraphModule where M.StorageType==Base.StorageType>(to to:M) throws {
         try _base.connect(to: to)
     }
     
-    internal override func connect(from from:AnyGraphModule<Base.StorageType>) throws {
+    internal override func connect<M:GraphModule where M.StorageType==Base.StorageType>(from from:M) throws {
         try _base.connect(from: from)
     }
     
@@ -220,6 +221,7 @@ func connect<M1, M2 where M1:GraphModule, M2:GraphModule, M1.StorageType == M2.S
     try to.connect(from: AnyGraphModule<M1.StorageType>(from))
 }
 
+// Groups should be responsible for scheduling the order of nodes
 class Group<S:Storage>: GraphModule {
     typealias StorageType = S
     
@@ -242,16 +244,16 @@ class Group<S:Storage>: GraphModule {
         self.modules = []
     }
 
-    func add<M:GraphModule where M.StorageType == S>(module: M) {
+    func add<M:GraphModule where M.StorageType == S>(module:M) {
         self.modules.append(AnyGraphModule<S>(module))
     }
     
-    func connect(to to:AnyGraphModule<S>) throws {
-        toModule = to
+    func connect<M:GraphModule where M.StorageType==S>(to to:M) throws {
+        toModule = AnyGraphModule<S>(to)
     }
     
-    func connect(from from:AnyGraphModule<S>) throws {
-        fromModule = from
+    func connect<M:GraphModule where M.StorageType==S>(from from:M) throws {
+        fromModule = AnyGraphModule<S>(from)
     }
     
     func forward(input:Tensor<S>?=nil) {
@@ -267,6 +269,7 @@ class Group<S:Storage>: GraphModule {
     }
 }
 
+// visit nodes in sequential order
 class Sequence<S:Storage>: Group<S> {
 //    init(modules: NSArray) {
 //        super.init()
@@ -306,6 +309,40 @@ class Sequence<S:Storage>: Group<S> {
     }
 }
 
+// start at leaf nodes and propagate upwards
+class Merge<S:Storage>: Group<S> {
+    override init() {
+        super.init()
+    }
+    
+    override func add<M : GraphModule where M.StorageType == S>(module: M) {
+        self.modules.append(AnyGraphModule<S>(module))
+        
+        try! module.connect(to: self)
+        try! self.connect(from: module)
+    }
+    
+    override func forward(input:Tensor<S>?=nil) {
+        // need to check if output is allocated
+        
+        modules.first!.forward(input)
+    }
+    
+    override func backward(gradOutput:Tensor<S>?=nil) {
+        modules.last!.backward(gradOutput)
+    }
+    
+    override func outputShape(inputShape: Extent) -> Extent {
+        return modules.last!.outputShape(inputShape)
+    }
+}
+
+class Split<S:Storage>: Group<S> {
+    override init() {
+        super.init()
+    }
+}
+
 class Linear<S:Storage>: GraphModule {
     typealias StorageType = S
     
@@ -333,12 +370,12 @@ class Linear<S:Storage>: GraphModule {
         grad = LinearGradient<S>(input_size: weight.shape[0], output_size: weight.shape[1])
     }
     
-    func connect(to to:AnyGraphModule<S>) throws {
-        toModule = to
+    func connect<M:GraphModule where M.StorageType==S>(to to:M) throws {
+        toModule = AnyGraphModule<S>(to)
     }
     
-    func connect(from from:AnyGraphModule<S>) throws {
-        fromModule = from
+    func connect<M:GraphModule where M.StorageType==S>(from from:M) throws {
+        fromModule = AnyGraphModule<S>(from)
     }
 
     func forward(input:Tensor<S>?=nil) {
@@ -350,6 +387,8 @@ class Linear<S:Storage>: GraphModule {
     }
     
     func backward(gradOutput:Tensor<S>?=nil) {
+        grad.apply(linear.output!, gradOutput: gradOutput!)
+        
         if let module = fromModule {
             module.backward(gradOutput)
         }
@@ -380,11 +419,11 @@ class Variable<S:Storage>: GraphModule {
 //        self.variable = variable
 //    }
     
-    func connect(to to:AnyGraphModule<S>) throws {
-        toModule = to
+    func connect<M:GraphModule where M.StorageType==S>(to to:M) throws {
+        toModule = AnyGraphModule(to)
     }
     
-    func connect(from from:AnyGraphModule<S>) throws {
+    func connect<M:GraphModule where M.StorageType==S>(from from:M) throws {
         throw ConnectionError.CannotAcceptInput
     }
     
@@ -414,18 +453,19 @@ class L2Criterion<S:Storage where S.ElementType:NumericType>: GraphModule {
     
     var fromModule:AnyGraphModule<S>?
     var error:S.ElementType?
-    var target:Tensor<S>
+//    var target:Tensor<S>
+    var target:AnyGraphModule<S>
     
-    init(target:Tensor<S>) {
+    init(target:AnyGraphModule<S>) {
         self.target = target
     }
 
-    func connect(to to:AnyGraphModule<S>) throws {
+    func connect<M:GraphModule where M.StorageType==S>(to to:M) throws {
         throw ConnectionError.CannotAcceptOutput
     }
     
-    func connect(from from:AnyGraphModule<S>) throws {
-        fromModule = from
+    func connect<M:GraphModule where M.StorageType==S>(from from:M) throws {
+        fromModule = AnyGraphModule<S>(from)
     }
     
     func forward(input:Tensor<S>?=nil) {
@@ -445,7 +485,7 @@ class L2Criterion<S:Storage where S.ElementType:NumericType>: GraphModule {
     func outputShape(inputShape: Extent) -> Extent {
         return Extent(1)
     }
-}
+}*/
 
 /*class Concat<S:Storage>: GraphModule {
     var toModule:GraphModule?

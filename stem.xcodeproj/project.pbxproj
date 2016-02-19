@@ -18,6 +18,7 @@
 		2D17565C1BF9869A009C397D /* native.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D1756551BF9869A009C397D /* native.swift */; };
 		2D17565E1BF986B7009C397D /* stemTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D17565D1BF986B7009C397D /* stemTests.swift */; };
 		2D1756611BF9884B009C397D /* README.md in Sources */ = {isa = PBXBuildFile; fileRef = 2D1756601BF9884B009C397D /* README.md */; };
+		2D46F0581C60DAB7001C8BCB /* graph2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D46F0571C60DAB7001C8BCB /* graph2.swift */; };
 		2D50D0A61C19269000C5A107 /* tensorops.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D50D0A51C19269000C5A107 /* tensorops.swift */; };
 		2D6A5F421C0BE6E4001838D4 /* nn.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D6A5F411C0BE6E4001838D4 /* nn.swift */; };
 		2D6A5F471C113A42001838D4 /* nnTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D6A5F461C113A42001838D4 /* nnTests.swift */; };
@@ -57,6 +58,7 @@
 		2D17565F1BF987DC009C397D /* COPYING */ = {isa = PBXFileReference; lastKnownFileType = text; path = COPYING; sourceTree = "<group>"; };
 		2D1756601BF9884B009C397D /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		2D1756621BF9FA7E009C397D /* StemPlayground.playground */ = {isa = PBXFileReference; lastKnownFileType = file.playground; path = StemPlayground.playground; sourceTree = "<group>"; };
+		2D46F0571C60DAB7001C8BCB /* graph2.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = graph2.swift; sourceTree = "<group>"; };
 		2D50D0A51C19269000C5A107 /* tensorops.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = tensorops.swift; sourceTree = "<group>"; };
 		2D6A5F411C0BE6E4001838D4 /* nn.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = nn.swift; path = stem/nn.swift; sourceTree = "<group>"; };
 		2D6A5F461C113A42001838D4 /* nnTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = nnTests.swift; sourceTree = "<group>"; };
@@ -148,6 +150,7 @@
 			children = (
 				2D6A5F411C0BE6E4001838D4 /* nn.swift */,
 				2D9C028E1C2C5D53003CB936 /* graph.swift */,
+				2D46F0571C60DAB7001C8BCB /* graph2.swift */,
 			);
 			name = nn;
 			sourceTree = "<group>";
@@ -271,6 +274,7 @@
 				2D1756591BF9869A009C397D /* storage.swift in Sources */,
 				2D50D0A61C19269000C5A107 /* tensorops.swift in Sources */,
 				2D1756561BF9869A009C397D /* tensor.swift in Sources */,
+				2D46F0581C60DAB7001C8BCB /* graph2.swift in Sources */,
 				2D17565A1BF9869A009C397D /* view.swift in Sources */,
 				2D1756581BF9869A009C397D /* extent.swift in Sources */,
 				2D6A5F421C0BE6E4001838D4 /* nn.swift in Sources */,

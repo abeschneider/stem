@@ -41,13 +41,13 @@ public struct TensorStorageIndex<StorageType:Storage>: GeneratorType {
 
     init(_ tensor:Tensor<StorageType>) {
         self.tensor = tensor
-        indices = [Int](count: tensor.shape.dims, repeatedValue: 0)
+        indices = [Int](count: tensor.shape.count, repeatedValue: 0)
     }
 
     public mutating func next() -> Int? {
-        let last = tensor.shape.dims-1
+        let last = tensor.shape.count-1
         if indices[last] >= tensor.shape[last] {
-            var d:Int = tensor.shape.dims - 1
+            var d:Int = tensor.shape.count - 1
             while d >= 0 && indices[d] >= tensor.shape[d] {
                 // at the end, so return no results left
                 if d == 0 { return nil }
@@ -102,7 +102,7 @@ public class Tensor<StorageType:Storage> {
         storage = StorageType(array: array)
         internalShape = shape
         self.stride = storage.calculateStride(shape)
-        dimIndex = Tensor.calculateOrder(shape.dims)
+        dimIndex = Tensor.calculateOrder(shape.count)
 
         if let o = offset {
             self.offset = o
@@ -110,7 +110,7 @@ public class Tensor<StorageType:Storage> {
             self.offset = 0
         }
         
-        view = ViewType(shape: shape, offset: Array<Int>(count: shape.dims, repeatedValue: 0))
+        view = ViewType(shape: shape, offset: Array<Int>(count: shape.count, repeatedValue: 0))
         transposed = false
     }
     
@@ -118,7 +118,7 @@ public class Tensor<StorageType:Storage> {
         self.storage = storage
         internalShape = shape
         self.stride = storage.calculateStride(shape)
-        dimIndex = Tensor.calculateOrder(shape.dims)
+        dimIndex = Tensor.calculateOrder(shape.count)
         
         if let o = offset {
             self.offset = o
@@ -129,7 +129,7 @@ public class Tensor<StorageType:Storage> {
         if let v = view {
             self.view = v
         } else {
-            self.view = ViewType(shape: shape, offset: Array<Int>(count: shape.dims, repeatedValue: 0))
+            self.view = ViewType(shape: shape, offset: Array<Int>(count: shape.count, repeatedValue: 0))
         }
         
         transposed = false
@@ -140,9 +140,9 @@ public class Tensor<StorageType:Storage> {
         internalShape = shape
         offset = 0
         self.stride = storage.calculateStride(shape)
-        dimIndex = Tensor.calculateOrder(shape.dims)
+        dimIndex = Tensor.calculateOrder(shape.count)
 
-        view = ViewType(shape: shape, offset: Array<Int>(count: shape.dims, repeatedValue: 0))
+        view = ViewType(shape: shape, offset: Array<Int>(count: shape.count, repeatedValue: 0))
         transposed = false
     }
     
@@ -154,7 +154,7 @@ public class Tensor<StorageType:Storage> {
 
         let viewShape = Extent(window.map { $0.last! - $0.first! + 1 })
         view = ViewType(shape: viewShape, offset: window.map { $0.first! })
-        dimIndex = (0..<tensor.internalShape.dims).map { tensor.internalShape.dims-$0-1 }
+        dimIndex = (0..<tensor.internalShape.count).map { tensor.internalShape.count-$0-1 }
         transposed = false
     }
     
@@ -190,7 +190,7 @@ public class Tensor<StorageType:Storage> {
     
     func calculateOffset() -> Int {
         var pos = offset
-        for i in 0..<shape.dims {
+        for i in 0..<shape.count {
             pos += view.offset[dimIndex[i]]*stride[i]
         }
         
@@ -273,7 +273,7 @@ extension Tensor {
     }
     
     private func convertToString(var indices:[Int], dim:Int) -> String {
-        if dim == internalShape.dims-1 {
+        if dim == internalShape.count-1 {
             // last dimension, convert values to string
             let values:[String] = (0..<shape[dim]).map({(i:Int) -> String in
                 indices[dim] = i
@@ -301,7 +301,7 @@ extension Tensor {
 extension Tensor: CustomStringConvertible {
     public var description: String {
         get {
-            let indices = (0..<internalShape.dims).map { _ in 0 }
+            let indices = (0..<internalShape.count).map { _ in 0 }
             return convertToString(indices, dim: 0)
         }
     }
@@ -329,7 +329,7 @@ func fill<StorageType:Storage>(tensor:Tensor<StorageType>, value:StorageType.Ele
 // concats two tensors along the given axis (0: rows, 1: cols, etc.)
 func concat<StorageType:Storage>(tensor1:Tensor<StorageType>, _ tensor2:Tensor<StorageType>, axis:Int=0) throws -> Tensor<StorageType> {
     // verify other dimensions match
-    let maxDims = max(tensor1.shape.dims, tensor2.shape.dims)
+    let maxDims = max(tensor1.shape.count, tensor2.shape.count)
     
     if axis >= maxDims {
         throw TensorError.IllegalAxis(axis: axis)
@@ -355,6 +355,25 @@ func concat<StorageType:Storage>(tensor1:Tensor<StorageType>, _ tensor2:Tensor<S
     
     for pos in tensor2.storageIndices() {
         result.storage[rpos.next()!] = tensor2.storage[pos]
+    }
+    
+    return result
+}
+
+func concat<StorageType:Storage>(tensor1:Tensor<StorageType>, _ tensor2:Tensor<StorageType>, _ tensor3:Tensor<StorageType>, _ rest:Tensor<StorageType>..., axis:Int=0) throws -> Tensor<StorageType> {
+    var result = try concat(tensor1, tensor2, axis: axis)
+    result = try concat(result, tensor3, axis:axis)
+    for i in 0..<rest.count {
+        result = try concat(result, rest[i], axis: axis)
+    }
+    
+    return result
+}
+
+func concat<StorageType:Storage>(tensors:[Tensor<StorageType>], axis:Int=0) throws -> Tensor<StorageType> {
+    var result = try concat(tensors[0], tensors[1], axis: axis)
+    for i in 2..<tensors.count {
+        result = try concat(result, tensors[i], axis: axis)
     }
     
     return result

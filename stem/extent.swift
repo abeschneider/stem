@@ -21,7 +21,7 @@ public struct Extent: CollectionType {
     var span:Int
     
     public var count:Int { return values.count }
-    public var dims:Int { return values.count }
+    public var dims:[Int] { return values }
     
     init(_ ex: Int...) {
         values = ex
@@ -31,6 +31,12 @@ public struct Extent: CollectionType {
     
     init(_ dims:[Int]) {
         values = dims
+        elements = values.reduce(1,combine: *)
+        span = (values.map { Int($0 > 1) }).reduce(0, combine: +)
+    }
+    
+    init(_ extent:Extent) {
+        values = extent.values
         elements = values.reduce(1,combine: *)
         span = (values.map { Int($0 > 1) }).reduce(0, combine: +)
     }
@@ -81,7 +87,7 @@ extension Extent: Equatable {}
 
 public func ==(left:Extent, right:Extent) -> Bool{
     if left.elements != right.elements { return false }
-    for i in 0..<left.dims {
+    for i in 0..<left.count {
         if left[i] != right[i] { return false }
     }
     

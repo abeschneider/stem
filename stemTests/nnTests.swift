@@ -21,7 +21,7 @@ class nnTests: XCTestCase {
         super.tearDown()
     }
     
-    func testGraph() {
+    /*func testGraph() {
         typealias S = NativeStorage<Double>
         let vec = Vector<S>([1, 2, 3])
         let weight = Matrix<S>([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
@@ -29,7 +29,7 @@ class nnTests: XCTestCase {
         
         let v = Variable<S>()
         let l = Linear<S>(weight: weight)
-        let c = L2Criterion<S>(target: target)
+        let c = L2Criterion<S>()
 
         let net = Sequence<S>()
         net.add(v)
@@ -37,13 +37,9 @@ class nnTests: XCTestCase {
         net.add(c)
         
         net.forward(vec)
-        net.backward()
-//        try! connect(from: v, to: l)
-//        try! connect(from: l, to: c)
-//        
-//        v.forward()
-//        c.backward()
-    }
+        net.backward(target)
+        print(l.grad.gradInput!)
+    }*/
 
     /*func testLinearForwardVector() {
         let w = Matrix<NativeStorage<Double>>([[1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 0, 0]], copyTransposed: true)

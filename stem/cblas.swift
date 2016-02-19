@@ -55,14 +55,14 @@ public class CBlasStorage<T:NumericType>: Storage {
     }
     
     public func calculateStride(shape:Extent) -> [Int] {
-        var stride = Array<Int>(count:shape.dims, repeatedValue: 0)
+        var stride = Array<Int>(count:shape.count, repeatedValue: 0)
         
         var mult = 1
-        for i in 0..<shape.dims-1 {
+        for i in 0..<shape.count-1 {
             stride[i] = shape[i]*mult
             mult *= shape[i]
         }
-        stride[shape.dims-1] = 1
+        stride[shape.count-1] = 1
 
         return stride
     }
