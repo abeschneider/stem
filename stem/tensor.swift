@@ -322,7 +322,7 @@ public func copy<StorageType>(tensor:Tensor<StorageType>) -> Tensor<StorageType>
 
 func fill<StorageType:Storage>(tensor:Tensor<StorageType>, value:StorageType.ElementType) {
     for i in tensor.storageIndices() {
-        tensor.storage[i] = 0
+        tensor.storage[i] = value
     }
 }
 

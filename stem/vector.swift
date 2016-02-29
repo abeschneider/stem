@@ -17,11 +17,11 @@ Matrix).
 
 // can be either row or column vector
 public class Vector<StorageType:Storage>: Tensor<StorageType> {
-    public init(_ array:[StorageType.ElementType], axis:Int=0, transposed:Bool=false) {
+    public init(_ array:[StorageType.ElementType], axis:Int=0) { //, transposed:Bool=false) {
         var dims = [Int](count: axis+1, repeatedValue: 1)
         dims[axis] = array.count
         super.init(array: array, shape: Extent(dims))
-        self.transposed = transposed
+//        self.transposed = transposed
     }
     
     public init(_ tensor:Tensor<StorageType>) {
@@ -58,7 +58,7 @@ public class Vector<StorageType:Storage>: Tensor<StorageType> {
 // constrained to be just a column vector
 public class ColumnVector<StorageType:Storage>: Vector<StorageType> {
     public init(_ array:[StorageType.ElementType]) {
-        super.init(array, axis: 1, transposed: false)
+        super.init(array, axis: 1) //, transposed: false)
     }
     
     public override init(_ tensor:Tensor<StorageType>, dimIndex:[Int]?=nil, view:StorageView<StorageType>?=nil) {
@@ -67,9 +67,9 @@ public class ColumnVector<StorageType:Storage>: Vector<StorageType> {
         super.init(tensor)
     }
     
-//    public override init(_ vector:Vector<StorageType>, dimIndex:[Int]?=nil, view:StorageView<StorageType>?=nil) {
-//        super.init(vector, dimIndex: dimIndex, view: view)
-//    }
+    public override init(_ vector:Vector<StorageType>, dimIndex:[Int]?=nil, view:StorageView<StorageType>?=nil) {
+        super.init(vector, dimIndex: dimIndex, view: view)
+    }
     
     public override init(rows:Int) {
         super.init(rows: rows)
@@ -91,7 +91,7 @@ public class ColumnVector<StorageType:Storage>: Vector<StorageType> {
 // constrained to be just a row vector
 public class RowVector<StorageType:Storage>: Vector<StorageType> {
     public init(_ array:[StorageType.ElementType]) {
-        super.init(array, axis: 0, transposed: true)
+        super.init(array, axis: 0) //, transposed: true)
     }
     
     public override init(_ tensor:Tensor<StorageType>) {

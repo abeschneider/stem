@@ -92,14 +92,13 @@ public func add<StorageType:Storage where StorageType.ElementType:NumericType>
 public func iadd<StorageType:Storage where StorageType.ElementType:NumericType>
     (left left:Tensor<StorageType>, right:Tensor<StorageType>)
 {
-    // general case is currently not supported
+    // TODO: need to just make sure Tensors are same shape
     assert(false)
 }
 
 public func iadd<StorageType:Storage where StorageType.ElementType:NumericType>
     (left left:Vector<StorageType>, right:Vector<StorageType>)
 {
-    // NxM + N
     assert(left.shape.elements == right.shape.elements)
     elementwiseBinaryOp(left, right, result: left, op: { $0 + $1 })
 }
@@ -107,7 +106,7 @@ public func iadd<StorageType:Storage where StorageType.ElementType:NumericType>
 public func iadd<StorageType:Storage where StorageType.ElementType:NumericType>
     (left left:Matrix<StorageType>, right:ColumnVector<StorageType>)
 {
-    // NxM + N
+    // NxM + M
     assert(left.shape[1] == right.shape[1])
     
     let rows = left.shape[0]
@@ -142,7 +141,7 @@ public func +<StorageType:Storage where StorageType.ElementType:NumericType>
 public func +=<StorageType:Storage where StorageType.ElementType:NumericType>
     (left:Tensor<StorageType>, right:Tensor<StorageType>)
 {
-    try! iadd(left: left, right: right)
+    iadd(left: left, right: right)
 }
 
 public func +=<StorageType:Storage where StorageType.ElementType:NumericType>
@@ -243,7 +242,7 @@ public func -<StorageType:Storage where StorageType.ElementType:NumericType>
 public func -=<StorageType:Storage where StorageType.ElementType:NumericType>
     (left:Tensor<StorageType>, right:Tensor<StorageType>)
 {
-    try! isub(left: left, right: right)
+    isub(left: left, right: right)
 }
 
 
@@ -268,7 +267,7 @@ public func div<StorageType:Storage where StorageType.ElementType:NumericType>
 public func idiv<StorageType:Storage where StorageType.ElementType:NumericType>
     (left left:Tensor<StorageType>, right:Tensor<StorageType>)
 {
-    // general case is currently not supported
+    // TODO
     assert(false)
 }
 
@@ -354,7 +353,7 @@ public func mul<StorageType:Storage where StorageType.ElementType:NumericType>
 public func imul<StorageType:Storage where StorageType.ElementType:NumericType>
     (left left:Tensor<StorageType>, right:Tensor<StorageType>)
 {
-    // general case is currently not supported
+    // TODO
     assert(false)
 }
 
@@ -670,9 +669,9 @@ func exp<StorageType:Storage where StorageType.ElementType:NumericType>
 
 
 func norm<StorageType:Storage where StorageType.ElementType:NumericType>
-    (tensor:Tensor<StorageType>) -> StorageType.ElementType
+    (tensor:Tensor<StorageType>, axis:Int?=nil) -> StorageType.ElementType
 {
     let p = pow(tensor, StorageType.ElementType(2.0))
-    let s:StorageType.ElementType = sum(p)
+    let s:StorageType.ElementType = sum(p, axis: axis)
     return StorageType.ElementType.sqrt(s)
 }

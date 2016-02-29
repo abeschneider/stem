@@ -2,34 +2,45 @@ Introduction
 ============
 The Swift Tensor Engine for Machine-Learning (STEM) is a Tensor library for Swift geared for Machine Learning. Similar to Numpy and Torch.Tensor, it is intended to provide a basis that other libraries can built on.
 
+What are STEM's goals?
+-----------------------
+The main goal of STEM is to provide an easy to use Tensor library similar to Numpy or Torch to support
+Machine Learning and scientific computing.
+
+What aren't STEM's goals?
+-------------------------
+There are many uses for a Tensor library. STEM isn't trying to create an all encompassing framework.
+Instead its goal is to provide a basis on which many other libraries can be written against.
+
+Thus, STEM is not attempting to create a graphing library, Machine Learning library (though that is
+being written in conjunction to STEM), or an automatic differentiation library. These
+
 Why Swift?
 ----------
 While Swift is still a new language, it has many qualities that make it great for Machine Learning:
 
-1. It's compiled:
+* It's compiled:
+	- None of the overhead normally associated with interpreted languages
+	- It's easy to call compiled libraries
+	- The LLVM allows it to also be interpreted
 
-	a. None of the overhead normally associated with interpreted languages b. It's easy to call compiled libraries
+* It's simple to use, but has powerful syntax:
+	- Operator overloading
+	- Generics
+	- While C++11 has made great strides to creating an easier to use language, it still has many aspects to it that make it difficult for a non-software engineer to write research code (e.g. template hacking)
 
-2. It's simple to use, but has powerful syntax:
+* It's strongly typed:
+	- Mistakes can be discovered quickly
+	- Can dispatch based on argument type (Python functions can get messy because it cannot dispatch based on parameter type)
 
-	a. Operator overloading 
-	b. Generics 
-	c. While C++11 has made great strides to creating an easier to use language, it still has many aspects to it that make it difficult for a non-software engineer to write research code (e.g. template hacking)
+* It supports good design
+	- Important for writing machine-learning algorithms for real-world problems
+	- Better science through better code
+	- Allows new ideas to be explored more easily
 
-3. It's strongly typed:
-
-	a. Mistakes can be discovered quickly 
-	b. Can dispatch based on argument type (Python functions can get messy because it cannot dispatch based on parameter type)
-
-4. It supports good design
-
-	a. Important for writing machine-learning algorithms for real-world problems
-	b. Better science through better code
-	c. Allows new ideas to be explored more easily
-
-5. Playground provides a very nice method to document algorithms
-
-	a. Display input, equations, and output along with the code
+* Playground
+	- Provides good method to document algorithms
+	- Display input, equations, and output along with the code
 
 
 Why not Numpy/Theano/Torch/TensorFlow?
