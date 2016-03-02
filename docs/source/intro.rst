@@ -43,8 +43,10 @@ While Swift is still a new language, it has many qualities that make it great fo
 	- Display input, equations, and output along with the code
 
 
-Why not Numpy/Theano/Torch/TensorFlow?
+Compared to other approaches
 --------------------------------------
 One of the main problems with the current approaches is that they require developing across multiple languages. This imposes a cost both in terms of development time as well runtime. In order to keep code fast, Numpy and Torch have C-backends. Theano compiles the Python code into either C or GPU code. While it's theoretically possible to use TensorFlow entirely in C++, see previous section. The separation of fast code from the rest of the code base means there is an added penalty to developing new methods. Additionally, it usually means there is added cost in calling external code.
 
-Swift on the other hand is a compile language that is easy to use. Because it is compiled, it can even call C code without the penalty usually associated with interpreted languages.
+Swift on the other hand is a compiled language that is easy to use. Because it is compiled, it can even call C code without the penalty usually associated with interpreted languages.
+
+Finally, compared to languages such as Lua, the modern features of Swift, such as operator overloading, allows mathematical libraries to be written in a user friendly manner.

@@ -11,13 +11,9 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
-   getting_started
    tensor
    random
    nn
-
-test: :ref:`intro`
-:ref:`Status`
 
 Indices and tables
 ==================

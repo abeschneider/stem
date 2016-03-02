@@ -349,6 +349,11 @@ public func mul<StorageType:Storage where StorageType.ElementType:NumericType>
     elementwiseBinaryOp(left, right, result: result, op: { return $0 * $1 })
 }
 
+public func mul<StorageType:Storage where StorageType.ElementType:NumericType>
+    (left left:StorageType.ElementType, right:Tensor<StorageType>, result:Tensor<StorageType>)
+{
+    elementwiseBinaryOp(left, right, result: result, op: { return $0 * $1 })
+}
 
 public func imul<StorageType:Storage where StorageType.ElementType:NumericType>
     (left left:Tensor<StorageType>, right:Tensor<StorageType>)
@@ -403,6 +408,28 @@ public func *<StorageType:Storage where StorageType.ElementType:NumericType>
     let result = Tensor<StorageType>(shape: left.shape)
     mul(left: left, right: right, result: result)
     
+    return result
+}
+
+public func *<StorageType:Storage where StorageType.ElementType:NumericType>
+    (left:StorageType.ElementType, right:Tensor<StorageType>) -> Tensor<StorageType>
+{
+    let result = Tensor<StorageType>(shape: right.shape)
+    mul(left: left, right: right, result: result)
+//    for i in right.storageIndices() {
+//        result.storage[i] = right.storage[i]*left
+//    }
+    return result
+}
+
+public func *<StorageType:Storage where StorageType.ElementType:NumericType>
+    (left:Tensor<StorageType>, right:StorageType.ElementType) -> Tensor<StorageType>
+{
+    let result = Tensor<StorageType>(shape: left.shape)
+    mul(left: left, right: right, result: result)
+//    for i in left.storageIndices() {
+//        result.storage[i] = left.storage[i]*right
+//    }
     return result
 }
 
@@ -522,26 +549,6 @@ public func *<StorageType:Storage where StorageType.ElementType:NumericType>
 {
     let result = Matrix<StorageType>(rows: left.shape[0], cols: right.shape[0])
     outer(left: left, right: right, result: result)
-    return result
-}
-
-public func *<StorageType:Storage where StorageType.ElementType:NumericType>
-    (left:StorageType.ElementType, right:Tensor<StorageType>) -> Tensor<StorageType>
-{
-    let result = Tensor<StorageType>(shape: right.shape)
-    for i in right.storageIndices() {
-        result.storage[i] = right.storage[i]*left
-    }
-    return result
-}
-
-public func *<StorageType:Storage where StorageType.ElementType:NumericType>
-    (left:Tensor<StorageType>, right:StorageType.ElementType) -> Tensor<StorageType>
-{
-    let result = Tensor<StorageType>(shape: left.shape)
-    for i in left.storageIndices() {
-        result.storage[i] = left.storage[i]*right
-    }
     return result
 }
 
