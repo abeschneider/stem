@@ -14,7 +14,7 @@ enum ConnectionError: ErrorType {
 }
 
 protocol GraphModule {
-    typealias StorageType:Storage
+    associatedtype StorageType:Storage
     
     // If nil, then module has no preferred shape
     //    var inputShape:Extent? { get }
@@ -29,7 +29,7 @@ protocol GraphModule {
 }
 
 @noreturn @inline(never)
-internal func _abstract(file: StaticString = __FILE__, line: UInt = __LINE__) {
+internal func _abstract(file: StaticString = #file, line: UInt = #line) {
     fatalError("Method must be overridden", file: file, line: line)
 }
 
@@ -116,7 +116,7 @@ class _AnyGraphModuleBox<Base:GraphModule>:
 
 
 protocol Container {
-    typealias StorageType
+    associatedtype StorageType
     func add<M:GraphModule where M.StorageType==StorageType>(module:M)
 }
 

@@ -23,10 +23,10 @@ import Foundation
 
 
 protocol Op {
-    typealias StorageType:Storage
+    associatedtype StorageType:Storage
     
     // general form -- specialized forms can appear in child classes
-    func apply(input:Tensor<StorageType>) -> Tensor<StorageType>
+    func apply(input:Tensor<StorageType>) throws -> Tensor<StorageType>
 }
 
 protocol Shapeable {
@@ -34,10 +34,10 @@ protocol Shapeable {
 }
 
 protocol Gradient {
-    typealias StorageType:Storage
+    associatedtype StorageType:Storage
     
     // general form -- specialized forms can appear in child classes
-    func apply(input:Tensor<StorageType>, gradOutput:Tensor<StorageType>) -> Tensor<StorageType>
+    func apply(input:Tensor<StorageType>, gradOutput:Tensor<StorageType>) throws -> Tensor<StorageType>
     
     func clear()
 }
@@ -74,19 +74,21 @@ class LinearOp<S:Storage>: Op, Shapeable {
     }
     
     // handle case were we have to do static-dispatch
-    func apply(input:Tensor<StorageType>) -> Tensor<StorageType> {
+    func apply(input:Tensor<StorageType>) throws -> Tensor<StorageType> {
         // figure out which of the specialized types applies
         if input.shape.span == 1 {
-            return apply(ColumnVector<StorageType>(input))
+            return try apply(ColumnVector<StorageType>(input))
         } else if input.shape.span == 2 {
-            return apply(Matrix<StorageType>(input))
+            return try apply(Matrix<StorageType>(input))
         }
         
         assert(false)
     }
     
-    func apply(input:ColumnVector<StorageType>) -> Vector<StorageType> {
-        assert(input.shape.elements == weight.shape[0])
+    func apply(input:ColumnVector<StorageType>) throws -> Vector<StorageType> {
+        if input.shape.elements != weight.shape[0] {
+            throw TensorError.SizeMismatch(lhs: input.shape, rhs: weight.shape)
+        }
         
         // verify that output is the correct shape
         if output == nil || output!.shape[0] != weight.shape[1] {
@@ -97,7 +99,7 @@ class LinearOp<S:Storage>: Op, Shapeable {
         if let out = output {
             // out = weight'*input
             fill(out, value: 0)
-            dot(left: weight.transpose(), right: input, result: out)
+            try dot(left: weight.transpose(), right: input, result: out)
 
             // out += bias
             iadd(left: out as! RowVector, right: bias)
@@ -106,7 +108,7 @@ class LinearOp<S:Storage>: Op, Shapeable {
         return output! as! Vector
     }
 
-    func apply(input:Matrix<StorageType>) -> Matrix<StorageType> {
+    func apply(input:Matrix<StorageType>) throws -> Matrix<StorageType> {
         // verify that output is the correct shape
         if output == nil || output!.shape[0] != weight.shape[0]{
             // if not, allocate new output storage
@@ -116,7 +118,7 @@ class LinearOp<S:Storage>: Op, Shapeable {
         if let out = output {
             // out = weight'*input
             fill(out, value: 0)
-            dot(left: weight.transpose(), right: input, result: out)
+            try dot(left: weight.transpose(), right: input, result: out)
             
             // out += bias
             iadd(left: out as! Matrix, right: bias)
@@ -149,18 +151,18 @@ class LinearGradient<S:Storage>: Gradient, Shapeable {
         }
     }
     
-    func apply(input:Tensor<StorageType>, gradOutput:Tensor<StorageType>) -> Tensor<StorageType> {
+    func apply(input:Tensor<StorageType>, gradOutput:Tensor<StorageType>) throws -> Tensor<StorageType> {
         // figure out which of the specialized types applies
         if input.shape.span == 1 {
-            return apply(Vector<StorageType>(input), gradOutput: ColumnVector<StorageType>(gradOutput))
+            return try apply(Vector<StorageType>(input), gradOutput: ColumnVector<StorageType>(gradOutput))
         } else if input.shape.span == 2 {
-            return apply(Matrix<StorageType>(input), gradOutput: Matrix<StorageType>(gradOutput))
+            return try apply(Matrix<StorageType>(input), gradOutput: Matrix<StorageType>(gradOutput))
         }
         
         assert(false)
     }
     
-    func apply(input:Vector<StorageType>, gradOutput:ColumnVector<StorageType>) -> Vector<StorageType>
+    func apply(input:Vector<StorageType>, gradOutput:ColumnVector<StorageType>) throws -> Vector<StorageType>
     {
         if gradInput == nil || gradInput!.shape[0] != gradWeight.shape[0] {
             gradInput = ColumnVector<StorageType>(rows: gradWeight.shape[0])
@@ -173,7 +175,7 @@ class LinearGradient<S:Storage>: Gradient, Shapeable {
         iadd(left: gradBias, right: gradOutput)
         
         // gradInput! = weight*gradOutput
-        let tmp:Vector<StorageType> = gradWeight*gradOutput
+        let tmp:Vector<StorageType> = try gradWeight•gradOutput
         iadd(left: self.gradInput! as! Vector<StorageType>, right: tmp)
         
         return self.gradInput! as! Vector

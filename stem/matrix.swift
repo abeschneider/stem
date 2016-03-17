@@ -54,6 +54,11 @@ public class Matrix<StorageType:Storage>: Tensor<StorageType> {
         super.init(shape: Extent(rows, cols))
     }
     
+    public override init(shape:Extent) {
+        assert(shape.count == 2)
+        super.init(shape: shape)
+    }
+    
     public init(_ matrix:Matrix, dimIndex:[Int]?=nil, view:StorageView<StorageType>?=nil) {
         super.init(matrix, dimIndex: dimIndex, view: view)
     }

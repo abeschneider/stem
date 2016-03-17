@@ -21,36 +21,6 @@ class stemTests: XCTestCase {
         super.tearDown()
     }
     
-    func testStorageCreate() {
-        _ = NativeStorage<Double>(size: 9)
-    }
-    
-    func testCBlasStorageCreate() {
-        _ = CBlasStorage<Double>(size: 9)
-    }
-
-    func testStorageIndexing1() {
-        let storage = NativeStorage<Double>(size: 5)
-        for i in 0..<5 {
-            storage[i] = Double(i)
-        }
-        
-        for i in 0..<5 {
-            XCTAssertEqual(storage.array[i], Double(i))
-        }
-    }
-    
-    func testCBlasStorageIndexing1() {
-        let storage = CBlasStorage<Double>(size: 5)
-        for i in 0..<5 {
-            storage[i] = Double(i)
-        }
-        
-        for i in 0..<5 {
-            XCTAssertEqual(storage.array[i], Double(i))
-        }
-    }
-    
     func testTensorCreate() {
         let array:[Double] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
         let tensor = Tensor<NativeStorage<Double>>(array: array, shape: Extent(2, 5))
@@ -60,7 +30,8 @@ class stemTests: XCTestCase {
         var k = 0
         for i in 0..<tensor.shape[0] {
             for j in 0..<tensor.shape[1] {
-                XCTAssertEqual(tensor[i, j], array[k++])
+                XCTAssertEqual(tensor[i, j], array[k])
+                k += 1
             }
         }
     }
@@ -77,7 +48,8 @@ class stemTests: XCTestCase {
         var k = 0
         for i in 0..<tensor.shape[0] {
             for j in 0..<tensor.shape[1] {
-                XCTAssertEqual(tensor[i, j], expected[k++])
+                XCTAssertEqual(tensor[i, j], expected[k])
+                k += 1
             }
         }
     }
@@ -91,7 +63,8 @@ class stemTests: XCTestCase {
         
         var k = 0
         for i in tensor2.storageIndices() {
-            XCTAssertEqual(tensor2.storage[i], expected[k++])
+            XCTAssertEqual(tensor2.storage[i], expected[k])
+            k += 1
         }
     }
     
@@ -102,7 +75,8 @@ class stemTests: XCTestCase {
         var k = 0
         for i in 0..<m.shape[1] {
             for j in 0..<m.shape[0] {
-                result[k++] = m[j, i]
+                result[k] = m[j, i]
+                k += 1
             }
         }
         
@@ -118,7 +92,8 @@ class stemTests: XCTestCase {
         
         var k = 0
         for i in tensor2.storageIndices() {
-            XCTAssertEqual(tensor2.storage[i], expected[k++])
+            XCTAssertEqual(tensor2.storage[i], expected[k])
+            k += 1
         }
     }
     
@@ -149,7 +124,8 @@ class stemTests: XCTestCase {
         
         var k = 0
         for i in tensor1.storageIndices() {
-            XCTAssertEqual(tensor1.storage[i], expected[k++])
+            XCTAssertEqual(tensor1.storage[i], expected[k])
+            k += 1
         }
     }
     
@@ -180,7 +156,8 @@ class stemTests: XCTestCase {
         
         var k = 0
         for i in tensor1.storageIndices() {
-            XCTAssertEqual(tensor1.storage[i], expected[k++])
+            XCTAssertEqual(tensor1.storage[i], expected[k])
+            k += 1
         }
     }
     
@@ -196,7 +173,8 @@ class stemTests: XCTestCase {
         var k = 0
         
         for i in tensor2.storageIndices() {
-            XCTAssertEqual(tensor2.storage[i], expected[k++])
+            XCTAssertEqual(tensor2.storage[i], expected[k])
+            k += 1
         }
         
         // as a sanity check, try transposing back
@@ -205,7 +183,8 @@ class stemTests: XCTestCase {
         
         k = 0
         for i in tensor3.storageIndices() {
-            XCTAssertEqual(tensor3.storage[i], array[k++])
+            XCTAssertEqual(tensor3.storage[i], array[k])
+            k += 1
         }
     }
     
@@ -221,7 +200,8 @@ class stemTests: XCTestCase {
         var k = 0
         
         for i in tensor2.storageIndices() {
-            XCTAssertEqual(tensor2.storage[i], expected[k++])
+            XCTAssertEqual(tensor2.storage[i], expected[k])
+            k += 1
         }
     }
     
@@ -236,7 +216,8 @@ class stemTests: XCTestCase {
         // verify contents are still valid
         var k = 0
         for i in tensor2.storageIndices() {
-            XCTAssertEqual(tensor2.storage[i], array[k++])
+            XCTAssertEqual(tensor2.storage[i], array[k])
+            k += 1
         }
     }
     
@@ -254,7 +235,8 @@ class stemTests: XCTestCase {
         // verify contents are still valid
         var k = 0
         for i in tensor2.storageIndices() {
-            XCTAssertEqual(tensor2.storage[i], expected[k++])
+            XCTAssertEqual(tensor2.storage[i], expected[k])
+            k += 1
         }
     }
     
@@ -265,11 +247,13 @@ class stemTests: XCTestCase {
         
         var k = 0
         for i in tensor1.storageIndices() {
-            XCTAssertEqual(tensor1.storage[i], array[k++])
+            XCTAssertEqual(tensor1.storage[i], array[k])
+            k += 1
         }
         
         for i in tensor2.storageIndices() {
-            XCTAssertEqual(tensor2.storage[i], array[k++])
+            XCTAssertEqual(tensor2.storage[i], array[k])
+            k += 1
         }
     }
 
@@ -299,10 +283,18 @@ class stemTests: XCTestCase {
         for j in 0..<tensor2.shape[0] {
             for k in 0..<tensor2.shape[1] {
                 let idx = indices.next()!
-                XCTAssertEqual(idx, expected[i++])
+                XCTAssertEqual(idx, expected[i])
                 XCTAssertEqual(tensor2.storage[idx], tensor2[j, k])
+                i += 1
             }
         }
+    }
+    
+    func testStorageIndex3() {
+        let array = (0..<15).map { Double($0) }
+        let tensor = Tensor<NativeStorage<Double>>(array: array, shape: Extent(3, 5))
+        let subtensor = tensor[0, 0..<5]
+        XCTAssertEqual(subtensor.shape.dims, [1, 5])
     }
     
     func testCreateVector() {
@@ -323,7 +315,8 @@ class stemTests: XCTestCase {
 
         var k = 0
         for i in vector1.storageIndices() {
-            XCTAssertEqual(vector1.storage[i], expected1[k++])
+            XCTAssertEqual(vector1.storage[i], expected1[k])
+            k += 1
         }
 
         let vector2 = Vector<NativeStorage<Double>>(tensor[0..<3, 1])
@@ -331,7 +324,8 @@ class stemTests: XCTestCase {
 
         k = 0
         for i in vector2.storageIndices() {
-            XCTAssertEqual(vector2.storage[i], expected2[k++])
+            XCTAssertEqual(vector2.storage[i], expected2[k])
+            k += 1
         }
         
         // verify transposition works on a vector created from a slice
@@ -340,7 +334,8 @@ class stemTests: XCTestCase {
         k = 0
         for i in vector3.storageIndices() {
             // NB: expected value should not change from vector2
-            XCTAssertEqual(vector3.storage[i], expected2[k++])
+            XCTAssertEqual(vector3.storage[i], expected2[k])
+            k += 1
         }
     }
     
@@ -396,7 +391,8 @@ class stemTests: XCTestCase {
         var k = 0
         
         for i in matrix2.storageIndices() {
-            XCTAssertEqual(matrix2.storage[i], expected[k++])
+            XCTAssertEqual(matrix2.storage[i], expected[k])
+            k += 1
         }
         
         // as a sanity check, try transposing back
@@ -407,7 +403,8 @@ class stemTests: XCTestCase {
         
         k = 0
         for i in matrix3.storageIndices() {
-            XCTAssertEqual(matrix3.storage[i], expected2[k++])
+            XCTAssertEqual(matrix3.storage[i], expected2[k])
+            k += 1
         }
     }
     
@@ -424,7 +421,8 @@ class stemTests: XCTestCase {
         var k = 0
         for i in 0..<mt.shape[0] {
             for j in 0..<mt.shape[1] {
-                XCTAssertEqual(mt[i, j], expected[k++])
+                XCTAssertEqual(mt[i, j], expected[k])
+                k += 1
             }
         }
     }
@@ -502,7 +500,7 @@ class stemTests: XCTestCase {
         let m2 = Vector<NativeStorage<Double>>([8, 7, 6, 5, 4, 3, 2, 1])
         let result = Vector<NativeStorage<Double>>(rows: m1.shape[0])
         
-        add(left: m1, right: m2, result: result)
+        try! add(left: m1, right: m2, result: result)
         
         let expected = Vector<NativeStorage<Double>>([9, 9, 9, 9, 9, 9, 9, 9])
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
@@ -513,7 +511,7 @@ class stemTests: XCTestCase {
         let m2 = Vector<CBlasStorage<Double>>([8, 7, 6, 5, 4, 3, 2, 1])
         let result = Vector<CBlasStorage<Double>>(rows: m1.shape[0])
         
-        add(left: m1, right: m2, result: result)
+        try! add(left: m1, right: m2, result: result)
         
         let expected = Vector<CBlasStorage<Double>>([9, 9, 9, 9, 9, 9, 9, 9])
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
@@ -523,9 +521,19 @@ class stemTests: XCTestCase {
         let m1 = Vector<NativeStorage<Double>>([1, 2, 3, 4, 5, 6, 7, 8])
         let m2 = Vector<NativeStorage<Double>>([8, 7, 6, 5, 4, 3, 2, 1])
         
-        let result = m1 + m2
+        let result = try! m1 + m2
         
         let expected = Vector<NativeStorage<Double>>([9, 9, 9, 9, 9, 9, 9, 9])
+        XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
+    }
+    
+    func testVectorAdd3() {
+        let m1 = Vector<NativeStorage<Double>>([1, 2, 3, 4, 5, 6, 7, 8])
+        let m2 = Vector<NativeStorage<Double>>([8, 7, 6, 5, 4, 3, 2, 1])
+        
+        let result = try! m1 + m2 + m1 + m2
+        
+        let expected = Vector<NativeStorage<Double>>([18, 18, 18, 18, 18, 18, 18, 18])
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
     }
     
@@ -533,7 +541,7 @@ class stemTests: XCTestCase {
         let m1 = Vector<CBlasStorage<Double>>([1, 2, 3, 4, 5, 6, 7, 8])
         let m2 = Vector<CBlasStorage<Double>>([8, 7, 6, 5, 4, 3, 2, 1])
         
-        let result = m1 + m2
+        let result = try! m1 + m2
         
         let expected = Vector<CBlasStorage<Double>>([9, 9, 9, 9, 9, 9, 9, 9])
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
@@ -544,7 +552,7 @@ class stemTests: XCTestCase {
         let m2 = Matrix<NativeStorage<Double>>([[8, 7, 6, 5], [4, 3, 2, 1]])
         let result = Matrix<NativeStorage<Double>>(rows: m1.shape[0], cols: m1.shape[1])
         
-        add(left: m1, right: m2, result: result)
+        try! add(left: m1, right: m2, result: result)
         
         let expected = Matrix<NativeStorage<Double>>([[9, 9, 9, 9], [9, 9, 9, 9]])
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
@@ -555,7 +563,7 @@ class stemTests: XCTestCase {
         let m2 = Matrix<CBlasStorage<Double>>([[8, 7, 6, 5], [4, 3, 2, 1]])
         let result = Matrix<CBlasStorage<Double>>(rows: m1.shape[0], cols: m1.shape[1])
         
-        add(left: m1, right: m2, result: result)
+        try! add(left: m1, right: m2, result: result)
         
         let expected = Matrix<CBlasStorage<Double>>([[9, 9, 9, 9], [9, 9, 9, 9]])
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
@@ -563,12 +571,12 @@ class stemTests: XCTestCase {
     
     func testMatrixVectorAdd1() {
         let m1 = Matrix<NativeStorage<Double>>([[1, 2, 3, 4], [5, 6, 7, 8]])
-        let v1 = RowVector<NativeStorage<Double>>([0.5, 0.5])
-        let v2 = ColumnVector<NativeStorage<Double>>([1, 1, 1, 1])
+        let v1 = RowVector<NativeStorage<Double>>([1, 1, 1, 1])
+        let v2 = ColumnVector<NativeStorage<Double>>([0.5, 0.5])
         let result = Matrix<NativeStorage<Double>>(rows: m1.shape[0], cols: m1.shape[1])
         
-        add(left: m1, right: v1, result: result)
-        iadd(left: result, right: v2)
+        try! add(left: m1, right: v1, result: result)
+        try! iadd(left: result, right: v2)
         
         let expected = Matrix<NativeStorage<Double>>([[2.5, 3.5, 4.5, 5.5], [6.5, 7.5, 8.5, 9.5]])
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
@@ -576,23 +584,142 @@ class stemTests: XCTestCase {
     
     func testCBlasMatrixVectorAdd1() {
         let m = Matrix<CBlasStorage<Double>>([[1, 2, 3, 4], [5, 6, 7, 8]])
-        let v1 = RowVector<CBlasStorage<Double>>([0.5, 0.5])
-        let v2 = ColumnVector<CBlasStorage<Double>>([1, 1, 1, 1])
+        
+        let v1 = RowVector<CBlasStorage<Double>>([1, 1, 1, 1])
+        let v2 = ColumnVector<CBlasStorage<Double>>([0.5, 0.5])
         let result = Matrix<CBlasStorage<Double>>(rows: m.shape[0], cols: m.shape[1])
         
-        add(left: m, right: v1, result: result)
-        iadd(left: result, right: v2)
+        try! add(left: m, right: v1, result: result)
+        try! iadd(left: result, right: v2)
         
         let expected = Matrix<CBlasStorage<Double>>([[2.5, 3.5, 4.5, 5.5], [6.5, 7.5, 8.5, 9.5]])
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
     }
     
-    func testDotProduct() {
+    func testVectorSub() {
+        let m1 = Vector<NativeStorage<Double>>([1, 2, 3, 4, 5, 6, 7, 8])
+        let m2 = Vector<NativeStorage<Double>>([8, 7, 6, 5, 4, 3, 2, 1])
+        let result = Vector<NativeStorage<Double>>(rows: m1.shape[0])
+        
+        sub(left: m1, right: m2, result: result)
+        
+        let expected = Vector<NativeStorage<Double>>([-7, -5, -3, -1, 1, 3, 5, 7])
+        XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
+    }
+    
+    func testCBlasVectorSub() {
+        let m1 = Vector<CBlasStorage<Double>>([1, 2, 3, 4, 5, 6, 7, 8])
+        let m2 = Vector<CBlasStorage<Double>>([8, 7, 6, 5, 4, 3, 2, 1])
+        let result = Vector<CBlasStorage<Double>>(rows: m1.shape[0])
+        
+        sub(left: m1, right: m2, result: result)
+        
+        let expected = Vector<CBlasStorage<Double>>([-7, -5, -3, -1, 1, 3, 5, 7])
+        XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
+    }
+    
+    func testVectorSub2() {
+        let m1 = Vector<NativeStorage<Double>>([1, 2, 3, 4, 5, 6, 7, 8])
+        let m2 = Vector<NativeStorage<Double>>([8, 7, 6, 5, 4, 3, 2, 1])
+        
+        let result = m1 - m2
+        
+        let expected = Vector<NativeStorage<Double>>([-7, -5, -3, -1, 1, 3, 5, 7])
+        XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
+    }
+    
+    func testCBlasVectorSub2() {
+        let m1 = Vector<CBlasStorage<Double>>([1, 2, 3, 4, 5, 6, 7, 8])
+        let m2 = Vector<CBlasStorage<Double>>([8, 7, 6, 5, 4, 3, 2, 1])
+        
+        let result = m1 - m2
+        
+        let expected = Vector<CBlasStorage<Double>>([-7, -5, -3, -1, 1, 3, 5, 7])
+        XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
+    }
+    
+    func testVectorScalarMul1() {
+        let v = Vector<NativeStorage<Double>>([1, 2, 3, 4, 5, 6, 7, 8])
+        let s:Double = 0.5
+        let result = Vector<NativeStorage<Double>>(rows: v.shape[0])
+        
+        mul(left: v, right: s, result: result)
+        
+        let expected = Vector<NativeStorage<Double>>([0.5, 1, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0])
+        XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
+    }
+    
+    func testVectorScalarMul2() {
+        let v = Vector<NativeStorage<Double>>([1, 2, 3, 4, 5, 6, 7, 8])
+        let s:Double = 0.5
+        let result = Vector<NativeStorage<Double>>(rows: v.shape[0])
+        
+        mul(left: s, right: v, result: result)
+        
+        let expected = Vector<NativeStorage<Double>>([0.5, 1, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0])
+        XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
+    }
+    
+    func testVectorScalarMul3() {
+        let v = Vector<NativeStorage<Double>>([1, 2, 3, 4, 5, 6, 7, 8])
+        let s:Double = 0.5
+        let result = v*s
+        
+        let expected = Vector<NativeStorage<Double>>([0.5, 1, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0])
+        XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
+    }
+    
+    func testVectorScalarMul4() {
+        let v = Vector<NativeStorage<Double>>([1, 2, 3, 4, 5, 6, 7, 8])
+        let s:Double = 0.5
+        let result = s*v
+        
+        let expected = Vector<NativeStorage<Double>>([0.5, 1, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0])
+        XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
+    }
+    
+    func testMatrixScalarMul1() {
+        let m = Matrix<NativeStorage<Double>>([[1, 2, 3, 4], [5, 6, 7, 8]])
+        let result = 0.5*m
+        
+        let expected = Matrix<NativeStorage<Double>>([[0.5, 1.0, 1.5, 2.0], [2.5, 3.0, 3.5, 4.0]])
+        XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
+    }
+    
+    func testMatrixScalarMul2() {
+        let m = Matrix<NativeStorage<Double>>([[1, 2, 3, 4], [5, 6, 7, 8]])
+        let result = m*0.5
+        
+        let expected = Matrix<NativeStorage<Double>>([[0.5, 1.0, 1.5, 2.0], [2.5, 3.0, 3.5, 4.0]])
+        XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
+    }
+    
+    func testMatrixRowVectorMul1() {
+        let m = Matrix<NativeStorage<Double>>([[1, 2, 3, 4], [5, 6, 7, 8]])
+        let v = ColumnVector<NativeStorage<Double>>([2, 1])
+        
+        let result = try! m*v
+        
+        let expected = Matrix<NativeStorage<Double>>([[2, 4, 6, 8], [5, 6, 7, 8]])
+        XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
+    }
+    
+    func testDotProduct1() {
         let m = Matrix<NativeStorage<Double>>([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
-        let v = Vector<NativeStorage<Double>>([1, 2, 3])
+        let v = ColumnVector<NativeStorage<Double>>([1, 2, 3])
         
         let result = ColumnVector<NativeStorage<Double>>(rows: 3)
-        dot(left: m, right: v, result: result)
+        try! dot(left: m, right: v, result: result)
+        
+        let expected = Vector<NativeStorage<Double>>([1, 2, 3])
+        XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
+    }
+    
+    func testDotProduct2() {
+        let m = Matrix<NativeStorage<Double>>([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+        let v = ColumnVector<NativeStorage<Double>>([1, 2, 3])
+        
+        let result = try! m•v
         
         let expected = Vector<NativeStorage<Double>>([1, 2, 3])
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
@@ -617,13 +744,14 @@ class stemTests: XCTestCase {
     
     func testNativeVectorPower() {
         let v = Vector<NativeStorage<Double>>([1, 2, 3, 4, 5, 6, 7, 8, 9])
-        let p = pow(v, 2.0)
+        let p = v**2.0
         
         let expected:[Double] = [1, 4, 9, 16, 25, 36, 49, 64, 81]
         
         var k = 0
         for i in p.storageIndices() {
-            XCTAssertEqual(p.storage[i], expected[k++])
+            XCTAssertEqual(p.storage[i], expected[k])
+            k += 1
         }
     }
 
@@ -673,8 +801,8 @@ class stemTests: XCTestCase {
     }
     
     func testConcat5() {
-        let v1 = RowVector<NativeStorage<Double>>([1, 2, 3, 4])
-        let v2 = RowVector<NativeStorage<Double>>([5, 6, 7, 8])
+        let v1 = ColumnVector<NativeStorage<Double>>([1, 2, 3, 4])
+        let v2 = ColumnVector<NativeStorage<Double>>([5, 6, 7, 8])
         
         var error = false
         do {
@@ -691,8 +819,8 @@ class stemTests: XCTestCase {
     }
     
     func testConcat6() {
-        let v1 = ColumnVector<NativeStorage<Double>>([1, 2, 3, 4])
-        let v2 = ColumnVector<NativeStorage<Double>>([5, 6, 7, 8])
+        let v1 = RowVector<NativeStorage<Double>>([1, 2, 3, 4])
+        let v2 = RowVector<NativeStorage<Double>>([5, 6, 7, 8])
         
         let result = try! concat(v1, v2, axis: 1)
         let expected = ColumnVector<NativeStorage<Double>>([1, 2, 3, 4, 5, 6, 7, 8])
@@ -722,7 +850,6 @@ class stemTests: XCTestCase {
         let v2 = Matrix<NativeStorage<Double>>([[9, 10, 11, 12], [13, 14, 15, 16]])
         let result = try! concat(v1, v2, axis: 1)
         
-        print("\(result)")
         let expected = Matrix<NativeStorage<Double>>([[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]])
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
     }

@@ -157,6 +157,15 @@ operation exists, you can write:
     // ..
   }
 
+
+.. csv-table:: Storage Types
+  :header: "Type", "Description"
+  :widths: 20, 20
+
+  "NativeStorage", "Unaccelerated using row-major memory storage"
+  "CBlasStorage", "CBLAS acceleration using column-major storage"
+  "GPUStorage", "(Not Implemented) GPU acceleration using row-memory storage"
+
 .. _Tensor_Class:
 
 Tensor Class

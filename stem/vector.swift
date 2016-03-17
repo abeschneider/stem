@@ -24,7 +24,7 @@ public class Vector<StorageType:Storage>: Tensor<StorageType> {
 //        self.transposed = transposed
     }
     
-    public init(_ tensor:Tensor<StorageType>) {
+    public init(_ tensor:Tensor<StorageType>, dimIndex:[Int]?=nil, view:StorageView<StorageType>?=nil) {
         assert(tensor.shape.span == 1)
         super.init(tensor)
     }
@@ -58,7 +58,7 @@ public class Vector<StorageType:Storage>: Tensor<StorageType> {
 // constrained to be just a column vector
 public class ColumnVector<StorageType:Storage>: Vector<StorageType> {
     public init(_ array:[StorageType.ElementType]) {
-        super.init(array, axis: 1) //, transposed: false)
+        super.init(array, axis: 0) //, transposed: false)
     }
     
     public override init(_ tensor:Tensor<StorageType>, dimIndex:[Int]?=nil, view:StorageView<StorageType>?=nil) {
@@ -91,10 +91,10 @@ public class ColumnVector<StorageType:Storage>: Vector<StorageType> {
 // constrained to be just a row vector
 public class RowVector<StorageType:Storage>: Vector<StorageType> {
     public init(_ array:[StorageType.ElementType]) {
-        super.init(array, axis: 0) //, transposed: true)
+        super.init(array, axis: 1) //, transposed: true)
     }
     
-    public override init(_ tensor:Tensor<StorageType>) {
+    public override init(_ tensor:Tensor<StorageType>, dimIndex:[Int]?=nil, view:StorageView<StorageType>?=nil) {
         // verify we're being passed a vector
         assert(tensor.shape.span == 1)
         

@@ -8,6 +8,8 @@
 
 import Foundation
 
+//infix operator .. { associativity left precedence 200 }
+
 // TODO: look into adding this to Extent to allow
 // broadcasting (currently directly supported in ops)
 enum ExtentElement {
@@ -17,8 +19,8 @@ enum ExtentElement {
 
 public struct Extent: CollectionType {
     var values:[Int]
-    var elements:Int
-    var span:Int
+    public var elements:Int
+    public var span:Int
     
     public var count:Int { return values.count }
     public var dims:[Int] { return values }
@@ -62,9 +64,12 @@ public struct Extent: CollectionType {
     
     public func generate() -> AnyGenerator<Int> {
         var index:Int = 0
-        return anyGenerator {
+        return AnyGenerator {
             if index >= self.values.count { return nil }
-            return self.values[index++]
+            
+            let currentIndex = index
+            index += 1
+            return self.values[currentIndex]
         }
     }
     

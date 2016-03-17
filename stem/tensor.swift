@@ -9,6 +9,9 @@
 import Foundation
 import Accelerate
 
+//public struct All {}
+//public let all = All()
+
 enum TensorError: ErrorType {
     case IllegalOperation
     case SizeMismatch(lhs:Extent, rhs:Extent)
@@ -22,7 +25,8 @@ public protocol TensorIndex {
 extension Int : TensorIndex {
     public var TensorRange: Range<Int> {
         get {
-            return Range<Int>(start: self, end: self+1)
+//            return Range<Int>(start: self, end: self+1)
+            return self..<(self+1)
         }
     }
 }
@@ -30,7 +34,18 @@ extension Int : TensorIndex {
 extension Range : TensorIndex {
     public var TensorRange: Range<Int> {
         get {
-            return Range<Int>(start: self.startIndex as! Int, end: self.endIndex as! Int)
+//            return Range<Int>(start: self.startIndex as! Int, end: self.endIndex as! Int)
+            // why the cast?
+            return (self.startIndex as! Int)..<(self.endIndex as! Int)
+        }
+    }
+}
+
+public struct All : TensorIndex {
+    public var TensorRange: Range<Int> {
+        get {
+//            return Range<Int>(start: 0, end: NSIntegerMax)
+            return 0..<0
         }
     }
 }
@@ -56,17 +71,17 @@ public struct TensorStorageIndex<StorageType:Storage>: GeneratorType {
                 indices[d] = 0
 
                 // increment next offset
-                ++indices[d-1]
+                indices[d-1] += 1
 
                 // go to next dimension
-                --d
+                d -= 1
             }
         }
 
         // TODO: This is expensive if the next index gives currentOffset+1.
         // Need to figure out a way of shortcuting this calculation when possible.
         let value = tensor.calculateOffset(indices)
-        ++indices[last]
+        indices[last] += 1
         return value
     }
 }
@@ -83,7 +98,7 @@ public class Tensor<StorageType:Storage> {
     var offset:Int
     
     // external shape
-    var shape:Extent {
+    public var shape:Extent {
         get { return view.shape }
     }
     
@@ -358,6 +373,11 @@ func concat<StorageType:Storage>(tensor1:Tensor<StorageType>, _ tensor2:Tensor<S
     }
     
     return result
+}
+
+infix operator ⊕ { associativity left precedence 140 }
+public func ⊕<StorageType:Storage>(tensor1:Tensor<StorageType>, tensor2:Tensor<StorageType>) throws -> Tensor<StorageType> {
+    return try concat(tensor1, tensor2)
 }
 
 func concat<StorageType:Storage>(tensor1:Tensor<StorageType>, _ tensor2:Tensor<StorageType>, _ tensor3:Tensor<StorageType>, _ rest:Tensor<StorageType>..., axis:Int=0) throws -> Tensor<StorageType> {

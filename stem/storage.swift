@@ -9,7 +9,7 @@
 import Foundation
 
 public protocol Storage {
-    typealias ElementType:NumericType
+    associatedtype ElementType:NumericType
     
     var size:Int { get }
     
