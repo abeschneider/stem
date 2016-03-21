@@ -57,7 +57,7 @@ Next, we can create two vectors:
 .. code:: swift
 
   // take the outer product (results in a matrix)
-  let m1 = v1*v2
+  let m1 = v1⨯v2
 
   // add two vectors together
   let v4 = v1+v3
@@ -311,11 +311,11 @@ Elementwise Exponentiation
 
 Liner Algebra
 +++++++++++++
-* ``RowVector`` * ``ColumnVector`` -> |Number|
-* |Matrix| * ``ColumnVector`` -> ``RowVector``
-* |Matrix| * |Matrix| -> ``RowVector``
+* ``Vector`` ⋅ ``Vector`` -> |Number|
+* |Matrix| ⋅ ``ColumnVector`` -> ``RowVector``
+* |Matrix| ⋅ |Matrix| -> ``RowVector``
 * dot(|Vector|, |Vector|) -> |Number|
-* ``ColumnVector`` * ``RowVector`` -> |Matrix|
+* ``ColumnVector`` ⨯ ``RowVector`` -> |Matrix|
 * outer(|Vector|, |Vector|) -> |Matrix|
 
 Other

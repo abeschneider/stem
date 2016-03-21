@@ -38,11 +38,6 @@ print("\(v6)")
 // single element (results in a scalar)
 let d1:Double = v1[0]
 let d2:Double = v1[1]
-// NB: v1[0] alone results in ambigous error, look into (return value disambiguiates)
-
-let r = 0..<0
-r.count
-
 
 
 //: Vector operations
@@ -55,28 +50,12 @@ let v9 = v1**2
 let v10 = RowVec([2, 2, 2, 2])
 
 
-try v2+v2
+// elementwise multiplication
 let v11 = try v10*v2
-let test = try v2+v2
-let v12 = try dot(left: v10, right: test)
-//let v12 = try v2*v10
-//print("\(v11)")
-//print("\(v10[1])")
 
+// dot product
+let v12 = try v10⋅(v2+v2)
 
-//: Creating matrices
-
-//let v2 = 0.5*v
-//
-//let v3 = try v ⊕ v2
-//
-//let v4 = v**2
-//
-////: outer product
-//
-////v⊗v2
-//let v5 = RowVec(v)
-//let v6 = ColVec(v2)
-//
-//let v7 = v5⊗v6
-//print("\(v7)")
+// outer product
+let v13 = try v10⨯(v2+v2)
+print("\(v13)")

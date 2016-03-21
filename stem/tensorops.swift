@@ -10,9 +10,8 @@ import Foundation
 
 infix operator ** { associativity left precedence 200 }
 infix operator ⨯ {associativity left precedence 100 }
-infix operator • {associativity left precedence 100 }
-//infix operator .*  {associativity left precedence 100 }
-//· x⋅y x•y ×
+infix operator ⋅ {associativity left precedence 100 }
+
 func elementwiseBinaryOp<StorageType:Storage>
     (left:Tensor<StorageType>, _ right:Tensor<StorageType>, result:Tensor<StorageType>,
     op:(left:StorageType.ElementType, right:StorageType.ElementType) -> StorageType.ElementType)
@@ -168,7 +167,7 @@ public func +<StorageType:Storage where StorageType.ElementType:NumericType>
 public func +<StorageType:Storage where StorageType.ElementType:NumericType>
     (left:RowVector<StorageType>, right:RowVector<StorageType>) throws -> RowVector<StorageType>
 {
-    let result = RowVector<StorageType>(cols: left.shape[0])
+    let result = RowVector<StorageType>(cols: left.shape[1])
     try add(left: left, right: right, result: result)
     
     return result
@@ -177,7 +176,7 @@ public func +<StorageType:Storage where StorageType.ElementType:NumericType>
 public func +<StorageType:Storage where StorageType.ElementType:NumericType>
     (left:ColumnVector<StorageType>, right:ColumnVector<StorageType>) throws -> ColumnVector<StorageType>
 {
-    let result = ColumnVector<StorageType>(rows: left.shape[1])
+    let result = ColumnVector<StorageType>(rows: left.shape[0])
     try add(left: left, right: right, result: result)
     
     return result
@@ -493,8 +492,12 @@ public func *<StorageType:Storage where StorageType.ElementType:NumericType>
 }
 
 public func *<StorageType:Storage where StorageType.ElementType:NumericType>
-    (left:Matrix<StorageType>, right:ColumnVector<StorageType>) -> Tensor<StorageType>
+    (left:Matrix<StorageType>, right:ColumnVector<StorageType>) throws -> Tensor<StorageType>
 {
+    if left.shape[0] != right.shape[0] {
+        throw TensorError.SizeMismatch(lhs: left.shape, rhs: right.shape)
+    }
+    
     let result = Matrix<StorageType>(shape: left.shape)
     mul(left: left, right: right, result: result)
     
@@ -550,60 +553,54 @@ public func dot<StorageType:Storage where StorageType.ElementType:NumericType>
 public func dot<StorageType:Storage where StorageType.ElementType:NumericType>
     (left left:Vector<StorageType>, right:Vector<StorageType>) throws -> StorageType.ElementType
 {
-    if right.shape.count < 2 {
-        throw TensorError.SizeMismatch(lhs: left.shape, rhs: right.shape)
-    }
-    
-    if left.shape[0] != right.shape[1] {
+    if left.shape.elements != right.shape.elements {
         throw TensorError.SizeMismatch(lhs: left.shape, rhs: right.shape)
     }
     
     var result:StorageType.ElementType = 0
     
-    // per row
-    for i in 0..<left.shape[0] {
-        // per column
-        for j in 0..<right.shape[1] {
-            result = result + left[i]*right[0, j]
-        }
-    }
+    let indexLeft = left.storageIndices()
+    let indexRight = right.storageIndices()
     
+    for (l, r) in Zip2Sequence(GeneratorSequence(indexLeft), GeneratorSequence(indexRight)) {
+        result = result + left.storage[l]*right.storage[r]
+    }
+
     return result
 }
 
 // transform: 1xn * nx1 -> 1
-public func dot<StorageType:Storage where StorageType.ElementType:NumericType>
-    (left left:RowVector<StorageType>, right:ColumnVector<StorageType>) throws -> StorageType.ElementType
-{
-    if left.shape[0] != right.shape[1] {
-        throw TensorError.SizeMismatch(lhs: left.shape, rhs: right.shape)
-    }
-    
-    var result:StorageType.ElementType = 0
-
-    // per row
-    for i in 0..<left.shape[0] {
-        // per column
-        for j in 0..<right.shape[1] {
-            result = result + left[i]*right[0, j]
-        }
-    }
-    
-    return result
-}
+//public func dot<StorageType:Storage where StorageType.ElementType:NumericType>
+//    (left left:RowVector<StorageType>, right:ColumnVector<StorageType>) throws -> StorageType.ElementType
+//{
+//    if left.shape[0] != right.shape[1] {
+//        throw TensorError.SizeMismatch(lhs: left.shape, rhs: right.shape)
+//    }
+//    
+//    var result:StorageType.ElementType = 0
+//
+//    // per row
+//    for i in 0..<left.shape[0] {
+//        // per column
+//        for j in 0..<right.shape[1] {
+//            result = result + left[i]*right[0, j]
+//        }
+//    }
+//    
+//    return result
+//}
 
 // dot product not defined for: nx1 * 1xn -> nxn
-public func dot<StorageType:Storage where StorageType.ElementType:NumericType>
-    (left left:ColumnVector<StorageType>, right:RowVector<StorageType>) throws -> StorageType.ElementType
-{
-    throw TensorError.SizeMismatch(lhs: left.shape, rhs: right.shape)
-}
+//public func dot<StorageType:Storage where StorageType.ElementType:NumericType>
+//    (left left:ColumnVector<StorageType>, right:RowVector<StorageType>) throws -> StorageType.ElementType
+//{
+//    throw TensorError.SizeMismatch(lhs: left.shape, rhs: right.shape)
+//}
 
 // transform: nxm * mx1 -> nx1
 public func dot<StorageType:Storage where StorageType.ElementType:NumericType>
     (left left:Matrix<StorageType>, right:ColumnVector<StorageType>, result:ColumnVector<StorageType>) throws
 {
-    print("\(left.shape[1]), \(right.shape[0])")
     if left.shape[1] != right.shape[0] {
         throw TensorError.SizeMismatch(lhs: left.shape, rhs: right.shape)
     }
@@ -638,13 +635,13 @@ public func dot<StorageType:Storage where StorageType.ElementType:NumericType>
     }
 }
 
-public func •<StorageType:Storage where StorageType.ElementType:NumericType>
+public func ⋅<StorageType:Storage where StorageType.ElementType:NumericType>
     (left:RowVector<StorageType>, right:ColumnVector<StorageType>) throws -> StorageType.ElementType
 {
     return try dot(left: left, right: right)
 }
 
-public func •<StorageType:Storage where StorageType.ElementType:NumericType>
+public func ⋅<StorageType:Storage where StorageType.ElementType:NumericType>
     (left:Matrix<StorageType>, right:ColumnVector<StorageType>) throws -> ColumnVector<StorageType>
 {
     let result = ColumnVector<StorageType>(rows: left.shape[0])
@@ -668,12 +665,15 @@ public func •<StorageType:Storage where StorageType.ElementType:NumericType>
 public func outer<StorageType:Storage where StorageType.ElementType:NumericType>
     (left left:Vector<StorageType>, right:Vector<StorageType>, result:Tensor<StorageType>)
 {
-    assert(left.shape[0] == result.shape[0])
-    assert(right.shape[0] == result.shape[1])
+    let indexLeft = left.storageIndices()
+    let indexRight = right.storageIndices()
+    let indexResult = result.storageIndices()
     
-    for i in 0..<result.shape[0] {
-        for j in 0..<result.shape[1] {
-            result[i, j] = left[i]*right[j]
+    var o = GeneratorSequence(indexResult)
+    for l in GeneratorSequence(indexLeft) {
+        for r in GeneratorSequence(indexRight ){
+            let pos = o.next()!
+            result.storage[pos] = left.storage[l]*right.storage[r]
         }
     }
 }
@@ -681,7 +681,7 @@ public func outer<StorageType:Storage where StorageType.ElementType:NumericType>
 public func ⨯<StorageType:Storage where StorageType.ElementType:NumericType>
     (left:Vector<StorageType>, right:Vector<StorageType>) -> Matrix<StorageType>
 {
-    let result = Matrix<StorageType>(rows: left.shape[0], cols: right.shape[0])
+    let result = Matrix<StorageType>(rows: left.shape.elements, cols: right.shape.elements)
     outer(left: left, right: right, result: result)
     return result
 }
