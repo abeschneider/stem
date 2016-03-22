@@ -70,6 +70,6 @@ let v14 = ColVec([1, 1, 1])
 let v15 = try m1⊙v14
 
 let m2 = Mat([[1, 2, 3], [1, 2, 3]])
-let m3 = try m1
+let m3 = try m1⊙m2
 print("\(m3)")
 

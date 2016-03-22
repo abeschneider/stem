@@ -688,7 +688,7 @@ public func ⊗<StorageType:Storage where StorageType.ElementType:NumericType>
 public func ⊗<StorageType:Storage where StorageType.ElementType:NumericType>
     (left:ColumnVector<StorageType>, right:RowVector<StorageType>) -> Matrix<StorageType>
 {
-    let result = Matrix<StorageType>(rows: left.shape[0], cols: right.shape[0])
+    let result = Matrix<StorageType>(rows: left.shape[0], cols: right.shape[1])
     outer(left: left, right: right, result: result)
     return result
 }

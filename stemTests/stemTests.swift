@@ -719,7 +719,7 @@ class stemTests: XCTestCase {
         let m = Matrix<NativeStorage<Double>>([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
         let v = ColumnVector<NativeStorage<Double>>([1, 2, 3])
         
-        let result = try! m⋅v
+        let result = try! m⊙v
         
         let expected = Vector<NativeStorage<Double>>([1, 2, 3])
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
@@ -730,7 +730,7 @@ class stemTests: XCTestCase {
         let v2 = RowVector<NativeStorage<Double>>([2, 2, 2, 2])
         let v3 = try! v1+v1
 
-        let result = try! v2⋅v3
+        let result = try! v2⊙v3
         XCTAssertEqual(result, 40)
     }
     
@@ -748,15 +748,14 @@ class stemTests: XCTestCase {
     func testOuterProduct2() {
         let v1 = ColumnVector<NativeStorage<Double>>([1, 2, 3, 4])
         let v2 = RowVector<NativeStorage<Double>>([2, 2, 2, 2])
-        let v3 = try! v1+v1
+        let result = try! v1⊗v2
         
         let expected = Matrix<NativeStorage<Double>>([
-            [  4,   8,  12,  16],
-            [  4,   8,  12,  16],
-            [  4,   8,  12,  16],
-            [  4,   8,  12,  16]])
+            [  2,   2,  2,  2],
+            [  4,   4,  4,  4],
+            [  6,   6,  6,  6],
+            [  8,   8,  8,  8]])
         
-        let result = try! v2⨯v3
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
     }
     
