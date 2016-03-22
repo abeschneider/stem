@@ -175,7 +175,7 @@ class LinearGradient<S:Storage>: Gradient, Shapeable {
         iadd(left: gradBias, right: gradOutput)
         
         // gradInput! = weight*gradOutput
-        let tmp:Vector<StorageType> = try gradWeight⋅gradOutput
+        let tmp:Vector<StorageType> = try gradWeight⊙gradOutput
         iadd(left: self.gradInput! as! Vector<StorageType>, right: tmp)
         
         return self.gradInput! as! Vector

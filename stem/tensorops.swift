@@ -9,8 +9,8 @@
 import Foundation
 
 infix operator ** { associativity left precedence 200 }
-infix operator ⨯ {associativity left precedence 100 }
-infix operator ⋅ {associativity left precedence 100 }
+infix operator ⊗ {associativity left precedence 100 }
+infix operator ⊙ {associativity left precedence 100 }
 
 func elementwiseBinaryOp<StorageType:Storage>
     (left:Tensor<StorageType>, _ right:Tensor<StorageType>, result:Tensor<StorageType>,
@@ -635,13 +635,13 @@ public func dot<StorageType:Storage where StorageType.ElementType:NumericType>
     }
 }
 
-public func ⋅<StorageType:Storage where StorageType.ElementType:NumericType>
+public func ⊙<StorageType:Storage where StorageType.ElementType:NumericType>
     (left:RowVector<StorageType>, right:ColumnVector<StorageType>) throws -> StorageType.ElementType
 {
     return try dot(left: left, right: right)
 }
 
-public func ⋅<StorageType:Storage where StorageType.ElementType:NumericType>
+public func ⊙<StorageType:Storage where StorageType.ElementType:NumericType>
     (left:Matrix<StorageType>, right:ColumnVector<StorageType>) throws -> ColumnVector<StorageType>
 {
     let result = ColumnVector<StorageType>(rows: left.shape[0])
@@ -649,14 +649,13 @@ public func ⋅<StorageType:Storage where StorageType.ElementType:NumericType>
     return result
 }
 
-// not expected behavior (should be matrix multiplication)
-//public func *<StorageType:Storage where StorageType.ElementType:NumericType>
-//    (left:Matrix<StorageType>, right:Matrix<StorageType>) -> Vector<StorageType>
-//{
-//    let result = Vector<StorageType>(rows: right.shape[0])
-//    dot(left: left, right: right, result: result)
-//    return result
-//}
+public func ⊙<StorageType:Storage where StorageType.ElementType:NumericType>
+    (left:Matrix<StorageType>, right:Matrix<StorageType>) throws -> Matrix<StorageType>
+{
+    let result = Matrix<StorageType>(rows: left.shape[0], cols: right.shape[1])
+    try dot(left: left, right: right, result: result)
+    return result
+}
 
 //
 // outer product
@@ -678,7 +677,7 @@ public func outer<StorageType:Storage where StorageType.ElementType:NumericType>
     }
 }
 
-public func ⨯<StorageType:Storage where StorageType.ElementType:NumericType>
+public func ⊗<StorageType:Storage where StorageType.ElementType:NumericType>
     (left:Vector<StorageType>, right:Vector<StorageType>) -> Matrix<StorageType>
 {
     let result = Matrix<StorageType>(rows: left.shape.elements, cols: right.shape.elements)
@@ -686,7 +685,7 @@ public func ⨯<StorageType:Storage where StorageType.ElementType:NumericType>
     return result
 }
 
-public func ⨯<StorageType:Storage where StorageType.ElementType:NumericType>
+public func ⊗<StorageType:Storage where StorageType.ElementType:NumericType>
     (left:ColumnVector<StorageType>, right:RowVector<StorageType>) -> Matrix<StorageType>
 {
     let result = Matrix<StorageType>(rows: left.shape[0], cols: right.shape[0])
