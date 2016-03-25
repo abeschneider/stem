@@ -704,7 +704,7 @@ class stemTests: XCTestCase {
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
     }
     
-    func testDotProduct1() {
+    func testDotProductVectorVector1() {
         let m = Matrix<NativeStorage<Double>>([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
         let v = ColumnVector<NativeStorage<Double>>([1, 2, 3])
         
@@ -715,7 +715,16 @@ class stemTests: XCTestCase {
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
     }
     
-    func testDotProduct2() {
+    func testDotProductVectorVector2() {
+        let v1 = ColumnVector<NativeStorage<Double>>([1, 2, 3, 4])
+        let v2 = RowVector<NativeStorage<Double>>([2, 2, 2, 2])
+        let v3 = try! v1+v1
+        
+        let result = try! v2⊙v3
+        XCTAssertEqual(result, 40)
+    }
+    
+    func testDotProductMatrixVector() {
         let m = Matrix<NativeStorage<Double>>([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
         let v = ColumnVector<NativeStorage<Double>>([1, 2, 3])
         
@@ -725,13 +734,12 @@ class stemTests: XCTestCase {
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
     }
     
-    func testDotProduct3() {
-        let v1 = ColumnVector<NativeStorage<Double>>([1, 2, 3, 4])
-        let v2 = RowVector<NativeStorage<Double>>([2, 2, 2, 2])
-        let v3 = try! v1+v1
-
-        let result = try! v2⊙v3
-        XCTAssertEqual(result, 40)
+    func testDotProductMatrixMatrix() {
+        let m = Matrix<NativeStorage<Double>>([[1, 2, 3], [3, 4, 5]])
+        let result = try! m⊙m.transpose()
+        
+        let expected = Matrix<NativeStorage<Double>>([[14, 26], [26, 50]])
+        XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
     }
     
     func testOuterProduct1() {

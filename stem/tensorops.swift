@@ -626,12 +626,24 @@ public func dot<StorageType:Storage where StorageType.ElementType:NumericType>
     }
     
     // NxM x MxK -> NxK
-    for n in 0..<left.shape[0] {
-        for m in 0..<left.shape[1] {
-            for k in 0..<right.shape[1] {
-                result[n, k] = result[n, k] + left[n, m]*right[m, k]
-            }
-        }
+//    for n in 0..<left.shape[0] {
+//        for m in 0..<right.shape[0] {
+//            for k in 0..<right.shape[1] {
+//                result[n, k] = result[n, k] + left[n, m]*right[m, k]
+//            }
+//        }
+//    }
+//    for n in 0..<left.shape[0] {
+//        for m in 0..<right.shape[1] {
+//            let value:StorageType.ElementType = Vector<StorageType>(left[n, 0..<left.shape[1]]) ⊙ Vector<StorageType>(right[0..<right.shape[0], m])
+//            result[n, m] = value
+//        }
+//    }
+    
+    let result = Matrix<StorageType>(rows: left.shape[0], cols: right.shape[1])
+    for m in 0..<right.shape[1] {
+//        result[0..<left.shape[0], m] = try left⊙ColumnVector<StorageType>(right[0..<right.shape[0], m])
+        try dot(left: left, right: Vector<StorageType>(right[0..<right.shape[0], m]), result: result[0..<left.shape[0], m])
     }
 }
 
@@ -649,11 +661,22 @@ public func ⊙<StorageType:Storage where StorageType.ElementType:NumericType>
     return result
 }
 
+// NxM * MxK -> NxK
 public func ⊙<StorageType:Storage where StorageType.ElementType:NumericType>
     (left:Matrix<StorageType>, right:Matrix<StorageType>) throws -> Matrix<StorageType>
 {
     let result = Matrix<StorageType>(rows: left.shape[0], cols: right.shape[1])
-    try dot(left: left, right: right, result: result)
+    
+    for n in 0..<left.shape[0] {
+        for m in 0..<left.shape[1] {
+            for k in 0..<right.shape[1] {
+                result[n, k] = result[n, k] + left[n, m]*right[m, k]
+            }
+        }
+    }
+//    for m in 0..<right.shape[1] {
+//        try dot(left: left, right: right[0..<right.shape[0], m], result: result[0..<left.shape[0], m])
+//    }
     return result
 }
 

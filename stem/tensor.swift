@@ -322,6 +322,21 @@ extension Tensor: CustomStringConvertible {
     }
 }
 
+func copy<StorageType:Storage>(from from:[[StorageType.ElementType]], to:Matrix<StorageType>) {
+//    assert(to.shape == from.shape)
+
+    var toIndices = to.storageIndices()
+    for i in 0..<from.count {
+        for j in 0..<from[i].count {
+            to.storage[toIndices.next()!] = from[i][j]
+        }
+    }
+//    let zippedIndices = zip(from.storageIndices(), to.storageIndices())
+//    for (i, j) in zippedIndices {
+//        to.storage[j] = from.storage[i]
+//    }
+}
+
 func copy<StorageType:Storage>(from from:Tensor<StorageType>, to:Tensor<StorageType>) {
     assert(to.shape == from.shape)
     
