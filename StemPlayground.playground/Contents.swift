@@ -86,6 +86,11 @@ print("\(vr2)")
 m2[0..<2, 1..<3] = Mat([[1, 1], [1, 1]])
 print("\(m2)")
 
+print("\(m2[all, 0])")
+
+print("\(m2[all, 1])")
+
+print("\(m2[all, 2])")
 
 //: Matrix operations
 //: -----------------
@@ -97,4 +102,3 @@ let v15 = try m1⊙v14
 let m3 = Mat([[1, 2, 3], [1, 2, 3]])
 let m4 = try m1⊙m3.transpose()
 print("\(m4)")
-

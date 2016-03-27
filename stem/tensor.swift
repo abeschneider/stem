@@ -41,14 +41,16 @@ extension Range : TensorIndex {
     }
 }
 
-public struct All : TensorIndex {
-    public var TensorRange: Range<Int> {
-        get {
-//            return Range<Int>(start: 0, end: NSIntegerMax)
-            return 0..<0
-        }
-    }
-}
+//public struct All : TensorIndex {
+//    public var TensorRange: Range<Int> {
+//        get {
+////            return Range<Int>(start: 0, end: NSIntegerMax)
+//            return 0..<0
+//        }
+//    }
+//}
+
+public let all:Range = 0..<0
 
 public struct TensorStorageIndex<StorageType:Storage>: GeneratorType {
     var tensor:Tensor<StorageType>
@@ -167,8 +169,15 @@ public class Tensor<StorageType:Storage> {
         offset = 0
         stride = tensor.stride
 
-        let viewShape = Extent(window.map { $0.last! - $0.first! + 1 })
-        view = ViewType(shape: viewShape, offset: window.map { $0.first! })
+        let viewShape = Extent(window.enumerate().map {
+            if $0.1.first == nil || $0.1.last == nil {
+                return tensor.shape[$0.0]
+            }
+            
+            return $0.1.last! - $0.1.first! + 1
+        })
+        
+        view = ViewType(shape: viewShape, offset: window.map { $0.first != nil ? $0.first! : 0})
         dimIndex = (0..<tensor.internalShape.count).map { tensor.internalShape.count-$0-1 }
         transposed = false
     }
@@ -331,10 +340,6 @@ func copy<StorageType:Storage>(from from:[[StorageType.ElementType]], to:Matrix<
             to.storage[toIndices.next()!] = from[i][j]
         }
     }
-//    let zippedIndices = zip(from.storageIndices(), to.storageIndices())
-//    for (i, j) in zippedIndices {
-//        to.storage[j] = from.storage[i]
-//    }
 }
 
 func copy<StorageType:Storage>(from from:Tensor<StorageType>, to:Tensor<StorageType>) {

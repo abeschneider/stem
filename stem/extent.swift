@@ -25,19 +25,19 @@ public struct Extent: CollectionType {
     public var count:Int { return values.count }
     public var dims:[Int] { return values }
     
-    init(_ ex: Int...) {
+    public init(_ ex: Int...) {
         values = ex
         elements = values.reduce(1, combine: *)
         span = (values.map { Int($0 > 1) }).reduce(0, combine: +)
     }
     
-    init(_ dims:[Int]) {
+    public init(_ dims:[Int]) {
         values = dims
         elements = values.reduce(1,combine: *)
         span = (values.map { Int($0 > 1) }).reduce(0, combine: +)
     }
     
-    init(_ extent:Extent) {
+    public init(_ extent:Extent) {
         values = extent.values
         elements = values.reduce(1,combine: *)
         span = (values.map { Int($0 > 1) }).reduce(0, combine: +)
@@ -73,7 +73,7 @@ public struct Extent: CollectionType {
         }
     }
     
-    func max() -> Int {
+    public func max() -> Int {
         var bestValue = values[0]
         var bestIndex = 0
         

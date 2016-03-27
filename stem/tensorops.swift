@@ -509,9 +509,7 @@ public func *<StorageType:Storage where StorageType.ElementType:NumericType>
 {
     let result = Tensor<StorageType>(shape: right.shape)
     mul(left: left, right: right, result: result)
-//    for i in right.storageIndices() {
-//        result.storage[i] = right.storage[i]*left
-//    }
+
     return result
 }
 
@@ -520,9 +518,7 @@ public func *<StorageType:Storage where StorageType.ElementType:NumericType>
 {
     let result = Tensor<StorageType>(shape: left.shape)
     mul(left: left, right: right, result: result)
-//    for i in left.storageIndices() {
-//        result.storage[i] = left.storage[i]*right
-//    }
+
     return result
 }
 
@@ -568,34 +564,6 @@ public func dot<StorageType:Storage where StorageType.ElementType:NumericType>
 
     return result
 }
-
-// transform: 1xn * nx1 -> 1
-//public func dot<StorageType:Storage where StorageType.ElementType:NumericType>
-//    (left left:RowVector<StorageType>, right:ColumnVector<StorageType>) throws -> StorageType.ElementType
-//{
-//    if left.shape[0] != right.shape[1] {
-//        throw TensorError.SizeMismatch(lhs: left.shape, rhs: right.shape)
-//    }
-//    
-//    var result:StorageType.ElementType = 0
-//
-//    // per row
-//    for i in 0..<left.shape[0] {
-//        // per column
-//        for j in 0..<right.shape[1] {
-//            result = result + left[i]*right[0, j]
-//        }
-//    }
-//    
-//    return result
-//}
-
-// dot product not defined for: nx1 * 1xn -> nxn
-//public func dot<StorageType:Storage where StorageType.ElementType:NumericType>
-//    (left left:ColumnVector<StorageType>, right:RowVector<StorageType>) throws -> StorageType.ElementType
-//{
-//    throw TensorError.SizeMismatch(lhs: left.shape, rhs: right.shape)
-//}
 
 // transform: nxm * mx1 -> nx1
 public func dot<StorageType:Storage where StorageType.ElementType:NumericType>

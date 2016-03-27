@@ -297,6 +297,24 @@ class stemTests: XCTestCase {
         XCTAssertEqual(subtensor.shape.dims, [1, 5])
     }
     
+    func testStorageIndex4() {
+        let t = Tensor<NativeStorage<Double>>(shape: Extent(2, 3))
+        let sub1 = t[0, all]
+        let sub2 = t[all, 0]
+        
+        XCTAssertEqual(sub1.shape[1], 3)
+        XCTAssertEqual(sub2.shape[0], 2)
+    }
+    
+    func testStorageIndex5() {
+        let m = Matrix<NativeStorage<Double>>(rows: 2, cols: 3)
+        let sub1 = m[0, all]
+        let sub2 = m[all, 0]
+        
+        XCTAssertEqual(sub1.shape[1], 3)
+        XCTAssertEqual(sub2.shape[0], 2)
+    }
+    
     func testCreateVector() {
         let array = (0..<20).map { Double($0) }
         let v = Vector<NativeStorage<Double>>(array)
