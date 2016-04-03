@@ -324,6 +324,15 @@ class stemTests: XCTestCase {
         }
     }
     
+    func testCreateIntegerVector() {
+        let array = (0..<20).map { Int($0) }
+        let v = Vector<NativeStorage<Int>>(array)
+        
+        for i in 0..<v.shape[0] {
+            XCTAssertEqual(v[i], array[i])
+        }
+    }
+    
     func testCreateVectorFromMatrix() {
         let array = (0..<15).map { Double($0) }
         let tensor = Tensor<NativeStorage<Double>>(array: array, shape: Extent(3, 5))
