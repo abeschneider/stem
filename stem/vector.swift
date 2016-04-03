@@ -17,11 +17,10 @@ Matrix).
 
 // can be either row or column vector
 public class Vector<StorageType:Storage>: Tensor<StorageType> {
-    public init(_ array:[StorageType.ElementType], axis:Int=0) { //, transposed:Bool=false) {
+    public init(_ array:[StorageType.ElementType], axis:Int=0) {
         var dims = [Int](count: axis+1, repeatedValue: 1)
         dims[axis] = array.count
         super.init(array: array, shape: Extent(dims))
-//        self.transposed = transposed
     }
     
     public init(_ tensor:Tensor<StorageType>, dimIndex:[Int]?=nil, view:StorageView<StorageType>?=nil) {
@@ -39,7 +38,6 @@ public class Vector<StorageType:Storage>: Tensor<StorageType> {
     
     public init(cols:Int) {
         super.init(shape: Extent(cols))
-        transposed = true
     }
     
     public override init(storage:StorageType, shape:Extent, view:StorageView<StorageType>?=nil, offset:Int?=nil) {
@@ -58,7 +56,7 @@ public class Vector<StorageType:Storage>: Tensor<StorageType> {
 // constrained to be just a column vector
 public class ColumnVector<StorageType:Storage>: Vector<StorageType> {
     public init(_ array:[StorageType.ElementType]) {
-        super.init(array, axis: 0) //, transposed: false)
+        super.init(array, axis: 0)
     }
     
     public override init(_ tensor:Tensor<StorageType>, dimIndex:[Int]?=nil, view:StorageView<StorageType>?=nil) {
@@ -75,10 +73,6 @@ public class ColumnVector<StorageType:Storage>: Vector<StorageType> {
         super.init(rows: rows)
     }
     
-//    public override init(storage:StorageType, shape:Extent, view:StorageView<StorageType>?=nil, offset:Int?=nil) {
-//        super.init(storage: storage, shape: shape, view: view, offset: offset)
-//    }
-    
     public override func transpose() -> RowVector<StorageType> {
         let newDimIndex = Array(dimIndex.reverse())
         let newShape = Extent(view.shape.reverse())
@@ -91,7 +85,7 @@ public class ColumnVector<StorageType:Storage>: Vector<StorageType> {
 // constrained to be just a row vector
 public class RowVector<StorageType:Storage>: Vector<StorageType> {
     public init(_ array:[StorageType.ElementType]) {
-        super.init(array, axis: 1) //, transposed: true)
+        super.init(array, axis: 1)
     }
     
     public override init(_ tensor:Tensor<StorageType>, dimIndex:[Int]?=nil, view:StorageView<StorageType>?=nil) {
@@ -102,7 +96,6 @@ public class RowVector<StorageType:Storage>: Vector<StorageType> {
         assert(tensor.shape[0] > 0)
         
         super.init(tensor)
-        transposed = true
     }
     
     public override init(_ vector:Vector<StorageType>, dimIndex:[Int]?=nil, view:StorageView<StorageType>?=nil) {

@@ -38,17 +38,6 @@ public class CBlasStorage<T:NumericType>: Storage {
         }
     }
 
-
-    
-//    public required init<OtherStorageType:Storage>(storage:OtherStorageType) {
-//        // need to allocate new memory
-//        array = SharedArray<ElementType>(count: storage.size, repeatedValue: ElementType(0))
-//        for i in 0..<storage.size {
-//            let value = storage[i]
-//            array[i] = unsafeBitCast(value, ElementType.self)
-//        }
-//    }
-    
     public subscript(index:Int) -> T {
         get { return array[index] }
         set { array[index] = newValue }
@@ -72,12 +61,13 @@ func add(
     left left:Vector<CBlasStorage<Double>>,
     right:Vector<CBlasStorage<Double>>,
     result:Vector<CBlasStorage<Double>>,
-    alpha:Double=1.0) throws
+    alpha:Double=1.0)
 {
 //    assert(left.shape[0] == right.shape[0])
-    if left.shape[0] != right.shape[0] {
-        throw TensorError.SizeMismatch(lhs: left.shape, rhs: right.shape)
-    }
+//    if left.shape[0] != right.shape[0] {
+//        throw TensorError.SizeMismatch(lhs: left.shape, rhs: right.shape)
+//    }
+    precondition(left.shape[0] == right.shape[0], "Number of rows must match")
 
     let v1Ptr = UnsafePointer<Double>(left.storage.array.memory) + left.calculateOffset()
     let v2Ptr = UnsafePointer<Double>(right.storage.array.memory) + right.calculateOffset()
@@ -96,13 +86,14 @@ func add(
     left left:Matrix<CBlasStorage<Double>>,
     right:ColumnVector<CBlasStorage<Double>>,
     result:Matrix<CBlasStorage<Double>>,
-    alpha:Double=1.0) throws
+    alpha:Double=1.0)
 {
     // NxM + N
 //    assert(left.shape[0] == right.shape[0])
-    if left.shape[0] != right.shape[0] {
-        throw TensorError.SizeMismatch(lhs: left.shape, rhs: right.shape)
-    }
+    precondition(left.shape[0] == right.shape[0], "Number of rows must match")
+//    if left.shape[0] != right.shape[0] {
+//        throw TensorError.SizeMismatch(lhs: left.shape, rhs: right.shape)
+//    }
     
     let numElements = Int32(right.shape.elements)
     
@@ -125,12 +116,13 @@ func add(
     left left:Matrix<CBlasStorage<Double>>,
     right:RowVector<CBlasStorage<Double>>,
     result:Matrix<CBlasStorage<Double>>,
-    alpha:Double=1.0) throws
+    alpha:Double=1.0)
 {
     // NxM + 1xM
-    if left.shape[1] != right.shape[1] {
-        throw TensorError.SizeMismatch(lhs: left.shape, rhs: right.shape)
-    }
+//    if left.shape[1] != right.shape[1] {
+//        throw TensorError.SizeMismatch(lhs: left.shape, rhs: right.shape)
+//    }
+    precondition(left.shape[1] == right.shape[1], "Number of columns must match")
     
     let numElements = Int32(right.shape.elements)
     
@@ -152,12 +144,13 @@ func add(
 func iadd(
     left left:Matrix<CBlasStorage<Double>>,
     right:RowVector<CBlasStorage<Double>>,
-    alpha:Double=1.0) throws
+    alpha:Double=1.0)
 {
     // NxM + 1xM
-    if left.shape[1] != right.shape[1] {
-        throw TensorError.SizeMismatch(lhs: left.shape, rhs: right.shape)
-    }
+//    if left.shape[1] != right.shape[1] {
+//        throw TensorError.SizeMismatch(lhs: left.shape, rhs: right.shape)
+//    }
+    precondition(left.shape[1] == right.shape[1], "Number of columns must match")
     
     let numElements = Int32(right.shape.elements)
     
@@ -175,12 +168,13 @@ func iadd(
 func iadd(
     left left:Matrix<CBlasStorage<Double>>,
     right:ColumnVector<CBlasStorage<Double>>,
-    alpha:Double=1.0) throws
+    alpha:Double=1.0)
 {
     // NxM + Nx1
-    if left.shape[0] != right.shape[0] {
-        throw TensorError.SizeMismatch(lhs: left.shape, rhs: right.shape)
-    }
+//    if left.shape[0] != right.shape[0] {
+//        throw TensorError.SizeMismatch(lhs: left.shape, rhs: right.shape)
+//    }
+    precondition(left.shape[0] == right.shape[0], "Number of rows must match")
     
     let numElements = Int32(right.shape.elements)
     
@@ -197,10 +191,10 @@ func iadd(
 
 func +(
     left:Vector<CBlasStorage<Double>>,
-    right:Vector<CBlasStorage<Double>>) throws -> Vector<CBlasStorage<Double>>
+    right:Vector<CBlasStorage<Double>>) -> Vector<CBlasStorage<Double>>
 {
     let result = Vector<CBlasStorage<Double>>(rows: left.shape[0])
-    try! add(left: left, right: right, result: result)
+    add(left: left, right: right, result: result)
     
     return result
 }
@@ -210,12 +204,13 @@ func dot(
     right:Vector<CBlasStorage<Double>>,
     result:Vector<CBlasStorage<Double>>,
     alpha:Double=1.0,
-    beta:Double=1.0)
+    beta:Double=1.0,
+    leftTransposed:Bool=false)
 {
     assert(left.shape[1] == right.shape[0])
     
     cblas_dgemv(CblasColMajor,
-                left.transposed ? CblasTrans : CblasNoTrans,
+                leftTransposed ? CblasTrans : CblasNoTrans,
                 Int32(left.shape[0]),
                 Int32(left.shape[1]),
                 alpha,
@@ -226,6 +221,23 @@ func dot(
                 beta,
                 UnsafeMutablePointer<Double>(result.storage.array.memory) + result.calculateOffset(),
                 Int32(result.stride[0]))
+}
+
+// TODO: completely untested
+func dot(
+    left left:Matrix<CBlasStorage<Double>>,
+    right:RowVector<CBlasStorage<Double>>,
+    result:ColumnVector<CBlasStorage<Double>>)
+{
+    return dot(left: left, right: right, result: result, alpha: 1.0, beta: 1.0, leftTransposed: false)
+}
+
+func dot(
+    left left:Matrix<CBlasStorage<Double>>,
+         right:ColumnVector<CBlasStorage<Double>>,
+         result:RowVector<CBlasStorage<Double>>)
+{
+    return dot(left: left, right: right, result: result, alpha: 1.0, beta: 1.0, leftTransposed: true)
 }
 
 public func outer(

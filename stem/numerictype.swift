@@ -21,7 +21,6 @@ public protocol NumericType: AbsoluteValuable, Comparable, FloatingPointType {
     
     static func pow(value: Self, _ power: Self) -> Self
     
-    
     init(_ v:Float)
     init(_ v:Double)
 }
@@ -36,6 +35,14 @@ public func ^(lhs:Double, rhs:Double) -> Double {
 
 
 extension Float: NumericType {
+    init<StorageType:Storage where StorageType.ElementType == Float>
+        (_ tensor:Tensor<StorageType>)
+    {
+        precondition(tensor.shape.elements == 1, "Can only convert tensors with a single element to a float")
+        
+        self.init(tensor.storage[0])
+    }
+    
     static public func exp(value:Float) -> Float {
         return Foundation.exp(value)
     }
@@ -49,6 +56,14 @@ extension Float: NumericType {
     }
 }
 extension Double: NumericType {
+    init<StorageType:Storage where StorageType.ElementType == Double>
+        (_ tensor:Tensor<StorageType>)
+    {
+        precondition(tensor.shape.elements == 1, "Can only convert tensors with a single element to a float")
+        
+        self.init(tensor.storage[0])
+    }
+    
     static public func exp(value: Double) -> Double {
         return Foundation.exp(value)
     }

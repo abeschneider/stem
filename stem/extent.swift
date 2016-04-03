@@ -8,8 +8,6 @@
 
 import Foundation
 
-//infix operator .. { associativity left precedence 200 }
-
 // TODO: look into adding this to Extent to allow
 // broadcasting (currently directly supported in ops)
 enum ExtentElement {
@@ -33,13 +31,13 @@ public struct Extent: CollectionType {
     
     public init(_ dims:[Int]) {
         values = dims
-        elements = values.reduce(1,combine: *)
+        elements = values.reduce(1, combine: *)
         span = (values.map { Int($0 > 1) }).reduce(0, combine: +)
     }
     
     public init(_ extent:Extent) {
         values = extent.values
-        elements = values.reduce(1,combine: *)
+        elements = values.reduce(1, combine: *)
         span = (values.map { Int($0 > 1) }).reduce(0, combine: +)
     }
     

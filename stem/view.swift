@@ -9,6 +9,7 @@
 import Foundation
 
 public struct StorageView<StorageType:Storage> {
+    // the dimensions of the Tensor
     public var shape:Extent
     
     // offset within storage
