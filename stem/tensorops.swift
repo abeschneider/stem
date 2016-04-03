@@ -757,13 +757,13 @@ public func max<StorageType:Storage where StorageType.ElementType:NumericType>
     }
 }
 
-public func **<StorageType:Storage where StorageType.ElementType:NumericType>
+public func **<StorageType:Storage where StorageType.ElementType:FloatNumericType>
     (tensor:Tensor<StorageType>, power:StorageType.ElementType) -> Tensor<StorageType>
 {
     return pow(tensor, power)
 }
 
-public func pow<StorageType:Storage where StorageType.ElementType:NumericType>
+public func pow<StorageType:Storage where StorageType.ElementType:FloatNumericType>
     (tensor:Tensor<StorageType>, _ power:StorageType.ElementType) -> Tensor<StorageType>
 {
     let result = Tensor<StorageType>(shape: tensor.shape)
@@ -774,7 +774,7 @@ public func pow<StorageType:Storage where StorageType.ElementType:NumericType>
     return result
 }
 
-func exp<StorageType:Storage where StorageType.ElementType:NumericType>
+func exp<StorageType:Storage where StorageType.ElementType:FloatNumericType>
     (tensor:Tensor<StorageType>) -> Tensor<StorageType>
 {
     let result = Tensor<StorageType>(shape: tensor.shape)
@@ -786,7 +786,7 @@ func exp<StorageType:Storage where StorageType.ElementType:NumericType>
 }
 
 
-func norm<StorageType:Storage where StorageType.ElementType:NumericType>
+func norm<StorageType:Storage where StorageType.ElementType:FloatNumericType>
     (tensor:Tensor<StorageType>, axis:Int?=nil) -> StorageType.ElementType
 {
     let p = pow(tensor, StorageType.ElementType(2.0))
