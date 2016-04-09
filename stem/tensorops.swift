@@ -610,7 +610,7 @@ public func ⊙<StorageType:Storage where StorageType.ElementType:NumericType>
     (left:Matrix<StorageType>, right:Matrix<StorageType>) -> Matrix<StorageType>
 {
     let result = Matrix<StorageType>(rows: left.shape[0], cols: right.shape[1])
-    try dot(left: left, right: right, result: result)
+    dot(left: left, right: right, result: result)
     return result
 }
 
@@ -672,18 +672,6 @@ public func isClose<StorageType:Storage where StorageType.ElementType:NumericTyp
     return true
 }
 
-// Misc (move?)
-//public func hist<StorageType:Storage where StorageType.ElementType == Int>
-//    (tensor:Tensor<StorageType>, bins:Int) -> Vector<StorageType>
-//{
-//    let h = Vector<StorageType>(rows: bins)
-//    for i in tensor.storageIndices() {
-//        let value:Int = tensor.storage[i]
-//        h[value] = h[value] + 1
-//    }
-//
-//    return h
-//}
 
 public func hist<StorageType:Storage where StorageType.ElementType == Double>
     (tensor:Tensor<StorageType>, bins:Int) -> Vector<StorageType>
@@ -701,60 +689,73 @@ public func hist<StorageType:Storage where StorageType.ElementType == Double>
     return h
 }
 
-
-// NB: no attempt was made to optimize these, and they need a lot of work to be fully functional
-
-
-// provide two versions of this .. one that returns a scalar and one that returns a Tensor?
-//public func reduce<StorageType:Storage>
-//    (tensor:Tensor<StorageType>, axis:Int) -> Tensor<StorageType>
-//{
-//    var shape = tensor.shape
-//    shape[axis] = 1
-//    var result = Tensor<StorageType>(shape: shape)
-//    
-//}
-
-// axis = nil, means sum everything
-// axis = Int chooses axis to sum along
-public func sum<StorageType:Storage> // where StorageType.ElementType:NumericType>
-    (tensor:Tensor<StorageType>, axis:Int?=nil) -> StorageType.ElementType
+func reduce<StorageType:Storage>(tensor:Tensor<StorageType>,
+            axis:Int,
+            op:(StorageType.ElementType, StorageType.ElementType) -> StorageType.ElementType)
+    -> Tensor<StorageType>
 {
-    if let ax = axis {
-        // need to verify is valid
+    precondition(axis < tensor.shape.count)
+    
+    let reduced:[(index:Int, element:Int)] = tensor.shape
+        .enumerate()
+        .filter { $0.index != axis }
+    
+    let indices = reduced.map { $0.index }
+    let newShape = reduced.map { $0.element }
+    
+    let result = Tensor<StorageType>(shape: Extent(newShape))
+    
+    for i in 0..<tensor.shape[axis] {
+        let oldIndices = GeneratorSequence(IndexGenerator(tensor.shape, dimIndex: indices))
+        let newIndices = GeneratorSequence(IndexGenerator(result.shape))
         
-        var shape = tensor.shape
-        shape[ax] = 1
-        var result = Tensor<StorageType>(shape: shape)
-        assert(false)
-        return 0
-    } else {
-        var total:StorageType.ElementType = 0
-        for i in tensor.storageIndices() {
-            total = total + tensor.storage[i]
+        for (var tensorIndex, resultIndex) in Zip2Sequence(oldIndices, newIndices) {
+            tensorIndex[axis] = i
+            let tensorOffset:Int = tensor.calculateOffset(tensorIndex)
+            
+            let resultOffset:Int = result.calculateOffset(resultIndex)
+            
+            result.storage[resultOffset] = op(result.storage[resultOffset], tensor.storage[tensorOffset])
         }
-        
-        return total
     }
+    
+    return result
+}
+
+func reduce<StorageType:Storage>(tensor:Tensor<StorageType>,
+            op:(StorageType.ElementType, StorageType.ElementType) -> StorageType.ElementType)
+    -> StorageType.ElementType
+{
+    var result:StorageType.ElementType = 0
+    
+    let indices = GeneratorSequence(IndexGenerator(tensor.shape))
+    for index in indices {
+        result = op(result, tensor[index])
+    }
+    
+    return result
+}
+
+public func sum<StorageType:Storage>
+    (tensor:Tensor<StorageType>, axis:Int) -> Tensor<StorageType>
+{
+    return reduce(tensor, axis: axis, op: +)
+}
+
+public func sum<StorageType:Storage>(tensor:Tensor<StorageType>) -> StorageType.ElementType {
+    return reduce(tensor, op: +)
 }
 
 public func max<StorageType:Storage where StorageType.ElementType:NumericType>
-    (tensor:Tensor<StorageType>, axis:Int?=nil) -> StorageType.ElementType
+    (tensor:Tensor<StorageType>, axis:Int) -> Tensor<StorageType>
 {
-    if let ax = axis {
-        // TODO
-        return 0
-    } else {
-        var index = 0
-        var value:StorageType.ElementType?
-        for i in tensor.storageIndices() {
-            if value == nil || tensor.storage[i] > value! {
-                index = i
-                value = tensor.storage[i]
-            }
-        }
-        return value!
-    }
+    return reduce(tensor, axis: axis, op: max)
+}
+
+public func max<StorageType:Storage where StorageType.ElementType:NumericType>
+    (tensor:Tensor<StorageType>) -> StorageType.ElementType
+{
+    return reduce(tensor, op: max)
 }
 
 public func **<StorageType:Storage where StorageType.ElementType:FloatNumericType>
@@ -785,11 +786,33 @@ func exp<StorageType:Storage where StorageType.ElementType:FloatNumericType>
     return result
 }
 
+func sqrt(tensor:TensorType) -> TensorType
+{
+    preconditionFailure()
+}
+
+func sqrt<StorageType:Storage where StorageType.ElementType:FloatNumericType>
+    (tensor:Tensor<StorageType>) -> Tensor<StorageType>
+{
+    let indices = tensor.storageIndices()
+    let result = Tensor<StorageType>(shape: tensor.shape)
+    for index in GeneratorSequence(indices) {
+        result.storage[index] = StorageType.ElementType.sqrt(tensor.storage[index])
+    }
+    
+    return result
+}
+
+func sqrt<StorageType:Storage where StorageType.ElementType:FloatNumericType>
+    (scalar:TensorScalar<StorageType>) -> TensorScalar<StorageType>
+{
+    return TensorScalar<StorageType>(StorageType.ElementType.sqrt(scalar.value))
+}
 
 func norm<StorageType:Storage where StorageType.ElementType:FloatNumericType>
-    (tensor:Tensor<StorageType>, axis:Int?=nil) -> StorageType.ElementType
+    (tensor:Tensor<StorageType>, axis:Int) -> Tensor<StorageType>
 {
     let p = pow(tensor, StorageType.ElementType(2.0))
-    let s:StorageType.ElementType = sum(p, axis: axis)
-    return StorageType.ElementType.sqrt(s)
+    let s = sum(p, axis: axis)
+    return sqrt(s)
 }

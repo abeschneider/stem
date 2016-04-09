@@ -42,9 +42,49 @@ extension Range : TensorIndex {
 
 public let all:Range = 0..<0
 
-// TODO: change design to:
-//  1. make specific version per storage type
-//  2. make a column-major and row-major version
+public struct IndexGenerator: GeneratorType {
+    var indices:[Int]
+    var shape:Extent
+    var dimIndex:[Int]
+
+    public init(_ shape:Extent, dimIndex:[Int]?=nil) {
+        self.shape = shape
+        indices = [Int](count: shape.count, repeatedValue: 0)
+        
+        if let dims = dimIndex {
+            self.dimIndex = dims
+        } else {
+            self.dimIndex = (0..<shape.count).map { $0 }
+        }
+    }
+    
+    public mutating func next() -> [Int]? {
+        if indices[dimIndex[0]] >= shape[dimIndex[0]] {
+            var d:Int = 0
+            
+            // loop until we no longer overflow
+            while d <= shape.count && indices[dimIndex[d]] >= shape[dimIndex[d]] {
+                // at the end, so return no results left
+                if d == dimIndex.count-1 { return nil }
+                
+                // reset current index
+                indices[dimIndex[d]] = 0
+                
+                // increment next offset
+                indices[dimIndex[d+1]] += 1
+                
+                // go to next dimension
+                d += 1
+            }
+        }
+        
+        let value = indices
+        indices[dimIndex[0]] += 1
+        return value
+    }
+}
+
+// TODO: remove, IndexGenerator supersedes this (+ tensor.calculateOffset)
 public struct TensorStorageIndex<StorageType:Storage>: GeneratorType {
     var tensor:Tensor<StorageType>
     var indices:[Int]
@@ -85,7 +125,51 @@ public struct TensorStorageIndex<StorageType:Storage>: GeneratorType {
     }
 }
 
-public class Tensor<StorageType:Storage> {
+public protocol TensorType {
+    var shape:Extent { get }
+}
+
+public class TensorScalar<StorageType:Storage>: TensorType {
+    public var shape:Extent { return Extent(1) }
+    public var value:StorageType.ElementType
+    
+    public init(_ value:StorageType.ElementType) {
+        self.value = value
+    }
+    
+    public subscript(indices:[Int]) -> StorageType.ElementType {
+        get {
+            precondition(indices.count == 1)
+            precondition(indices[0] == 0)
+            return value
+        }
+        set {
+            precondition(indices.count == 1)
+            precondition(indices[0] == 0)
+            value = newValue
+        }
+    }
+    
+    public subscript(indices:Int) -> StorageType.ElementType {
+        get {
+            precondition(indices == 0)
+            return value
+        }
+        set {
+            precondition(indices == 0)
+            value = newValue
+        }
+    }
+}
+
+extension Float {
+    init<StorageType:Storage where StorageType.ElementType:FloatNumericType>(_ scalar:TensorScalar<StorageType>) {
+        // TODO: this is dangerous
+        self.init(scalar.value as! Float)
+    }
+}
+
+public class Tensor<StorageType:Storage>: TensorType {
     public typealias ViewType = StorageView<StorageType>
     
     public var storage:StorageType
@@ -205,7 +289,7 @@ public class Tensor<StorageType:Storage> {
         return (0..<dims).map { dims-$0-1 }
     }
     
-    func calculateOffset() -> Int {
+    public func calculateOffset() -> Int {
         var pos = offset
         for i in 0..<shape.count {
             pos += view.offset[dimIndex[i]]*stride[i]
@@ -214,7 +298,7 @@ public class Tensor<StorageType:Storage> {
         return pos
     }
 
-    func calculateOffset(indices:[Int]) -> Int {
+    public func calculateOffset(indices:[Int]) -> Int {
         var pos = offset
         for i in 0..<indices.count {
             pos += (indices[dimIndex[i]]+view.offset[dimIndex[i]])*stride[i]
@@ -260,11 +344,7 @@ public class Tensor<StorageType:Storage> {
     }
     
     public func reshape(newShape:Extent) -> Tensor {
-        // verify the total number of elements is conserved
-        precondition(newShape.elements == internalShape.elements, "Number of elements must be equal.")
-//        if newShape.elements != internalShape.elements {
-//            throw TensorError.SizeMismatch(lhs: newShape, rhs: internalShape)
-//        }
+        precondition(newShape.elements == internalShape.elements, "Cannot change number of elements in Tensor.")
         
         return Tensor(storage: storage, shape: newShape)
     }

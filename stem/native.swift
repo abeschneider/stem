@@ -12,7 +12,6 @@ public class NativeStorage<T:NumericType>: Storage {
     public typealias ElementType = T
     
     var array:SharedArray<T>
-//    var broadcast:[Bool]
     
     public var size:Int { return array.memory.count }
     
@@ -60,48 +59,3 @@ public class NativeStorage<T:NumericType>: Storage {
         return stride
     }
 }
-
-//public struct NativeIndex<T:NumericType> {
-//    public var offset:Array<Int>
-//    public var shape:Extent
-//    public var overflow:Bool
-//    
-//    public init(_ s:Extent) {
-//        shape = s
-//        overflow = false
-//
-//        // TODO: is there a way to allocate an array without initializing it?
-//        offset = Array<Int>(count:shape.count, repeatedValue: 0)
-//        
-//        var mult = 1
-//        offset[0] = 1
-//        for i in 1..<shape.count {
-//            offset[i] = shape[i]*mult
-//            mult *= shape[i]
-//        }
-//    }
-//}
-//
-//public func +=<T:NumericType>(var index:NativeIndex<T>, size:Int) {
-//    let last = index.shape.count-1
-//    if index.offset[last] >= index.shape[last] {
-//        var d:Int = index.shape.count - size
-//        
-//        // loop until we no longer overflow
-//        while d >= 0 && index.offset[d] >= index.shape[d] {
-//            // at the end, so return no results left
-//            if d == 0 {
-//                index.overflow = true
-//            } else {
-//                // reset current index
-//                index.offset[d] = 0
-//                
-//                // increment next offset
-//                index.offset[d-1] += 1
-//                
-//                // go to next dimension
-//                d -= 1
-//            }
-//        }
-//    }
-//}
