@@ -795,16 +795,36 @@ class stemTests: XCTestCase {
     }
     
     func testNativeVectorSum() {
-        let v = Vector<NativeStorage<Double>>([1, 2, 3, 4, 5, 6, 7, 8, 9])
+        let v = Vector<NativeStorage<Float>>([1, 2, 3, 4, 5, 6, 7, 8, 9])
         let s = sum(v)
         XCTAssertEqual(s, 45.0)
     }
     
+    func testNativeVectorMax() {
+        let v = Vector<NativeStorage<Float>>([5, 1, 3, 2, 6, 10, 0, 42, 5, 2, 1])
+        let s = max(v)
+        XCTAssertEqual(s, 42.0)
+    }
+    
+    func testNativeMatrixSum1() {
+        let v = Matrix<NativeStorage<Float>>([[1, 2, 3, 4], [5, 6, 7, 8]])
+        let s = sum(v, axis: 0)
+        let expected = Vector<NativeStorage<Float>>([6, 8, 10, 12])
+        XCTAssert(isClose(s, expected, eps: 10e-4), "Not close")
+    }
+    
+    func testNativeMatrixSum2() {
+        let v = Matrix<NativeStorage<Float>>([[1, 2, 3, 4], [5, 6, 7, 8]])
+        let s = sum(v, axis: 1)
+        let expected = Vector<NativeStorage<Float>>([10, 26])
+        XCTAssert(isClose(s, expected, eps: 10e-4), "Not close")
+    }
+    
     func testNativeVectorPower() {
-        let v = Vector<NativeStorage<Double>>([1, 2, 3, 4, 5, 6, 7, 8, 9])
+        let v = Vector<NativeStorage<Float>>([1, 2, 3, 4, 5, 6, 7, 8, 9])
         let p = v**2.0
         
-        let expected:[Double] = [1, 4, 9, 16, 25, 36, 49, 64, 81]
+        let expected:[Float] = [1, 4, 9, 16, 25, 36, 49, 64, 81]
         
         var k = 0
         for i in p.storageIndices() {
