@@ -288,7 +288,7 @@ class stemTests: XCTestCase {
             XCTAssertEqual(index, expected[i])
         }
     }
-
+    
     func testStorageIndex1() {
         let array = (0..<20).map { Double($0) }
         let tensor = Tensor<NativeStorage<Double>>(array: array, shape: Extent(2, 10))
@@ -347,6 +347,16 @@ class stemTests: XCTestCase {
         
         XCTAssertEqual(sub1.shape[1], 3)
         XCTAssertEqual(sub2.shape[0], 2)
+    }
+    
+    func testStorageIndex6() {
+        let cube = Tensor<NativeStorage<Double>>(shape: Extent(3, 4, 5))
+        let expected = (0..<cube.shape.elements).map { $0 }
+        
+        for (i, index) in GeneratorSequence(IndexGenerator(cube.shape, order:.ColumnMajor)).enumerate() {
+            let offset = cube.calculateOffset(index)
+            XCTAssertEqual(offset, expected[i])
+        }
     }
     
     func testCreateVector() {

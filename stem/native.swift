@@ -52,8 +52,8 @@ public class NativeStorage<T:NumericType>: Storage {
         var mult = 1
         stride[0] = 1
         for i in 1..<shape.count {
-            stride[i] = shape[i]*mult
-            mult *= shape[i]
+            stride[i] = shape[shape.count-i]*mult
+            mult *= shape[shape.count-i]
         }
         
         return stride
