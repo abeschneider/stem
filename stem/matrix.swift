@@ -20,21 +20,21 @@ public class Matrix<StorageType:Storage>: Tensor<StorageType> {
         }
         
         // copy array
-        var indices = storageIndices()
+        var indices = self.indices()
         
         // TODO: look into simplifying this code
         if (!copyTransposed) {
             for i in 0..<rows {
                 for j in 0..<cols {
-                    let index = indices.next()!
-                    storage[index] = array[i][j]
+                    let offset = calculateOffset(indices.next()!)
+                    storage[offset] = array[i][j]
                 }
             }
         } else {
             for j in 0..<cols {
                 for i in 0..<rows {
-                    let index = indices.next()!
-                    storage[index] = array[i][j]
+                    let offset = calculateOffset(indices.next()!)
+                    storage[offset] = array[i][j]
                 }
             }
         }

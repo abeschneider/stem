@@ -55,8 +55,8 @@ class randomTests: XCTestCase {
         let tensor = Tensor<NativeStorage<Double>>(shape: Extent(size))
         tensor.uniform(rng)
         let h = hist(tensor, bins: bins)
-        for i in h.storageIndices() {
-            XCTAssertGreaterThan(h.storage[i], expected_margin)
+        for i in h.indices() {
+            XCTAssertGreaterThan(h[i], expected_margin)
         }
     }
 

@@ -62,8 +62,8 @@ class stemTests: XCTestCase {
         let expected:[Double] = [11, 12, 21, 22]
         
         var k = 0
-        for i in tensor2.storageIndices() {
-            XCTAssertEqual(tensor2.storage[i], expected[k])
+        for i in tensor2.indices() {
+            XCTAssertEqual(tensor2[i], expected[k])
             k += 1
         }
     }
@@ -91,8 +91,8 @@ class stemTests: XCTestCase {
         let expected:[Double] = [11, 12, 21, 22]
         
         var k = 0
-        for i in tensor2.storageIndices() {
-            XCTAssertEqual(tensor2.storage[i], expected[k])
+        for i in tensor2.indices() {
+            XCTAssertEqual(tensor2[i], expected[k])
             k += 1
         }
     }
@@ -102,20 +102,20 @@ class stemTests: XCTestCase {
 
         // top row
         let tensor2 = tensor1[0, 0..<5]
-        for i in tensor2.storageIndices() {
-            tensor2.storage[i] = 1
+        for i in tensor2.indices() {
+            tensor2[i] = 1
         }
         
         // second column
         let tensor3 = tensor1[0..<3, 1]
-        for i in tensor3.storageIndices() {
-            tensor3.storage[i] = 2
+        for i in tensor3.indices() {
+            tensor3[i] = 2
         }
         
         // lower right area
         let tensor4 = tensor1[1..<3, 2..<5]
-        for i in tensor4.storageIndices() {
-            tensor4.storage[i] = 3
+        for i in tensor4.indices() {
+            tensor4[i] = 3
         }
         
         let expected:[Double] = [1, 2, 1, 1, 1,
@@ -123,8 +123,8 @@ class stemTests: XCTestCase {
                                  0, 2, 3, 3, 3]
         
         var k = 0
-        for i in tensor1.storageIndices() {
-            XCTAssertEqual(tensor1.storage[i], expected[k])
+        for i in tensor1.indices() {
+            XCTAssertEqual(tensor1[i], expected[k])
             k += 1
         }
     }
@@ -134,20 +134,20 @@ class stemTests: XCTestCase {
         
         // top row
         let tensor2 = tensor1[0, 0..<5]
-        for i in tensor2.storageIndices() {
-            tensor2.storage[i] = 1
+        for i in tensor2.indices() {
+            tensor2[i] = 1
         }
         
         // second column
         let tensor3 = tensor1[0..<3, 1]
-        for i in tensor3.storageIndices() {
-            tensor3.storage[i] = 2
+        for i in tensor3.indices() {
+            tensor3[i] = 2
         }
         
         // lower right area
         let tensor4 = tensor1[1..<3, 2..<5]
-        for i in tensor4.storageIndices() {
-            tensor4.storage[i] = 3
+        for i in tensor4.indices() {
+            tensor4[i] = 3
         }
         
         let expected:[Double] = [1, 2, 1, 1, 1,
@@ -155,8 +155,8 @@ class stemTests: XCTestCase {
                                  0, 2, 3, 3, 3]
         
         var k = 0
-        for i in tensor1.storageIndices() {
-            XCTAssertEqual(tensor1.storage[i], expected[k])
+        for i in tensor1.indices() {
+            XCTAssertEqual(tensor1[i], expected[k])
             k += 1
         }
     }
@@ -172,8 +172,8 @@ class stemTests: XCTestCase {
         let expected:[Double] = [0, 5, 1, 6, 2, 7, 3, 8, 4, 9]
         var k = 0
         
-        for i in tensor2.storageIndices() {
-            XCTAssertEqual(tensor2.storage[i], expected[k])
+        for i in tensor2.indices() {
+            XCTAssertEqual(tensor2[i], expected[k])
             k += 1
         }
         
@@ -182,8 +182,8 @@ class stemTests: XCTestCase {
         XCTAssertEqual(tensor3.shape, Extent(2, 5))
         
         k = 0
-        for i in tensor3.storageIndices() {
-            XCTAssertEqual(tensor3.storage[i], array[k])
+        for i in tensor3.indices() {
+            XCTAssertEqual(tensor3[i], array[k])
             k += 1
         }
     }
@@ -199,8 +199,8 @@ class stemTests: XCTestCase {
         let expected:[Double] = [0, 5, 1, 6, 2, 7, 3, 8, 4, 9]
         var k = 0
         
-        for i in tensor2.storageIndices() {
-            XCTAssertEqual(tensor2.storage[i], expected[k])
+        for i in tensor2.indices() {
+            XCTAssertEqual(tensor2[i], expected[k])
             k += 1
         }
     }
@@ -215,8 +215,8 @@ class stemTests: XCTestCase {
 
         // verify contents are still valid
         var k = 0
-        for i in tensor2.storageIndices() {
-            XCTAssertEqual(tensor2.storage[i], array[k])
+        for i in tensor2.indices() {
+            XCTAssertEqual(tensor2[i], array[k])
             k += 1
         }
     }
@@ -234,8 +234,8 @@ class stemTests: XCTestCase {
         
         // verify contents are still valid
         var k = 0
-        for i in tensor2.storageIndices() {
-            XCTAssertEqual(tensor2.storage[i], expected[k])
+        for i in tensor2.indices() {
+            XCTAssertEqual(tensor2[i], expected[k])
             k += 1
         }
     }
@@ -246,13 +246,13 @@ class stemTests: XCTestCase {
         let tensor2 = Tensor<NativeStorage<Double>>(array: array, shape: Extent(5, 10), offset: 50)
         
         var k = 0
-        for i in tensor1.storageIndices() {
-            XCTAssertEqual(tensor1.storage[i], array[k])
+        for i in tensor1.indices() {
+            XCTAssertEqual(tensor1[i], array[k])
             k += 1
         }
         
-        for i in tensor2.storageIndices() {
-            XCTAssertEqual(tensor2.storage[i], array[k])
+        for i in tensor2.indices() {
+            XCTAssertEqual(tensor2[i], array[k])
             k += 1
         }
     }
@@ -260,10 +260,11 @@ class stemTests: XCTestCase {
     func testStorageIndex1() {
         let array = (0..<20).map { Double($0) }
         let tensor = Tensor<NativeStorage<Double>>(array: array, shape: Extent(2, 10))
-        let indices = tensor.storageIndices()
+        let indices = tensor.indices()
         
         for (i, index) in GeneratorSequence(indices).enumerate() {
-            XCTAssertEqual(i, index)
+            let offset = tensor.calculateOffset(index)
+            XCTAssertEqual(i, offset)
         }
     }
     
@@ -271,7 +272,7 @@ class stemTests: XCTestCase {
         let array = (0..<100).map { Double($0) }
         let tensor1 = Tensor<NativeStorage<Double>>(array: array, shape: Extent(10, 10))
         let tensor2 = tensor1[5..<10, 5..<10]
-        var indices = tensor2.storageIndices()
+        var indices = tensor2.indices()
 
         let expected:[Int] = [  55, 56, 57, 58, 59,
                                 65, 66, 67, 68, 69,
@@ -283,8 +284,9 @@ class stemTests: XCTestCase {
         for j in 0..<tensor2.shape[0] {
             for k in 0..<tensor2.shape[1] {
                 let idx = indices.next()!
-                XCTAssertEqual(idx, expected[i])
-                XCTAssertEqual(tensor2.storage[idx], tensor2[j, k])
+                let offset = tensor2.calculateOffset(idx)
+                XCTAssertEqual(offset, expected[i])
+                XCTAssertEqual(tensor2[idx], tensor2[j, k])
                 i += 1
             }
         }
@@ -341,8 +343,8 @@ class stemTests: XCTestCase {
         let expected1:[Double] = [0, 1, 2, 3, 4]
 
         var k = 0
-        for i in vector1.storageIndices() {
-            XCTAssertEqual(vector1.storage[i], expected1[k])
+        for i in vector1.indices() {
+            XCTAssertEqual(vector1[i], expected1[k])
             k += 1
         }
 
@@ -350,8 +352,8 @@ class stemTests: XCTestCase {
         let expected2:[Double] = [1, 6, 11]
 
         k = 0
-        for i in vector2.storageIndices() {
-            XCTAssertEqual(vector2.storage[i], expected2[k])
+        for i in vector2.indices() {
+            XCTAssertEqual(vector2[i], expected2[k])
             k += 1
         }
         
@@ -359,9 +361,9 @@ class stemTests: XCTestCase {
         let vector3 = vector2.transpose()
         
         k = 0
-        for i in vector3.storageIndices() {
+        for i in vector3.indices() {
             // NB: expected value should not change from vector2
-            XCTAssertEqual(vector3.storage[i], expected2[k])
+            XCTAssertEqual(vector3[i], expected2[k])
             k += 1
         }
     }
@@ -417,8 +419,8 @@ class stemTests: XCTestCase {
         let expected:[Double] = [0, 5, 1, 6, 2, 7, 3, 8, 4, 9]
         var k = 0
         
-        for i in matrix2.storageIndices() {
-            XCTAssertEqual(matrix2.storage[i], expected[k])
+        for i in matrix2.indices() {
+            XCTAssertEqual(matrix2[i], expected[k])
             k += 1
         }
         
@@ -429,8 +431,8 @@ class stemTests: XCTestCase {
         let expected2 = (0..<10).map { Double($0) }
         
         k = 0
-        for i in matrix3.storageIndices() {
-            XCTAssertEqual(matrix3.storage[i], expected2[k])
+        for i in matrix3.indices() {
+            XCTAssertEqual(matrix3[i], expected2[k])
             k += 1
         }
     }
@@ -827,8 +829,8 @@ class stemTests: XCTestCase {
         let expected:[Float] = [1, 4, 9, 16, 25, 36, 49, 64, 81]
         
         var k = 0
-        for i in p.storageIndices() {
-            XCTAssertEqual(p.storage[i], expected[k])
+        for i in p.indices() {
+            XCTAssertEqual(p[i], expected[k])
             k += 1
         }
     }

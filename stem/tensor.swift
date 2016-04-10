@@ -85,45 +85,45 @@ public struct IndexGenerator: GeneratorType {
 }
 
 // TODO: remove, IndexGenerator supersedes this (+ tensor.calculateOffset)
-public struct TensorStorageIndex<StorageType:Storage>: GeneratorType {
-    var tensor:Tensor<StorageType>
-    var indices:[Int]
-    var index:Int
-    var last:Int
-
-    init(_ tensor:Tensor<StorageType>) {
-        self.tensor = tensor
-        indices = [Int](count: tensor.shape.count, repeatedValue: 0)
-        index = 0
-        last = tensor.shape.count-1
-    }
-
-    public mutating func next() -> Int? {
-        if indices[last] >= tensor.shape[last] {
-            var d:Int = tensor.shape.count - 1
-            
-            // loop until we no longer overflow
-            while d >= 0 && indices[d] >= tensor.shape[d] {
-                // at the end, so return no results left
-                if d == 0 { return nil }
-
-                // reset current index
-                indices[d] = 0
-
-                // increment next offset
-                indices[d-1] += 1
-
-                // go to next dimension
-                d -= 1
-            }
-        }
-
-        let value = tensor.calculateOffset(indices)
-        indices[last] += 1
-        
-        return value
-    }
-}
+//public struct TensorStorageIndex<StorageType:Storage>: GeneratorType {
+//    var tensor:Tensor<StorageType>
+//    var indices:[Int]
+//    var index:Int
+//    var last:Int
+//
+//    init(_ tensor:Tensor<StorageType>) {
+//        self.tensor = tensor
+//        indices = [Int](count: tensor.shape.count, repeatedValue: 0)
+//        index = 0
+//        last = tensor.shape.count-1
+//    }
+//
+//    public mutating func next() -> Int? {
+//        if indices[last] >= tensor.shape[last] {
+//            var d:Int = tensor.shape.count - 1
+//            
+//            // loop until we no longer overflow
+//            while d >= 0 && indices[d] >= tensor.shape[d] {
+//                // at the end, so return no results left
+//                if d == 0 { return nil }
+//
+//                // reset current index
+//                indices[d] = 0
+//
+//                // increment next offset
+//                indices[d-1] += 1
+//
+//                // go to next dimension
+//                d -= 1
+//            }
+//        }
+//
+//        let value = tensor.calculateOffset(indices)
+//        indices[last] += 1
+//        
+//        return value
+//    }
+//}
 
 public protocol TensorType {
     var shape:Extent { get }
@@ -350,8 +350,12 @@ public class Tensor<StorageType:Storage>: TensorType {
     }
     
     // generates indices of view in storage
-    public func storageIndices() -> GeneratorSequence<TensorStorageIndex<StorageType>> {
-        return GeneratorSequence<TensorStorageIndex<StorageType>>(TensorStorageIndex<StorageType>(self))
+//    public func storageIndices() -> GeneratorSequence<TensorStorageIndex<StorageType>> {
+//        return GeneratorSequence<TensorStorageIndex<StorageType>>(TensorStorageIndex<StorageType>(self))
+//    }
+    public func indices() -> GeneratorSequence<IndexGenerator> {
+        let dimOrder = (0..<shape.count).map { shape.count-$0-1 }
+        return GeneratorSequence<IndexGenerator>(IndexGenerator(shape, dimIndex: dimOrder)) //, dimIndex: dimIndex))
     }
 }
 
@@ -414,10 +418,10 @@ func copy<StorageType:Storage>(from from:[[StorageType.ElementType]], to:Matrix<
     precondition(to.shape[0] != from.count || to.shape[1] != from[0].count,
                  "Destination and source must be the same size")
 
-    var toIndices = to.storageIndices()
+    var toIndices = to.indices()
     for i in 0..<from.count {
         for j in 0..<from[i].count {
-            to.storage[toIndices.next()!] = from[i][j]
+            to[toIndices.next()!] = from[i][j]
         }
     }
 }
@@ -425,9 +429,9 @@ func copy<StorageType:Storage>(from from:[[StorageType.ElementType]], to:Matrix<
 func copy<StorageType:Storage>(from from:Tensor<StorageType>, to:Tensor<StorageType>) {
     precondition(to.shape == from.shape, "Destination and source must be the same size")
     
-    let zippedIndices = zip(from.storageIndices(), to.storageIndices())
+    let zippedIndices = zip(from.indices(), to.indices())
     for (i, j) in zippedIndices {
-        to.storage[j] = from.storage[i]
+        to[j] = from[i]
     }
 }
 
@@ -436,8 +440,8 @@ public func copy<StorageType>(tensor:Tensor<StorageType>) -> Tensor<StorageType>
 }
 
 func fill<StorageType:Storage>(tensor:Tensor<StorageType>, value:StorageType.ElementType) {
-    for i in tensor.storageIndices() {
-        tensor.storage[i] = value
+    for i in tensor.indices() {
+        tensor[i] = value
     }
 }
 
@@ -465,14 +469,17 @@ func concat<StorageType:Storage>(tensor1:Tensor<StorageType>, _ tensor2:Tensor<S
     shape[axis] += tensor2.shape[axis]
     
     let result = Tensor<StorageType>(shape: shape)
-    var rpos = result.storageIndices()
+    var rpos = result.indices()
     
-    for pos in tensor1.storageIndices() {
-        result.storage[rpos.next()!] = tensor1.storage[pos]
+    for pos in tensor1.indices() {
+//        result.storage[rpos.next()!] = tensor1.storage[pos]
+        result[rpos.next()!] = tensor1[pos]
     }
     
-    for pos in tensor2.storageIndices() {
-        result.storage[rpos.next()!] = tensor2.storage[pos]
+//    for pos in tensor2.storageIndices() {
+    for pos in tensor2.indices() {
+//        result.storage[rpos.next()!] = tensor2.storage[pos]
+        result[rpos.next()!] = tensor2[pos]
     }
     
     return result
@@ -520,8 +527,8 @@ func map<StorageType:Storage>(
     fn:(StorageType.ElementType) -> StorageType.ElementType) -> Tensor<StorageType>
 {
     let result = Tensor<StorageType>(shape: tensor.shape)
-    for i in tensor.storageIndices() {
-        result.storage[i] = fn(tensor.storage[i])
+    for i in tensor.indices() {
+        result[i] = fn(tensor[i])
     }
     
     return result

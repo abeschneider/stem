@@ -166,7 +166,7 @@ class Concat<S:Storage>: GraphModule, Container {
     func forward(input:Tensor<S>?) -> Tensor<S> {
         let outputs = modules.map { $0.forward(input) }
         moduleShapes = outputs.map { $0.shape }
-        output = try! concat(outputs)
+        output = concat(outputs)
         return output!
     }
     

@@ -19,14 +19,14 @@ func elementwiseBinaryOp<StorageType:Storage>
     precondition(left.shape.elements == right.shape.elements)
     precondition(left.shape.elements == result.shape.elements)
     
-    let indexLeft = left.storageIndices()
-    let indexRight = right.storageIndices()
-    var indexResult = result.storageIndices()
+    let indexLeft = left.indices()
+    let indexRight = right.indices()
+    var indexResult = result.indices()
     
     // TODO: There should be better syntax to support this use-case
     for (l, r) in Zip2Sequence(GeneratorSequence(indexLeft), GeneratorSequence(indexRight)) {
         let idx = indexResult.next()!
-        result.storage[idx] = op(left: left.storage[l], right: right.storage[r])
+        result[idx] = op(left: left[l], right: right[r])
     }
 }
 
@@ -36,10 +36,10 @@ func elementwiseBinaryOp<StorageType:Storage>
 {
     precondition(left.shape.elements == result.shape.elements)
     
-    var indexResult = result.storageIndices()
-    for i in left.storageIndices() {
+    var indexResult = result.indices()
+    for i in left.indices() {
         let idx = indexResult.next()!
-        result.storage[idx] = op(left: left.storage[i], right: right)
+        result[idx] = op(left: left[i], right: right)
     }
 }
 
@@ -49,10 +49,10 @@ func elementwiseBinaryOp<StorageType:Storage>
 {
     precondition(right.shape.elements == result.shape.elements)
     
-    var indexResult = result.storageIndices()
-    for i in right.storageIndices() {
+    var indexResult = result.indices()
+    for i in right.indices() {
         let idx = indexResult.next()!
-        result.storage[idx] = op(left: left, right: right.storage[i])
+        result[idx] = op(left: left, right: right[i])
     }
 }
 
@@ -541,11 +541,11 @@ public func dot<StorageType:Storage where StorageType.ElementType:NumericType>
     
     var result:StorageType.ElementType = 0
     
-    let indexLeft = left.storageIndices()
-    let indexRight = right.storageIndices()
+    let indexLeft = left.indices()
+    let indexRight = right.indices()
     
     for (l, r) in Zip2Sequence(GeneratorSequence(indexLeft), GeneratorSequence(indexRight)) {
-        result = result + left.storage[l]*right.storage[r]
+        result = result + left[l]*right[r]
     }
 
     return result
@@ -621,15 +621,15 @@ public func ⊙<StorageType:Storage where StorageType.ElementType:NumericType>
 public func outer<StorageType:Storage where StorageType.ElementType:NumericType>
     (left left:Vector<StorageType>, right:Vector<StorageType>, result:Tensor<StorageType>)
 {
-    let indexLeft = left.storageIndices()
-    let indexRight = right.storageIndices()
-    let indexResult = result.storageIndices()
+    let indexLeft = left.indices()
+    let indexRight = right.indices()
+    let indexResult = result.indices()
     
     var o = GeneratorSequence(indexResult)
     for l in GeneratorSequence(indexLeft) {
         for r in GeneratorSequence(indexRight ){
             let pos = o.next()!
-            result.storage[pos] = left.storage[l]*right.storage[r]
+            result[pos] = left[l]*right[r]
         }
     }
 }
@@ -654,8 +654,8 @@ public func abs<StorageType:Storage where StorageType.ElementType:NumericType>
     (tensor:Tensor<StorageType>) -> Tensor<StorageType>
 {
     let result = Tensor<StorageType>(shape: tensor.shape)
-    for index in tensor.storageIndices() {
-        result.storage[index] = abs(tensor.storage[index])
+    for index in tensor.indices() {
+        result[index] = abs(tensor[index])
     }
     
     return result
@@ -666,8 +666,8 @@ public func isClose<StorageType:Storage where StorageType.ElementType:NumericTyp
 {
     let diff = left - right
     let adiff:Tensor<StorageType> = abs(diff)
-    for i in adiff.storageIndices() {
-        if adiff.storage[i] >= eps { return false }
+    for i in adiff.indices() {
+        if adiff[i] >= eps { return false }
     }
     return true
 }
@@ -679,8 +679,8 @@ public func hist<StorageType:Storage where StorageType.ElementType == Double>
     let h = Vector<StorageType>(rows: bins)
     let m = max(tensor)
     let delta = m/StorageType.ElementType(bins)
-    for i in tensor.storageIndices() {
-        let value = tensor.storage[i]
+    for i in tensor.indices() {
+        let value = tensor[i]
         var bin = Int(value/delta)
         if bin >= bins {  bin = bins-1 }
         h[bin] = h[bin] + 1
@@ -711,8 +711,7 @@ func reduce<StorageType:Storage>(tensor:Tensor<StorageType>,
         
         for (var tensorIndex, resultIndex) in Zip2Sequence(oldIndices, newIndices) {
             tensorIndex[axis] = i
-            let tensorOffset:Int = tensor.calculateOffset(tensorIndex)
-            
+            let tensorOffset:Int = tensor.calculateOffset(tensorIndex)            
             let resultOffset:Int = result.calculateOffset(resultIndex)
             
             result.storage[resultOffset] = op(result.storage[resultOffset], tensor.storage[tensorOffset])
@@ -768,8 +767,8 @@ public func pow<StorageType:Storage where StorageType.ElementType:FloatNumericTy
     (tensor:Tensor<StorageType>, _ power:StorageType.ElementType) -> Tensor<StorageType>
 {
     let result = Tensor<StorageType>(shape: tensor.shape)
-    for i in result.storageIndices() {
-        result.storage[i] = StorageType.ElementType.pow(tensor.storage[i], power)
+    for i in result.indices() {
+        result[i] = StorageType.ElementType.pow(tensor[i], power)
     }
     
     return result
@@ -779,8 +778,8 @@ func exp<StorageType:Storage where StorageType.ElementType:FloatNumericType>
     (tensor:Tensor<StorageType>) -> Tensor<StorageType>
 {
     let result = Tensor<StorageType>(shape: tensor.shape)
-    for i in result.storageIndices() {
-        result.storage[i] = StorageType.ElementType.exp(tensor.storage[i])
+    for i in result.indices() {
+        result[i] = StorageType.ElementType.exp(tensor[i])
     }
     
     return result
@@ -794,10 +793,10 @@ func sqrt(tensor:TensorType) -> TensorType
 func sqrt<StorageType:Storage where StorageType.ElementType:FloatNumericType>
     (tensor:Tensor<StorageType>) -> Tensor<StorageType>
 {
-    let indices = tensor.storageIndices()
+    let indices = tensor.indices()
     let result = Tensor<StorageType>(shape: tensor.shape)
     for index in GeneratorSequence(indices) {
-        result.storage[index] = StorageType.ElementType.sqrt(tensor.storage[index])
+        result[index] = StorageType.ElementType.sqrt(tensor[index])
     }
     
     return result

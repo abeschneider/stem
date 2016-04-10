@@ -99,7 +99,7 @@ class LinearOp<S:Storage>: Op, Shapeable {
         if let out = output {
             // out = weight'*input
             fill(out, value: 0)
-            try dot(left: weight.transpose(), right: input, result: out)
+            dot(left: weight.transpose(), right: input, result: out)
 
             // out += bias
             iadd(left: out as! RowVector, right: bias)
@@ -118,7 +118,7 @@ class LinearOp<S:Storage>: Op, Shapeable {
         if let out = output {
             // out = weight'*input
             fill(out, value: 0)
-            try dot(left: weight.transpose(), right: input, result: out)
+            dot(left: weight.transpose(), right: input, result: out)
             
             // out += bias
             iadd(left: out as! Matrix, right: bias)
@@ -175,7 +175,7 @@ class LinearGradient<S:Storage>: Gradient, Shapeable {
         iadd(left: gradBias, right: gradOutput)
         
         // gradInput! = weight*gradOutput
-        let tmp:Vector<StorageType> = try gradWeight⊙gradOutput
+        let tmp:Vector<StorageType> = gradWeight⊙gradOutput
         iadd(left: self.gradInput! as! Vector<StorageType>, right: tmp)
         
         return self.gradInput! as! Vector
@@ -188,7 +188,7 @@ class LinearGradient<S:Storage>: Gradient, Shapeable {
     }
 }
 
-class SigmoidModule<S:Storage>: Op {
+class SigmoidModule<S:Storage where S.ElementType:FloatNumericType>: Op {
     typealias StorageType = S
     
     var output:Tensor<StorageType>?
@@ -205,8 +205,8 @@ class SigmoidModule<S:Storage>: Op {
         }
 
         if let out = output {
-            for i in input.storageIndices() {
-                out.storage[i] = StorageType.ElementType(1.0) / (StorageType.ElementType(1.0) + StorageType.ElementType.exp(-input.storage[i]))
+            for i in input.indices() {
+                out[i] = StorageType.ElementType(1.0) / (StorageType.ElementType(1.0) + StorageType.ElementType.exp(-input[i]))
             }
         }
         
@@ -214,7 +214,7 @@ class SigmoidModule<S:Storage>: Op {
     }
 }
 
-class SigmoidGradient<S:Storage>: Gradient {
+class SigmoidGradient<S:Storage where S.ElementType:FloatNumericType>: Gradient {
     typealias StorageType = S
     
     var gradInput:Tensor<StorageType>?
