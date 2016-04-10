@@ -17,7 +17,7 @@ public protocol NumericType: AbsoluteValuable, Comparable { //, FloatingPointTyp
     func **(lhs:Self, rhs:Self) -> Self
     
     static func max(lhs: Self, _ rhs: Self) -> Self
-    
+    static func min(lhs: Self, _ rhs: Self) -> Self
     
     init(_ v:Int)
 }
@@ -66,6 +66,10 @@ extension Int: NumericType {
     static public func max(lhs:Int, _ rhs:Int) -> Int {
         return lhs > rhs ? lhs : rhs
     }
+    
+    static public func min(lhs:Int, _ rhs:Int) -> Int {
+        return lhs < rhs ? lhs : rhs
+    }
 }
 
 extension Float: FloatNumericType {
@@ -92,6 +96,10 @@ extension Float: FloatNumericType {
     static public func max(lhs:Float, _ rhs:Float) -> Float {
         return lhs > rhs ? lhs : rhs
     }
+    
+    static public func min(lhs:Float, _ rhs:Float) -> Float {
+        return lhs < rhs ? lhs : rhs
+    }
 }
 
 extension Double: FloatNumericType {
@@ -117,6 +125,10 @@ extension Double: FloatNumericType {
     
     static public func max(lhs:Double, _ rhs:Double) -> Double {
         return lhs > rhs ? lhs : rhs
+    }
+    
+    static public func min(lhs:Double, _ rhs:Double) -> Double {
+        return lhs < rhs ? lhs : rhs
     }
 }
 

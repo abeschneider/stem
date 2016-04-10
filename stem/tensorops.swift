@@ -19,14 +19,12 @@ func elementwiseBinaryOp<StorageType:Storage>
     precondition(left.shape.elements == right.shape.elements)
     precondition(left.shape.elements == result.shape.elements)
     
-    let indexLeft = left.indices()
-    let indexRight = right.indices()
     var indexResult = result.indices()
     
     // TODO: There should be better syntax to support this use-case
-    for (l, r) in Zip2Sequence(GeneratorSequence(indexLeft), GeneratorSequence(indexRight)) {
+    for (lhs, rhs) in Zip2Sequence(GeneratorSequence(left.indices()), GeneratorSequence(right.indices())) {
         let idx = indexResult.next()!
-        result[idx] = op(left: left[l], right: right[r])
+        result[idx] = op(left: left[lhs], right: right[rhs])
     }
 }
 
@@ -164,8 +162,6 @@ public func +<StorageType:Storage where StorageType.ElementType:NumericType>
     
     return result
 }
-
-
 
 public func +=<StorageType:Storage where StorageType.ElementType:NumericType>
     (left:Tensor<StorageType>, right:Tensor<StorageType>)
@@ -477,9 +473,6 @@ public func *<StorageType:Storage where StorageType.ElementType:NumericType>
 public func *<StorageType:Storage where StorageType.ElementType:NumericType>
     (left:Matrix<StorageType>, right:ColumnVector<StorageType>) -> Tensor<StorageType>
 {
-//    if left.shape[0] != right.shape[0] {
-//        throw TensorError.SizeMismatch(lhs: left.shape, rhs: right.shape)
-//    }
     precondition(left.shape[0] == right.shape[0], "Number of rows of vector must match number of rows of matrix")
     
     let result = Matrix<StorageType>(shape: left.shape)
@@ -555,14 +548,7 @@ public func dot<StorageType:Storage where StorageType.ElementType:NumericType>
 public func dot<StorageType:Storage where StorageType.ElementType:NumericType>
     (left left:Matrix<StorageType>, right:ColumnVector<StorageType>, result:ColumnVector<StorageType>)
 {
-//    if left.shape[1] != right.shape[0] {
-//        throw TensorError.SizeMismatch(lhs: left.shape, rhs: right.shape)
-//    }
     precondition(left.shape[1] == right.shape[0], "Number of rows in vector must match number of rows of matrix")
-    
-//    if left.shape[0] != result.shape[0] {
-//        throw TensorError.SizeMismatch(lhs: left.shape, rhs: result.shape)
-//    }
     precondition(left.shape[0] == result.shape[0], "Number of rows of result must match rows in matrix")
     
     // per row
@@ -578,9 +564,6 @@ public func dot<StorageType:Storage where StorageType.ElementType:NumericType>
 public func dot<StorageType:Storage where StorageType.ElementType:NumericType>
     (left left:Matrix<StorageType>, right:Matrix<StorageType>, result:Tensor<StorageType>)
 {
-//    if left.shape[1] != right.shape[0] {
-//        throw TensorError.SizeMismatch(lhs: left.shape, rhs: right.shape)
-//    }
     precondition(left.shape[1] == right.shape[0], "Number of columns must match number of rows in matrices")
     
     for n in 0..<left.shape[0] {
@@ -755,6 +738,18 @@ public func max<StorageType:Storage where StorageType.ElementType:NumericType>
     (tensor:Tensor<StorageType>) -> StorageType.ElementType
 {
     return reduce(tensor, op: max)
+}
+
+public func min<StorageType:Storage where StorageType.ElementType:NumericType>
+    (tensor:Tensor<StorageType>, axis:Int) -> Tensor<StorageType>
+{
+    return reduce(tensor, axis: axis, op: min)
+}
+
+public func min<StorageType:Storage where StorageType.ElementType:NumericType>
+    (tensor:Tensor<StorageType>) -> StorageType.ElementType
+{
+    return reduce(tensor, op: min)
 }
 
 public func **<StorageType:Storage where StorageType.ElementType:FloatNumericType>

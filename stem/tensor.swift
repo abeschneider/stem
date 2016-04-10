@@ -42,6 +42,11 @@ extension Range : TensorIndex {
 
 public let all:Range = 0..<0
 
+public enum DimensionOrder {
+    case ColumnMajor
+    case RowMajor
+}
+
 public struct IndexGenerator: GeneratorType {
     var indices:[Int]
     var shape:Extent
@@ -57,6 +62,21 @@ public struct IndexGenerator: GeneratorType {
             self.dimIndex = (0..<shape.count).map { $0 }
         }
     }
+    
+    public init(_ shape:Extent, order:DimensionOrder) {
+        self.shape = shape
+        indices = [Int](count: shape.count, repeatedValue: 0)
+
+        switch order {
+        case .ColumnMajor:
+            dimIndex = (0..<shape.count).map { shape.count-$0-1 }
+            break
+        case .RowMajor:
+            dimIndex = (0..<shape.count).map { $0 }
+            break
+        }
+    }
+
     
     public mutating func next() -> [Int]? {
         if indices[dimIndex[0]] >= shape[dimIndex[0]] {
@@ -83,47 +103,6 @@ public struct IndexGenerator: GeneratorType {
         return value
     }
 }
-
-// TODO: remove, IndexGenerator supersedes this (+ tensor.calculateOffset)
-//public struct TensorStorageIndex<StorageType:Storage>: GeneratorType {
-//    var tensor:Tensor<StorageType>
-//    var indices:[Int]
-//    var index:Int
-//    var last:Int
-//
-//    init(_ tensor:Tensor<StorageType>) {
-//        self.tensor = tensor
-//        indices = [Int](count: tensor.shape.count, repeatedValue: 0)
-//        index = 0
-//        last = tensor.shape.count-1
-//    }
-//
-//    public mutating func next() -> Int? {
-//        if indices[last] >= tensor.shape[last] {
-//            var d:Int = tensor.shape.count - 1
-//            
-//            // loop until we no longer overflow
-//            while d >= 0 && indices[d] >= tensor.shape[d] {
-//                // at the end, so return no results left
-//                if d == 0 { return nil }
-//
-//                // reset current index
-//                indices[d] = 0
-//
-//                // increment next offset
-//                indices[d-1] += 1
-//
-//                // go to next dimension
-//                d -= 1
-//            }
-//        }
-//
-//        let value = tensor.calculateOffset(indices)
-//        indices[last] += 1
-//        
-//        return value
-//    }
-//}
 
 public protocol TensorType {
     var shape:Extent { get }
@@ -328,7 +307,9 @@ public class Tensor<StorageType:Storage>: TensorType {
     }
     
     public subscript(ranges:TensorIndex...) -> Tensor {
-        get { return self[ranges] }
+        get {
+            return self[ranges]
+        }
         set {
             let view = Tensor(self, window: ranges.map { $0.TensorRange })
             copy(from: newValue, to: view)
@@ -349,13 +330,8 @@ public class Tensor<StorageType:Storage>: TensorType {
         return Tensor(storage: storage, shape: newShape)
     }
     
-    // generates indices of view in storage
-//    public func storageIndices() -> GeneratorSequence<TensorStorageIndex<StorageType>> {
-//        return GeneratorSequence<TensorStorageIndex<StorageType>>(TensorStorageIndex<StorageType>(self))
-//    }
     public func indices() -> GeneratorSequence<IndexGenerator> {
-        let dimOrder = (0..<shape.count).map { shape.count-$0-1 }
-        return GeneratorSequence<IndexGenerator>(IndexGenerator(shape, dimIndex: dimOrder)) //, dimIndex: dimIndex))
+        return GeneratorSequence<IndexGenerator>(IndexGenerator(shape, order: .ColumnMajor))
     }
 }
 

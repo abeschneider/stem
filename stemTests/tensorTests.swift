@@ -256,6 +256,38 @@ class stemTests: XCTestCase {
             k += 1
         }
     }
+    
+    func testIndexGenerator1() {
+        let shape = Extent(3, 2)
+        
+        let expected = [ [0, 0], [1, 0], [2, 0], [0, 1], [1, 1], [2, 1] ]
+        
+        for (i, index) in GeneratorSequence(IndexGenerator(shape)).enumerate() {
+            XCTAssertEqual(index, expected[i])
+        }
+        
+        for (i, index) in GeneratorSequence(IndexGenerator(shape, dimIndex: [0, 1])).enumerate() {
+            XCTAssertEqual(index, expected[i])
+        }
+        
+        for (i, index) in GeneratorSequence(IndexGenerator(shape, order: .RowMajor)).enumerate() {
+            XCTAssertEqual(index, expected[i])
+        }
+    }
+    
+    func testIndexGenerator2() {
+        let shape = Extent(3, 2)
+        
+        let expected = [ [0, 0], [0, 1], [1, 0], [1, 1], [2, 0], [2, 1] ]
+        
+        for (i, index) in GeneratorSequence(IndexGenerator(shape, dimIndex: [1, 0])).enumerate() {
+            XCTAssertEqual(index, expected[i])
+        }
+        
+        for (i, index) in GeneratorSequence(IndexGenerator(shape, order: .ColumnMajor)).enumerate() {
+            XCTAssertEqual(index, expected[i])
+        }
+    }
 
     func testStorageIndex1() {
         let array = (0..<20).map { Double($0) }
