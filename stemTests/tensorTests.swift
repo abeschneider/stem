@@ -29,7 +29,7 @@ class stemTests: XCTestCase {
         XCTAssertEqual(tensor.shape, Extent(2, 5))
         
         var k = 0
-        for index in GeneratorSequence(tensor.indices()) {
+        for index in tensor.indices() {
             XCTAssertEqual(tensor[index], array[k])
             k += 1
         }
@@ -291,7 +291,7 @@ class stemTests: XCTestCase {
         let tensor = Tensor<NativeStorage<Double>>(array: array, shape: Extent(2, 10))
         let indices = tensor.indices()
         
-        for (i, index) in GeneratorSequence(indices).enumerate() {
+        for (i, index) in indices.enumerate() {
             let offset = tensor.calculateOffset(index)
             XCTAssertEqual(i, offset)
         }
@@ -430,7 +430,7 @@ class stemTests: XCTestCase {
         let expected2:[[Double]] = [[6, 7],
                                     [10, 11]]
         
-        for index in GeneratorSequence(matrix2.indices()) {
+        for index in matrix2.indices() {
             XCTAssertEqual(matrix2[index], expected2[index[0]][index[1]])
         }
         
@@ -438,7 +438,7 @@ class stemTests: XCTestCase {
         let expected3:[[Double]] = [[6, 10],
                                     [7, 11]]
 
-        for index in GeneratorSequence(matrix3.indices()) {
+        for index in matrix3.indices() {
             XCTAssertEqual(matrix3[index], expected3[index[0]][index[1]])
         }
     }

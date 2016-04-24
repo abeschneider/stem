@@ -22,7 +22,7 @@ func elementwiseBinaryOp<StorageType:Storage>
     var indexResult = result.indices()
     
     // TODO: There should be better syntax to support this use-case
-    for (lhs, rhs) in Zip2Sequence(GeneratorSequence(left.indices()), GeneratorSequence(right.indices())) {
+    for (lhs, rhs) in Zip2Sequence(left.indices(), right.indices()) {
         let idx = indexResult.next()!
         result[idx] = op(left: left[lhs], right: right[rhs])
     }
@@ -566,7 +566,7 @@ public func dot<StorageType:Storage where StorageType.ElementType:NumericType>
     let indexLeft = left.indices()
     let indexRight = right.indices()
     
-    for (l, r) in Zip2Sequence(GeneratorSequence(indexLeft), GeneratorSequence(indexRight)) {
+    for (l, r) in Zip2Sequence(indexLeft, indexRight) {
         result = result + left[l]*right[r]
     }
 
@@ -635,12 +635,12 @@ public func outer<StorageType:Storage where StorageType.ElementType:NumericType>
 {
     let indexLeft = left.indices()
     let indexRight = right.indices()
-    let indexResult = result.indices()
+    var indexResult = result.indices()
     
-    var o = GeneratorSequence(indexResult)
-    for l in GeneratorSequence(indexLeft) {
-        for r in GeneratorSequence(indexRight ){
-            let pos = o.next()!
+//    var o = GeneratorSequence(indexResult)
+    for l in indexLeft {
+        for r in indexRight {
+            let pos = indexResult.next()!
             result[pos] = left[l]*right[r]
         }
     }
@@ -822,7 +822,7 @@ func sqrt<StorageType:Storage where StorageType.ElementType:FloatNumericType>
 {
     let indices = tensor.indices()
     let result = Tensor<StorageType>(shape: tensor.shape)
-    for index in GeneratorSequence(indices) {
+    for index in indices {
         result[index] = StorageType.ElementType.sqrt(tensor[index])
     }
     
@@ -847,7 +847,7 @@ func sigmoid<StorageType:Storage where StorageType.ElementType:FloatNumericType>
     (input:Tensor<StorageType>, output:Tensor<StorageType>)
 {
     precondition(input.shape == output.shape)
-    for index in GeneratorSequence(input.indices()) {
+    for index in input.indices() {
         output[index] = StorageType.ElementType(1.0) / (StorageType.ElementType(1.0) + StorageType.ElementType.exp(-input[index]))
     }
 }
