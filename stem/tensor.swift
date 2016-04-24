@@ -17,6 +17,15 @@ enum TensorError: ErrorType {
     case IllegalAxis(axis:Int)
 }
 
+public enum TensorType {
+    case Tensor
+    case Vector
+    case RowVector
+    case ColumnVector
+    case Matrix
+    case Cube
+}
+
 public protocol TensorIndex {
     var TensorRange: Range<Int> { get }
 }
@@ -41,11 +50,6 @@ extension Range : TensorIndex {
 }
 
 public let all:Range = 0..<0
-
-public enum DimensionOrder {
-    case ColumnMajor
-    case RowMajor
-}
 
 public struct IndexGenerator: GeneratorType {
     var indices:[Int]
@@ -76,7 +80,6 @@ public struct IndexGenerator: GeneratorType {
             break
         }
     }
-
     
     public mutating func next() -> [Int]? {
         if indices[dimIndex[0]] >= shape[dimIndex[0]] {
@@ -104,51 +107,51 @@ public struct IndexGenerator: GeneratorType {
     }
 }
 
-public protocol TensorType {
-    var shape:Extent { get }
-}
+//public protocol TensorType {
+//    var shape:Extent { get }
+//}
 
-public class TensorScalar<StorageType:Storage>: TensorType {
-    public var shape:Extent { return Extent(1) }
-    public var value:StorageType.ElementType
-    
-    public init(_ value:StorageType.ElementType) {
-        self.value = value
-    }
-    
-    public subscript(indices:[Int]) -> StorageType.ElementType {
-        get {
-            precondition(indices.count == 1)
-            precondition(indices[0] == 0)
-            return value
-        }
-        set {
-            precondition(indices.count == 1)
-            precondition(indices[0] == 0)
-            value = newValue
-        }
-    }
-    
-    public subscript(indices:Int) -> StorageType.ElementType {
-        get {
-            precondition(indices == 0)
-            return value
-        }
-        set {
-            precondition(indices == 0)
-            value = newValue
-        }
-    }
-}
+//public class TensorScalar<StorageType:Storage> {
+//    public var shape:Extent { return Extent(1) }
+//    public var value:StorageType.ElementType
+//    
+//    public init(_ value:StorageType.ElementType) {
+//        self.value = value
+//    }
+//    
+//    public subscript(indices:[Int]) -> StorageType.ElementType {
+//        get {
+//            precondition(indices.count == 1)
+//            precondition(indices[0] == 0)
+//            return value
+//        }
+//        set {
+//            precondition(indices.count == 1)
+//            precondition(indices[0] == 0)
+//            value = newValue
+//        }
+//    }
+//    
+//    public subscript(indices:Int) -> StorageType.ElementType {
+//        get {
+//            precondition(indices == 0)
+//            return value
+//        }
+//        set {
+//            precondition(indices == 0)
+//            value = newValue
+//        }
+//    }
+//}
+//
+//extension Float {
+//    init<StorageType:Storage where StorageType.ElementType:FloatNumericType>(_ scalar:TensorScalar<StorageType>) {
+//        // TODO: this is dangerous
+//        self.init(scalar.value as! Float)
+//    }
+//}
 
-extension Float {
-    init<StorageType:Storage where StorageType.ElementType:FloatNumericType>(_ scalar:TensorScalar<StorageType>) {
-        // TODO: this is dangerous
-        self.init(scalar.value as! Float)
-    }
-}
-
-public class Tensor<StorageType:Storage>: TensorType {
+public class Tensor<StorageType:Storage> {
     public typealias ViewType = StorageView<StorageType>
     
     public var storage:StorageType
@@ -162,6 +165,7 @@ public class Tensor<StorageType:Storage>: TensorType {
     // external shape
     public var shape:Extent {
         get { return view.shape }
+//        set { view.shape = newValue }
     }
     
     // view into storage
@@ -173,6 +177,22 @@ public class Tensor<StorageType:Storage>: TensorType {
     // step size to increment within storage for each dimension
     public var stride:[Int]
     
+    public var type:TensorType {
+        if shape.span == 1 {
+            if shape[0] > 1 {
+                return .RowVector
+            } else {
+                return .ColumnVector
+            }
+        } else if shape.span == 2 {
+            return .Matrix
+        } else if shape.span == 3 {
+            return .Cube
+        }
+        
+        return .Tensor
+    }
+    
     // convenience accessor to generate a transposed view
     public var T:Tensor<StorageType> {
         get { return transpose() }
@@ -182,7 +202,7 @@ public class Tensor<StorageType:Storage>: TensorType {
         storage = StorageType(array: array)
         internalShape = shape
         self.stride = storage.calculateStride(shape)
-        dimIndex = Tensor.calculateOrder(shape.count)
+        dimIndex = storage.calculateOrder(shape.count)
 
         if let o = offset {
             self.offset = o
@@ -197,7 +217,7 @@ public class Tensor<StorageType:Storage>: TensorType {
         self.storage = storage
         internalShape = shape
         self.stride = storage.calculateStride(shape)
-        dimIndex = Tensor.calculateOrder(shape.count)
+        dimIndex = storage.calculateOrder(shape.count)
         
         if let o = offset {
             self.offset = o
@@ -217,7 +237,7 @@ public class Tensor<StorageType:Storage>: TensorType {
         internalShape = shape
         offset = 0
         self.stride = storage.calculateStride(shape)
-        dimIndex = Tensor.calculateOrder(shape.count)
+        dimIndex = storage.calculateOrder(shape.count)
 
         view = ViewType(shape: shape, offset: Array<Int>(count: shape.count, repeatedValue: 0))
     }
@@ -240,7 +260,7 @@ public class Tensor<StorageType:Storage>: TensorType {
         dimIndex = (0..<tensor.internalShape.count).map { tensor.internalShape.count-$0-1 }
     }
     
-    public init(_ tensor:Tensor, dimIndex:[Int]?=nil, view:StorageView<StorageType>?=nil, copy:Bool=false) {
+    public init(_ tensor:Tensor, dimIndex:[Int]?=nil, view:StorageView<StorageType>?=nil, stride: [Int]?=nil, copy:Bool=false) {
         if copy {
             storage = tensor.storage
         } else {
@@ -249,7 +269,6 @@ public class Tensor<StorageType:Storage>: TensorType {
         
         internalShape = tensor.internalShape
         offset = 0
-        stride = tensor.stride
         
         if let d = dimIndex {
             self.dimIndex = d
@@ -262,16 +281,32 @@ public class Tensor<StorageType:Storage>: TensorType {
         } else {
             self.view = ViewType(shape: tensor.shape, offset: tensor.view.offset)
         }
+        
+        if let s = stride {
+            self.stride = s
+        } else {
+            self.stride = tensor.stride
+        }
+    }
+    
+    public init(tensor:Tensor, shape:Extent, stride:[Int]) {
+        storage = tensor.storage
+        internalShape = shape
+        offset = 0
+        self.stride = stride
+        self.view = ViewType(shape: shape, offset: tensor.view.offset)
+        dimIndex = (0..<tensor.internalShape.count).map { tensor.internalShape.count-$0-1 }
     }
 
-    static func calculateOrder(dims:Int) -> [Int] {
-        return (0..<dims).map { dims-$0-1 }
-    }
+//    static func calculateOrder(dims:Int) -> [Int] {
+//        return (0..<dims).map { dims-$0-1 }
+//    }
     
     public func calculateOffset() -> Int {
         var pos = offset
         for i in 0..<shape.count {
-            pos += view.offset[dimIndex[i]]*stride[i]
+            let di = dimIndex[i]
+            pos += view.offset[di]*stride[di]
         }
         
         return pos
@@ -279,8 +314,9 @@ public class Tensor<StorageType:Storage>: TensorType {
 
     public func calculateOffset(indices:[Int]) -> Int {
         var pos = offset
-        for i in 0..<indices.count {
-            pos += (indices[dimIndex[i]]+view.offset[dimIndex[i]])*stride[i]
+        for i in 0..<dimIndex.count {
+            let di = dimIndex[i]
+            pos += (indices[di]+view.offset[di])*stride[di]
         }
         
         return pos
@@ -321,7 +357,7 @@ public class Tensor<StorageType:Storage>: TensorType {
         let newShape = Extent(view.shape.reverse())
         let newOffset = Array(view.offset.reverse())
         let newView = StorageView<StorageType>(shape: newShape, offset: newOffset)
-        return Tensor(self, dimIndex: newDimIndex, view: newView)
+        return Tensor(self, dimIndex: newDimIndex, view: newView, stride: stride.reverse())
     }
     
     public func reshape(newShape:Extent) -> Tensor {
@@ -330,8 +366,14 @@ public class Tensor<StorageType:Storage>: TensorType {
         return Tensor(storage: storage, shape: newShape)
     }
     
-    public func indices() -> GeneratorSequence<IndexGenerator> {
-        return GeneratorSequence<IndexGenerator>(IndexGenerator(shape, order: .ColumnMajor))
+    // Defaults to given indices in native layout (to allow for better performance). However,
+    // if consistency in traversal between storage types is required, the order can be specified
+    public func indices(order:DimensionOrder?=nil) -> GeneratorSequence<IndexGenerator> {
+        if let o = order {
+            return GeneratorSequence<IndexGenerator>(IndexGenerator(shape, order: o))
+        } else {
+            return GeneratorSequence<IndexGenerator>(IndexGenerator(shape, order: storage.order))
+        }
     }
 }
 
@@ -389,6 +431,16 @@ extension Tensor: CustomStringConvertible {
         }
     }
 }
+
+//public class BroadcastTensor<StorageType:Storage>: Tensor<StorageType> {
+//    var broadcast:[Int]
+//    
+//    public init(_ tensor:Tensor<StorageType>, _ dims:[Int]) {
+//        broadcast = dims
+//        super.init(tensor)
+//    }
+//    
+//}
 
 func copy<StorageType:Storage>(from from:[[StorageType.ElementType]], to:Matrix<StorageType>)  {
     precondition(to.shape[0] != from.count || to.shape[1] != from[0].count,

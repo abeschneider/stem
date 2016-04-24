@@ -15,7 +15,9 @@ public class CBlasStorage<T:NumericType>: Storage {
     public typealias ElementType = T
     
     var array:SharedArray<T>
+    
     public var size:Int { return array.memory.count }
+    public var order:DimensionOrder { return .RowMajor }
     
     public required init(size:Int) {
         array = SharedArray<ElementType>(count: size, repeatedValue: ElementType(0))
@@ -47,13 +49,21 @@ public class CBlasStorage<T:NumericType>: Storage {
         var stride = Array<Int>(count:shape.count, repeatedValue: 0)
         
         var mult = 1
-        for i in 0..<shape.count-1 {
-            stride[i] = shape[i]*mult
-            mult *= shape[i]
+        let last = shape.count-1
+        stride[last] = 1
+        
+        var j = 0
+        for i in last.stride(to: 0, by: -1) {
+            stride[i-1] = shape[last-i]*mult
+            mult *= shape[last-i]
+            j += 1
         }
-        stride[shape.count-1] = 1
+        
+        return stride.reverse()
+    }
 
-        return stride
+    public func calculateOrder(dims:Int) -> [Int] {
+        return (0..<dims).map { $0 }
     }
 }
 

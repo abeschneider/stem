@@ -41,16 +41,21 @@ func elementwiseBinaryOp<StorageType:Storage>
     }
 }
 
+// TODO: provide code to allow broadcasting (need to check dimensions against each other)
 func elementwiseBinaryOp<StorageType:Storage>
     (left:StorageType.ElementType, _ right:Tensor<StorageType>, result:Tensor<StorageType>,
     op:(left:StorageType.ElementType, right:StorageType.ElementType) -> StorageType.ElementType)
 {
-    precondition(right.shape.elements == result.shape.elements)
+//    precondition(right.shape.elements == result.shape.elements)
     
-    var indexResult = result.indices()
-    for i in right.indices() {
-        let idx = indexResult.next()!
-        result[idx] = op(left: left, right: right[i])
+    if right.shape.elements == result.shape.elements {
+        var indexResult = result.indices()
+        for i in right.indices() {
+            let idx = indexResult.next()!
+            result[idx] = op(left: left, right: right[i])
+        }
+    } else {
+        // broadcast
     }
 }
 
@@ -515,15 +520,39 @@ public func *=<StorageType:Storage where StorageType.ElementType:NumericType>
 // dot product
 //
 
-public func dot<StorageType:Storage where StorageType.ElementType:NumericType>
-    (left left:Tensor<StorageType>, right:Tensor<StorageType>, result:Tensor<StorageType>)
-{
-    // completely generic type currently unsupported
-//    throw TensorError.IllegalOperation
-    assertionFailure()
+func isVector(type:TensorType) -> Bool {
+    return type == .Vector || type == .RowVector || type == .ColumnVector
 }
 
-// generalized form (must check manually that vectors are properly aligned)
+func isMatrix(type:TensorType) -> Bool {
+    return type == .Matrix
+}
+
+func isCube(type:TensorType) -> Bool {
+    return type == .Cube
+}
+
+
+// TODO: benchmark this against specific cases .. not sure
+// the specific cases are faster (and therefore should potentially
+// be removed)
+public func dot<S:Storage where S.ElementType:NumericType>
+    (left left:Tensor<S>, right:Tensor<S>, result:Tensor<S>)
+{
+    precondition(left.shape.span < 3)
+    precondition(right.shape.span < 3)
+    precondition(left.shape[1] == right.shape[0], "Number of rows in vector must match number of rows of matrix")
+    precondition(left.shape[0] == result.shape[0], "Number of rows of result must match rows in matrix")
+    
+    for n in 0..<left.shape[0] {
+        for m in 0..<right.shape[0] {
+            for k in 0..<right.shape[1] {
+                result[n, k] = result[n, k] + left[n, m]*right[m, k]
+            }
+        }
+    }
+}
+
 public func dot<StorageType:Storage where StorageType.ElementType:NumericType>
     (left left:Vector<StorageType>, right:Vector<StorageType>) -> StorageType.ElementType
 {
@@ -679,6 +708,7 @@ func reduce<StorageType:Storage>(tensor:Tensor<StorageType>,
 {
     precondition(axis < tensor.shape.count)
     
+    // calculate new shape
     let reduced:[(index:Int, element:Int)] = tensor.shape
         .enumerate()
         .filter { $0.index != axis }
@@ -686,8 +716,10 @@ func reduce<StorageType:Storage>(tensor:Tensor<StorageType>,
     let indices = reduced.map { $0.index }
     let newShape = reduced.map { $0.element }
     
+    // create tensor to hold results
     let result = Tensor<StorageType>(shape: Extent(newShape))
     
+    // index `i` is the axis we are summing along
     for i in 0..<tensor.shape[axis] {
         let oldIndices = GeneratorSequence(IndexGenerator(tensor.shape, dimIndex: indices))
         let newIndices = GeneratorSequence(IndexGenerator(result.shape))
@@ -797,11 +829,11 @@ func sqrt<StorageType:Storage where StorageType.ElementType:FloatNumericType>
     return result
 }
 
-func sqrt<StorageType:Storage where StorageType.ElementType:FloatNumericType>
-    (scalar:TensorScalar<StorageType>) -> TensorScalar<StorageType>
-{
-    return TensorScalar<StorageType>(StorageType.ElementType.sqrt(scalar.value))
-}
+//func sqrt<StorageType:Storage where StorageType.ElementType:FloatNumericType>
+//    (scalar:TensorScalar<StorageType>) -> TensorScalar<StorageType>
+//{
+//    return TensorScalar<StorageType>(StorageType.ElementType.sqrt(scalar.value))
+//}
 
 func norm<StorageType:Storage where StorageType.ElementType:FloatNumericType>
     (tensor:Tensor<StorageType>, axis:Int) -> Tensor<StorageType>
@@ -809,4 +841,13 @@ func norm<StorageType:Storage where StorageType.ElementType:FloatNumericType>
     let p = pow(tensor, StorageType.ElementType(2.0))
     let s = sum(p, axis: axis)
     return sqrt(s)
+}
+
+func sigmoid<StorageType:Storage where StorageType.ElementType:FloatNumericType>
+    (input:Tensor<StorageType>, output:Tensor<StorageType>)
+{
+    precondition(input.shape == output.shape)
+    for index in GeneratorSequence(input.indices()) {
+        output[index] = StorageType.ElementType(1.0) / (StorageType.ElementType(1.0) + StorageType.ElementType.exp(-input[index]))
+    }
 }

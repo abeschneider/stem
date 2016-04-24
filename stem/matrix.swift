@@ -42,12 +42,16 @@ public class Matrix<StorageType:Storage>: Tensor<StorageType> {
     
     public init(_ tensor:Tensor<StorageType>) {
         // verify we're being pass a vector
-        assert(tensor.shape.span == 2)
+        precondition(tensor.shape.span == 2)
         super.init(tensor)
     }
     
-    public override init(storage:StorageType, shape:Extent, view:StorageView<StorageType>?=nil, offset:Int?=nil) {
+    public init(storage:StorageType, shape:Extent, view:StorageView<StorageType>?=nil, offset:Int?=nil, stride:[Int]?=nil) {
         super.init(storage: storage, shape: shape, view: view, offset: offset)
+        
+        if let s = stride {
+            self.stride = s
+        }
     }
     
     public init(rows:Int, cols:Int) {
@@ -55,12 +59,16 @@ public class Matrix<StorageType:Storage>: Tensor<StorageType> {
     }
     
     public override init(shape:Extent) {
-        assert(shape.count == 2)
+        precondition(shape.count == 2)
         super.init(shape: shape)
     }
     
-    public init(_ matrix:Matrix, dimIndex:[Int]?=nil, view:StorageView<StorageType>?=nil) {
+    public init(_ matrix:Matrix, dimIndex:[Int]?=nil, view:StorageView<StorageType>?=nil, stride:[Int]?=nil) {
         super.init(matrix, dimIndex: dimIndex, view: view)
+        
+        if let s = stride {
+            self.stride = s
+        }
     }
     
     public override func transpose() -> Matrix {
@@ -68,6 +76,6 @@ public class Matrix<StorageType:Storage>: Tensor<StorageType> {
         let newShape = Extent(view.shape.reverse())
         let newOffset = Array(view.offset.reverse())
         let newView = StorageView<StorageType>(shape: newShape, offset: newOffset)
-        return Matrix(self, dimIndex: newDimIndex, view: newView)
+        return Matrix(self, dimIndex: newDimIndex, view: newView, stride: self.stride.reverse())
     }
 }

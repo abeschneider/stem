@@ -28,8 +28,8 @@ public class Vector<StorageType:Storage>: Tensor<StorageType> {
         super.init(tensor)
     }
     
-    public init(_ vector:Vector<StorageType>, dimIndex:[Int]?=nil, view:StorageView<StorageType>?=nil) {
-        super.init(vector, dimIndex: dimIndex, view: view)
+    public init(_ vector:Vector<StorageType>, dimIndex:[Int]?=nil, view:StorageView<StorageType>?=nil, stride:[Int]?) {
+        super.init(vector, dimIndex: dimIndex, view: view, stride: stride)
     }
     
     public init(rows:Int) {
@@ -65,8 +65,8 @@ public class ColumnVector<StorageType:Storage>: Vector<StorageType> {
         super.init(tensor)
     }
     
-    public override init(_ vector:Vector<StorageType>, dimIndex:[Int]?=nil, view:StorageView<StorageType>?=nil) {
-        super.init(vector, dimIndex: dimIndex, view: view)
+    public override init(_ vector:Vector<StorageType>, dimIndex:[Int]?=nil, view:StorageView<StorageType>?=nil, stride:[Int]?=nil) {
+        super.init(vector, dimIndex: dimIndex, view: view, stride:stride)
     }
     
     public override init(rows:Int) {
@@ -78,7 +78,7 @@ public class ColumnVector<StorageType:Storage>: Vector<StorageType> {
         let newShape = Extent(view.shape.reverse())
         let newOffset = Array(view.offset.reverse())
         let newView = StorageView<StorageType>(shape: newShape, offset: newOffset)
-        return RowVector<StorageType>(self, dimIndex: newDimIndex, view: newView)
+        return RowVector<StorageType>(self, dimIndex: newDimIndex, view: newView, stride: stride.reverse())
     }
 }
 
@@ -98,8 +98,8 @@ public class RowVector<StorageType:Storage>: Vector<StorageType> {
         super.init(tensor)
     }
     
-    public override init(_ vector:Vector<StorageType>, dimIndex:[Int]?=nil, view:StorageView<StorageType>?=nil) {
-        super.init(vector, dimIndex: dimIndex, view: view)
+    public override init(_ vector:Vector<StorageType>, dimIndex:[Int]?=nil, view:StorageView<StorageType>?=nil, stride:[Int]?=nil) {
+        super.init(vector, dimIndex: dimIndex, view: view, stride: stride)
     }
     
     public override init(storage:StorageType, shape:Extent, view:StorageView<StorageType>?=nil, offset:Int?=nil) {
@@ -112,6 +112,6 @@ public class RowVector<StorageType:Storage>: Vector<StorageType> {
     
     public override func transpose() -> ColumnVector<StorageType> {
         let newDimIndex = Array(dimIndex.reverse())
-        return ColumnVector<StorageType>(self, dimIndex: newDimIndex)
+        return ColumnVector<StorageType>(self, dimIndex: newDimIndex, stride: stride.reverse())
     }
 }

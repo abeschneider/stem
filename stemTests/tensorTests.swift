@@ -22,17 +22,16 @@ class stemTests: XCTestCase {
     }
     
     func testTensorCreate() {
-        let array:[Double] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+        let array:[Double] = [0, 1, 2, 3, 4,
+                              5, 6, 7, 8, 9]
         let tensor = Tensor<NativeStorage<Double>>(array: array, shape: Extent(2, 5))
         
         XCTAssertEqual(tensor.shape, Extent(2, 5))
         
         var k = 0
-        for i in 0..<tensor.shape[0] {
-            for j in 0..<tensor.shape[1] {
-                XCTAssertEqual(tensor[i, j], array[k])
-                k += 1
-            }
+        for index in GeneratorSequence(tensor.indices()) {
+            XCTAssertEqual(tensor[index], array[k])
+            k += 1
         }
     }
     
@@ -42,15 +41,13 @@ class stemTests: XCTestCase {
         let tensor = Tensor<CBlasStorage<Double>>(array: array, shape: Extent(2, 5))
         
         XCTAssertEqual(tensor.shape, Extent(2, 5))
-
+        
         let expected = (0..<10).map { Double($0) }
         
         var k = 0
-        for i in 0..<tensor.shape[0] {
-            for j in 0..<tensor.shape[1] {
-                XCTAssertEqual(tensor[i, j], expected[k])
-                k += 1
-            }
+        for index in tensor.indices(.ColumnMajor) {
+            XCTAssertEqual(tensor[index], expected[k])
+            k += 1
         }
     }
     
@@ -71,7 +68,7 @@ class stemTests: XCTestCase {
     func asColumnMajor(array:[Double], rows:Int, cols:Int) -> [Double] {
         let m = Tensor<NativeStorage<Double>>(array: array, shape: Extent(rows, cols))
         var result = Array<Double>(count: m.shape.elements, repeatedValue: Double(0))
-        
+
         var k = 0
         for i in 0..<m.shape[1] {
             for j in 0..<m.shape[0] {
@@ -91,7 +88,7 @@ class stemTests: XCTestCase {
         let expected:[Double] = [11, 12, 21, 22]
         
         var k = 0
-        for i in tensor2.indices() {
+        for i in tensor2.indices(.ColumnMajor) {
             XCTAssertEqual(tensor2[i], expected[k])
             k += 1
         }
@@ -134,19 +131,19 @@ class stemTests: XCTestCase {
         
         // top row
         let tensor2 = tensor1[0, 0..<5]
-        for i in tensor2.indices() {
+        for i in tensor2.indices(.ColumnMajor) {
             tensor2[i] = 1
         }
         
         // second column
         let tensor3 = tensor1[0..<3, 1]
-        for i in tensor3.indices() {
+        for i in tensor3.indices(.ColumnMajor) {
             tensor3[i] = 2
         }
         
         // lower right area
         let tensor4 = tensor1[1..<3, 2..<5]
-        for i in tensor4.indices() {
+        for i in tensor4.indices(.ColumnMajor) {
             tensor4[i] = 3
         }
         
@@ -155,7 +152,7 @@ class stemTests: XCTestCase {
                                  0, 2, 3, 3, 3]
         
         var k = 0
-        for i in tensor1.indices() {
+        for i in tensor1.indices(.ColumnMajor) {
             XCTAssertEqual(tensor1[i], expected[k])
             k += 1
         }
@@ -199,7 +196,7 @@ class stemTests: XCTestCase {
         let expected:[Double] = [0, 5, 1, 6, 2, 7, 3, 8, 4, 9]
         var k = 0
         
-        for i in tensor2.indices() {
+        for i in tensor2.indices(.ColumnMajor) {
             XCTAssertEqual(tensor2[i], expected[k])
             k += 1
         }
@@ -234,7 +231,7 @@ class stemTests: XCTestCase {
         
         // verify contents are still valid
         var k = 0
-        for i in tensor2.indices() {
+        for i in tensor2.indices(.ColumnMajor) {
             XCTAssertEqual(tensor2[i], expected[k])
             k += 1
         }
@@ -353,6 +350,7 @@ class stemTests: XCTestCase {
         let cube = Tensor<NativeStorage<Double>>(shape: Extent(3, 4, 5))
         let expected = (0..<cube.shape.elements).map { $0 }
         
+        print("stride: \(cube.stride)")
         for (i, index) in GeneratorSequence(IndexGenerator(cube.shape, order:.ColumnMajor)).enumerate() {
             let offset = cube.calculateOffset(index)
             XCTAssertEqual(offset, expected[i])
@@ -432,21 +430,16 @@ class stemTests: XCTestCase {
         let expected2:[[Double]] = [[6, 7],
                                     [10, 11]]
         
-        for i in 0..<matrix2.shape[0] {
-            for j in 0..<matrix2.shape[1] {
-                XCTAssertEqual(matrix2[i, j], expected2[i][j])
-            }
+        for index in GeneratorSequence(matrix2.indices()) {
+            XCTAssertEqual(matrix2[index], expected2[index[0]][index[1]])
         }
         
         let matrix3 = matrix2.transpose()
-        
         let expected3:[[Double]] = [[6, 10],
                                     [7, 11]]
-        
-        for i in 0..<matrix3.shape[0] {
-            for j in 0..<matrix3.shape[1] {
-                XCTAssertEqual(matrix3[i, j], expected3[i][j])
-            }
+
+        for index in GeneratorSequence(matrix3.indices()) {
+            XCTAssertEqual(matrix3[index], expected3[index[0]][index[1]])
         }
     }
     
@@ -653,19 +646,19 @@ class stemTests: XCTestCase {
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
     }
     
-    func testCBlasMatrixVectorAdd1() {
-        let m = Matrix<CBlasStorage<Double>>([[1, 2, 3, 4], [5, 6, 7, 8]])
-        
-        let v1 = RowVector<CBlasStorage<Double>>([1, 1, 1, 1])
-        let v2 = ColumnVector<CBlasStorage<Double>>([0.5, 0.5])
-        let result = Matrix<CBlasStorage<Double>>(rows: m.shape[0], cols: m.shape[1])
-        
-        add(left: m, right: v1, result: result)
-        iadd(left: result, right: v2)
-        
-        let expected = Matrix<CBlasStorage<Double>>([[2.5, 3.5, 4.5, 5.5], [6.5, 7.5, 8.5, 9.5]])
-        XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
-    }
+//    func testCBlasMatrixVectorAdd1() {
+//        let m = Matrix<CBlasStorage<Double>>([[1, 2, 3, 4], [5, 6, 7, 8]])
+//        
+//        let v1 = RowVector<CBlasStorage<Double>>([1, 1, 1, 1])
+//        let v2 = ColumnVector<CBlasStorage<Double>>([0.5, 0.5])
+//        let result = Matrix<CBlasStorage<Double>>(rows: m.shape[0], cols: m.shape[1])
+//        
+//        add(left: m, right: v1, result: result)
+//        iadd(left: result, right: v2)
+//        
+//        let expected = Matrix<CBlasStorage<Double>>([[2.5, 3.5, 4.5, 5.5], [6.5, 7.5, 8.5, 9.5]])
+//        XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
+//    }
     
     func testVectorSub() {
         let m1 = Vector<NativeStorage<Double>>([1, 2, 3, 4, 5, 6, 7, 8])

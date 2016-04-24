@@ -8,10 +8,16 @@
 
 import Foundation
 
+public enum DimensionOrder {
+    case ColumnMajor
+    case RowMajor
+}
+
 public protocol Storage {
     associatedtype ElementType:NumericType
     
     var size:Int { get }
+    var order:DimensionOrder { get }
     
     init(size:Int)
     init(array:[ElementType])
@@ -20,6 +26,11 @@ public protocol Storage {
     
     subscript(index:Int) -> ElementType {get set}
     
+    // TODO: does this stay here or become a separate function (currently
+    // does not depend on storage type
     // returns the stride for each dimension to traverse memory
     func calculateStride(shape:Extent) -> [Int]
+    
+    func calculateOrder(dims:Int) -> [Int]
 }
+

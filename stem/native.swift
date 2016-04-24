@@ -14,6 +14,7 @@ public class NativeStorage<T:NumericType>: Storage {
     var array:SharedArray<T>
     
     public var size:Int { return array.memory.count }
+    public var order:DimensionOrder { return .ColumnMajor }
     
     public required init(size:Int) {
         array = SharedArray<ElementType>(count: size, repeatedValue: ElementType(0))
@@ -50,12 +51,20 @@ public class NativeStorage<T:NumericType>: Storage {
         var stride = Array<Int>(count:shape.count, repeatedValue: 0)
         
         var mult = 1
-        stride[0] = 1
-        for i in 1..<shape.count {
-            stride[i] = shape[shape.count-i]*mult
-            mult *= shape[shape.count-i]
+        let last = shape.count-1
+        stride[last] = 1
+        
+        var j = 0
+        for i in last.stride(to: 0, by: -1) {
+            stride[i-1] = shape[i]*mult
+            mult *= shape[i]
+            j += 1
         }
         
         return stride
+    }
+    
+    public func calculateOrder(dims:Int) -> [Int] {
+        return (0..<dims).map { dims-$0-1 }
     }
 }
