@@ -9,8 +9,6 @@
 import Foundation
 import Accelerate
 
-// TODO: need some way to set dimIndex from storage level (maybe some function
-// to return the index as a default value?)
 public class CBlasStorage<T:NumericType>: Storage {
     public typealias ElementType = T
     
@@ -45,25 +43,12 @@ public class CBlasStorage<T:NumericType>: Storage {
         set { array[index] = newValue }
     }
     
-    public func calculateStride(shape:Extent) -> [Int] {
-        var stride = Array<Int>(count:shape.count, repeatedValue: 0)
-        
-        var mult = 1
-        let last = shape.count-1
-        stride[last] = 1
-        
-        var j = 0
-        for i in last.stride(to: 0, by: -1) {
-            stride[i-1] = shape[last-i]*mult
-            mult *= shape[last-i]
-            j += 1
-        }
-        
-        return stride.reverse()
-    }
-
     public func calculateOrder(dims:Int) -> [Int] {
         return (0..<dims).map { $0 }
+    }
+    
+    public func calculateOrder(values:[Int]) -> [Int] {
+        return values
     }
 }
 

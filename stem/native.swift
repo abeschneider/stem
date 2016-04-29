@@ -47,24 +47,11 @@ public class NativeStorage<T:NumericType>: Storage {
         set { array[index] = newValue }
     }
     
-    public func calculateStride(shape:Extent) -> [Int] {
-        var stride = Array<Int>(count:shape.count, repeatedValue: 0)
-        
-        var mult = 1
-        let last = shape.count-1
-        stride[last] = 1
-        
-        var j = 0
-        for i in last.stride(to: 0, by: -1) {
-            stride[i-1] = shape[i]*mult
-            mult *= shape[i]
-            j += 1
-        }
-        
-        return stride
-    }
-    
     public func calculateOrder(dims:Int) -> [Int] {
         return (0..<dims).map { dims-$0-1 }
+    }
+    
+    public func calculateOrder(values:[Int]) -> [Int] {
+        return values.reverse()
     }
 }

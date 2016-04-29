@@ -201,7 +201,7 @@ public class Tensor<StorageType:Storage> {
     public init(array:[StorageType.ElementType], shape:Extent, offset:Int?=nil) {
         storage = StorageType(array: array)
         internalShape = shape
-        self.stride = storage.calculateStride(shape)
+        self.stride = calculateStride(Extent(storage.calculateOrder(shape.dims)))
         dimIndex = storage.calculateOrder(shape.count)
 
         if let o = offset {
@@ -216,7 +216,7 @@ public class Tensor<StorageType:Storage> {
     public init(storage:StorageType, shape:Extent, view:StorageView<StorageType>?=nil, offset:Int?=nil) {
         self.storage = storage
         internalShape = shape
-        self.stride = storage.calculateStride(shape)
+        self.stride = calculateStride(Extent(storage.calculateOrder(shape.dims)))
         dimIndex = storage.calculateOrder(shape.count)
         
         if let o = offset {
@@ -236,7 +236,7 @@ public class Tensor<StorageType:Storage> {
         storage = StorageType(size: shape.elements)
         internalShape = shape
         offset = 0
-        self.stride = storage.calculateStride(shape)
+        self.stride = calculateStride(Extent(storage.calculateOrder(shape.dims)))
         dimIndex = storage.calculateOrder(shape.count)
 
         view = ViewType(shape: shape, offset: Array<Int>(count: shape.count, repeatedValue: 0))
@@ -257,7 +257,7 @@ public class Tensor<StorageType:Storage> {
         })
         
         view = ViewType(shape: viewShape, offset: window.map { $0.first != nil ? $0.first! : 0})
-        dimIndex = (0..<tensor.internalShape.count).map { tensor.internalShape.count-$0-1 }
+        dimIndex = tensor.storage.calculateOrder(viewShape.count)
     }
     
     public init(_ tensor:Tensor, dimIndex:[Int]?=nil, view:StorageView<StorageType>?=nil, stride: [Int]?=nil, copy:Bool=false) {
@@ -295,18 +295,14 @@ public class Tensor<StorageType:Storage> {
         offset = 0
         self.stride = stride
         self.view = ViewType(shape: shape, offset: tensor.view.offset)
-        dimIndex = (0..<tensor.internalShape.count).map { tensor.internalShape.count-$0-1 }
+        dimIndex = storage.calculateOrder(shape.count)
     }
 
-//    static func calculateOrder(dims:Int) -> [Int] {
-//        return (0..<dims).map { dims-$0-1 }
-//    }
-    
     public func calculateOffset() -> Int {
         var pos = offset
         for i in 0..<shape.count {
             let di = dimIndex[i]
-            pos += view.offset[di]*stride[di]
+            pos += view.offset[di]*stride[i]
         }
         
         return pos
@@ -316,7 +312,7 @@ public class Tensor<StorageType:Storage> {
         var pos = offset
         for i in 0..<dimIndex.count {
             let di = dimIndex[i]
-            pos += (indices[di]+view.offset[di])*stride[di]
+            pos += (indices[di]+view.offset[di])*stride[i]
         }
         
         return pos
@@ -357,7 +353,7 @@ public class Tensor<StorageType:Storage> {
         let newShape = Extent(view.shape.reverse())
         let newOffset = Array(view.offset.reverse())
         let newView = StorageView<StorageType>(shape: newShape, offset: newOffset)
-        return Tensor(self, dimIndex: newDimIndex, view: newView, stride: stride.reverse())
+        return Tensor(self, dimIndex: newDimIndex, view: newView, stride: stride)
     }
     
     public func reshape(newShape:Extent) -> Tensor {

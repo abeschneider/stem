@@ -37,13 +37,24 @@ class stemTests: XCTestCase {
     
     func testCBlasTensorCreate() {
         // NB: storage for CBlas follows a column-major format
-        let array:[Double] = asColumnMajor((0..<10).map { Double($0) }, rows: 2, cols: 5)
-        let tensor = Tensor<CBlasStorage<Double>>(array: array, shape: Extent(2, 5))
-        
+//        let array:[Double] = asColumnMajor((0..<10).map { Double($0) }, rows: 2, cols: 5)
+//        let tensor = Tensor<CBlasStorage<Double>>(array: array, shape: Extent(2, 5))
+        let tensor = Tensor<CBlasStorage<Double>>(shape: Extent(2, 5))
+
         XCTAssertEqual(tensor.shape, Extent(2, 5))
+        
+        var c = 0.0
+        for i in 0..<2 {
+            for j in 0..<5 {
+                tensor[i, j] = c
+                c += 1
+            }
+        }
         
         let expected = (0..<10).map { Double($0) }
         
+        // traverse the tensor in column major to
+        // test expected values
         var k = 0
         for index in tensor.indices(.ColumnMajor) {
             XCTAssertEqual(tensor[index], expected[k])
@@ -131,19 +142,19 @@ class stemTests: XCTestCase {
         
         // top row
         let tensor2 = tensor1[0, 0..<5]
-        for i in tensor2.indices(.ColumnMajor) {
+        for i in tensor2.indices() {
             tensor2[i] = 1
         }
         
         // second column
         let tensor3 = tensor1[0..<3, 1]
-        for i in tensor3.indices(.ColumnMajor) {
+        for i in tensor3.indices() {
             tensor3[i] = 2
         }
         
         // lower right area
         let tensor4 = tensor1[1..<3, 2..<5]
-        for i in tensor4.indices(.ColumnMajor) {
+        for i in tensor4.indices() {
             tensor4[i] = 3
         }
         
@@ -350,7 +361,6 @@ class stemTests: XCTestCase {
         let cube = Tensor<NativeStorage<Double>>(shape: Extent(3, 4, 5))
         let expected = (0..<cube.shape.elements).map { $0 }
         
-        print("stride: \(cube.stride)")
         for (i, index) in GeneratorSequence(IndexGenerator(cube.shape, order:.ColumnMajor)).enumerate() {
             let offset = cube.calculateOffset(index)
             XCTAssertEqual(offset, expected[i])
