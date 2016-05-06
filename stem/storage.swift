@@ -30,26 +30,6 @@ public protocol Storage {
     func calculateOrder(values:[Int]) -> [Int]
 }
 
-func broadcast<S>(tensor:Tensor<S>, shape:Extent) -> [Int] {
-    let idim_start = shape.count - tensor.shape.count
-    var idim = shape.count-1
-    var result = [Int](count: shape.count, repeatedValue: 0)
-    
-    while idim >= idim_start {
-        let strides_shape_value = tensor.shape[idim - idim_start]
-        
-        if (strides_shape_value == 1) {
-            result[idim] = 0
-        } else {
-            result[idim] = tensor.stride[idim - idim_start]
-        }
-        
-        idim -= 1
-    }
-    
-    return result
-}
-
 public func calculateStride(shape:Extent) -> [Int] {
     var stride = Array<Int>(count:shape.count, repeatedValue: 0)
     

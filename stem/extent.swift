@@ -41,6 +41,18 @@ public struct Extent: CollectionType {
         span = (values.map { Int($0 > 1) }).reduce(0, combine: +)
     }
     
+    // extend the extent over additional dimensions
+    public init(_ extent:Extent, over:Int) {
+        precondition(over >= extent.count)
+        let diff = over - extent.count
+        
+        let ones = [Int](count: diff, repeatedValue: 1)
+        values = extent.values + ones
+        
+        elements = values.reduce(1, combine: *)
+        span = (values.map { Int($0 > 1) }).reduce(0, combine: +)
+    }
+    
     public var startIndex:Int { return 0 }
     public var endIndex:Int { return values.count }
     
@@ -88,11 +100,20 @@ public struct Extent: CollectionType {
 
 extension Extent: Equatable {}
 
-public func ==(left:Extent, right:Extent) -> Bool{
+public func ==(left:Extent, right:Extent) -> Bool {
     if left.elements != right.elements { return false }
+    
     for i in 0..<left.count {
         if left[i] != right[i] { return false }
     }
     
     return true
+}
+
+public func >(left:Extent, right:Extent) -> Bool {
+    return left.elements > right.elements
+}
+
+public func max(left:Extent, _ right:Extent) -> Extent {
+    return left > right ? left : right
 }

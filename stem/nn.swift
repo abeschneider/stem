@@ -162,7 +162,7 @@ class LinearGradient<S:Storage>: Gradient, Shapeable {
         assert(false)
     }
     
-    func apply(input:Vector<StorageType>, gradOutput:ColumnVector<StorageType>) throws -> Vector<StorageType>
+    func apply(input:Vector<StorageType>, gradOutput:ColumnVector<StorageType>) throws -> Tensor<StorageType>
     {
         if gradInput == nil || gradInput!.shape[0] != gradWeight.shape[0] {
             gradInput = ColumnVector<StorageType>(rows: gradWeight.shape[0])
@@ -175,10 +175,10 @@ class LinearGradient<S:Storage>: Gradient, Shapeable {
         iadd(left: gradBias, right: gradOutput)
         
         // gradInput! = weight*gradOutput
-        let tmp:Vector<StorageType> = gradWeight⊙gradOutput
-        iadd(left: self.gradInput! as! Vector<StorageType>, right: tmp)
+        let tmp:Tensor<StorageType> = gradWeight⊙gradOutput
+        iadd(left: self.gradInput!, right: tmp)
         
-        return self.gradInput! as! Vector
+        return self.gradInput!
     }
     
     func clear() {

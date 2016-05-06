@@ -7,7 +7,7 @@
 //
 
 import Foundation
-
+/*
 enum ConnectionError: ErrorType {
     case CannotAcceptInput
     case CannotAcceptOutput
@@ -196,7 +196,7 @@ class Concat<S:Storage>: GraphModule, Container {
         // need to verify output dimensions make sense
         modules.append(AnyGraphModule<S>(module))
     }
-}
+}*/
 
 
 // takes a single input, and forwards it to each of its children

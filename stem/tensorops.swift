@@ -66,79 +66,25 @@ func elementwiseBinaryOp<StorageType:Storage>
 public func add<StorageType:Storage where StorageType.ElementType:NumericType>
     (left left:Tensor<StorageType>, right:Tensor<StorageType>, result:Tensor<StorageType>)
 {
-    precondition(left.shape == right.shape, "Tensor dimensions must match")
-    
-    elementwiseBinaryOp(left, right, result: result, op: { $0 + $1 })
-}
-
-public func add<StorageType:Storage where StorageType.ElementType:NumericType>
-    (left left:Matrix<StorageType>, right:RowVector<StorageType>, result:Matrix<StorageType>)
-{
-    // NxM + 1xN
-    precondition(left.shape[1] == right.shape[1], "Number of columns must match")
-    precondition(result.shape[0] == left.shape[0], "Number of rows must match")
-    precondition(result.shape[1] == left.shape[1], "Number of columns must match")
-    
-    let rows = left.shape[0]
-    let cols = left.shape[1]
-    for i in 0..<rows {
-        elementwiseBinaryOp(left[i, 0..<cols], right, result: result[i, 0..<cols], op: { $0 + $1 })
-    }
-}
-
-public func add<StorageType:Storage where StorageType.ElementType:NumericType>
-    (left left:Matrix<StorageType>, right:ColumnVector<StorageType>, result:Matrix<StorageType>)
-{
-    // NxM + M
-    precondition(left.shape[0] == right.shape[1], "Vector must have same number columns as rows in Matrix")
-    
-    let rows = left.shape[0]
-    let cols = left.shape[1]
-    
-    for i in 0..<cols {
-        elementwiseBinaryOp(left[0..<rows, i], right, result: result[0..<rows, i], op: { $0 + $1 })
+//    precondition(left.shape == right.shape, "Tensor dimensions must match")
+//
+    if left.shape == right.shape {
+        elementwiseBinaryOp(left, right, result: result, op: { $0 + $1 })
+    } else {
+        let (l, r) = broadcast(left, right)
+        elementwiseBinaryOp(l, r, result: result, op: { $0 + $1 })
     }
 }
 
 public func iadd<StorageType:Storage where StorageType.ElementType:NumericType>
     (left left:Tensor<StorageType>, right:Tensor<StorageType>)
 {
-    // TODO: need to just make sure Tensors are same shape
-    assert(false)
-}
-
-public func iadd<StorageType:Storage where StorageType.ElementType:NumericType>
-    (left left:Vector<StorageType>, right:Vector<StorageType>)
-{
-    precondition(left.shape.elements == right.shape.elements)
-    elementwiseBinaryOp(left, right, result: left, op: { $0 + $1 })
-}
-
-public func iadd<StorageType:Storage where StorageType.ElementType:NumericType>
-    (left left:Matrix<StorageType>, right:ColumnVector<StorageType>)
-{
-    // NxM + Mx1
-    precondition(left.shape[0] == right.shape[0], "Number of columns must match")
-    
-    let rows = left.shape[0]
-    let cols = left.shape[1]
-    for i in 0..<cols {
-        elementwiseBinaryOp(left[0..<rows, i], right, result: left[0..<rows, i], op: { $0 + $1 })
+    if left.shape == right.shape {
+        elementwiseBinaryOp(left, right, result: left, op: { $0 + $1 })
+    } else {
+        let (l, r) = broadcast(left, right)
+        elementwiseBinaryOp(l, r, result: left, op: { $0 + $1 })
     }
-}
-
-public func iadd<StorageType:Storage where StorageType.ElementType:NumericType>
-    (left left:Matrix<StorageType>, right:RowVector<StorageType>)
-{
-    // NxM + N
-    precondition(left.shape[0] == right.shape[0], "Number of rows much match")
-    
-    let rows = left.shape[0]
-    let cols = left.shape[1]
-    for i in 0..<rows {
-        elementwiseBinaryOp(left[i, 0..<cols], right, result: left[i, 0..<cols], op: { $0 + $1 })
-    }
-
 }
 
 public func +<StorageType:Storage where StorageType.ElementType:NumericType>
@@ -150,48 +96,11 @@ public func +<StorageType:Storage where StorageType.ElementType:NumericType>
     return result
 }
 
-public func +<StorageType:Storage where StorageType.ElementType:NumericType>
-    (left:RowVector<StorageType>, right:RowVector<StorageType>) -> RowVector<StorageType>
-{
-    let result = RowVector<StorageType>(cols: left.shape[1])
-    add(left: left, right: right, result: result)
-    
-    return result
-}
-
-public func +<StorageType:Storage where StorageType.ElementType:NumericType>
-    (left:ColumnVector<StorageType>, right:ColumnVector<StorageType>) -> ColumnVector<StorageType>
-{
-    let result = ColumnVector<StorageType>(rows: left.shape[0])
-    add(left: left, right: right, result: result)
-    
-    return result
-}
-
 public func +=<StorageType:Storage where StorageType.ElementType:NumericType>
     (left:Tensor<StorageType>, right:Tensor<StorageType>)
 {
     iadd(left: left, right: right)
 }
-
-public func +=<StorageType:Storage where StorageType.ElementType:NumericType>
-    (left:Vector<StorageType>, right:Vector<StorageType>)
-{
-    iadd(left: left, right: right)
-}
-
-public func +=<StorageType:Storage where StorageType.ElementType:NumericType>
-    (left:Matrix<StorageType>, right:ColumnVector<StorageType>)
-{
-    iadd(left: left, right: right)
-}
-
-public func +=<StorageType:Storage where StorageType.ElementType:NumericType>
-    (left:Matrix<StorageType>, right:RowVector<StorageType>)
-{
-    iadd(left: left, right: right)
-}
-
 
 //
 // subtraction
@@ -200,7 +109,13 @@ public func +=<StorageType:Storage where StorageType.ElementType:NumericType>
 public func sub<StorageType:Storage where StorageType.ElementType:NumericType>
     (left left:Tensor<StorageType>, right:Tensor<StorageType>, result:Tensor<StorageType>)
 {
-    elementwiseBinaryOp(left, right, result: result, op: { return $0 - $1 })
+    if left.shape == right.shape {
+        elementwiseBinaryOp(left, right, result: result, op: { return $0 - $1 })
+    } else {
+        let (l, r) = broadcast(left, right)
+        elementwiseBinaryOp(l, r, result: result, op: { return $0 - $1 })
+    }
+    
 }
 
 public func sub<StorageType:Storage where StorageType.ElementType:NumericType>
@@ -212,41 +127,11 @@ public func sub<StorageType:Storage where StorageType.ElementType:NumericType>
 public func isub<StorageType:Storage where StorageType.ElementType:NumericType>
     (left left:Tensor<StorageType>, right:Tensor<StorageType>)
 {
-    // general case is currently not supported
-    assert(false)
-}
-
-public func isub<StorageType:Storage where StorageType.ElementType:NumericType>
-    (left left:Vector<StorageType>, right:Vector<StorageType>)
-{
-    // NxM + N
-    precondition(left.shape.elements == right.shape.elements)
-    elementwiseBinaryOp(left, right, result: left, op: { $0 - $1 })
-}
-
-public func isub<StorageType:Storage where StorageType.ElementType:NumericType>
-    (left left:Matrix<StorageType>, right:ColumnVector<StorageType>)
-{
-    // NxM + N
-    precondition(left.shape[1] == right.shape[0])
-    
-    let rows = left.shape[0]
-    let cols = left.shape[1]
-    for i in 0..<rows {
-        elementwiseBinaryOp(left[i, 0..<cols], right, result: left[i, 0..<cols], op: { $0 - $1 })
-    }
-}
-
-public func isub<StorageType:Storage where StorageType.ElementType:NumericType>
-    (left left:Matrix<StorageType>, right:RowVector<StorageType>)
-{
-    // NxM + N
-    precondition(left.shape[0] == right.shape[0])
-    
-    let rows = left.shape[0]
-    let cols = left.shape[1]
-    for i in 0..<cols {
-        elementwiseBinaryOp(left[0..<rows, i], right, result: left[0..<rows, i], op: { $0 - $1 })
+    if left.shape == right.shape {
+        elementwiseBinaryOp(left, right, result: left, op: { $0 - $1 })
+    } else {
+        let (l, r) = broadcast(left, right)
+        elementwiseBinaryOp(l, r, result: left, op: { $0 - $1 })
     }
 }
 
@@ -297,41 +182,11 @@ public func div<StorageType:Storage where StorageType.ElementType:NumericType>
 public func idiv<StorageType:Storage where StorageType.ElementType:NumericType>
     (left left:Tensor<StorageType>, right:Tensor<StorageType>)
 {
-    // TODO
-    assert(false)
-}
-
-public func idiv<StorageType:Storage where StorageType.ElementType:NumericType>
-    (left left:Vector<StorageType>, right:Vector<StorageType>)
-{
-    // NxM + N
-    precondition(left.shape.elements == right.shape.elements)
-    elementwiseBinaryOp(left, right, result: left, op: { $0 / $1 })
-}
-
-public func idiv<StorageType:Storage where StorageType.ElementType:NumericType>
-    (left left:Matrix<StorageType>, right:ColumnVector<StorageType>)
-{
-    // NxM + N
-    precondition(left.shape[1] == right.shape[0])
-    
-    let rows = left.shape[0]
-    let cols = left.shape[1]
-    for i in 0..<rows {
-        elementwiseBinaryOp(left[i, 0..<cols], right, result: left[i, 0..<cols], op: { $0 / $1 })
-    }
-}
-
-public func idiv<StorageType:Storage where StorageType.ElementType:NumericType>
-    (left left:Matrix<StorageType>, right:RowVector<StorageType>)
-{
-    // NxM + N
-    precondition(left.shape[0] == right.shape[0])
-    
-    let rows = left.shape[0]
-    let cols = left.shape[1]
-    for i in 0..<cols {
-        elementwiseBinaryOp(left[0..<rows, i], right, result: left[0..<rows, i], op: { $0 / $1 })
+    if left.shape == right.shape {
+        elementwiseBinaryOp(left, right, result: left, op: { $0 / $1 })
+    } else {
+        let (l, r) = broadcast(left, right)
+        elementwiseBinaryOp(l, r, result: left, op: { $0 / $1 })
     }
 }
 
@@ -344,9 +199,9 @@ public func idiv<StorageType:Storage where StorageType.ElementType:NumericType>
 public func /<StorageType:Storage where StorageType.ElementType:NumericType>
     (left:Tensor<StorageType>, right:Tensor<StorageType>) -> Tensor<StorageType>
 {
-    let result = Tensor<StorageType>(shape: left.shape)
+    let shape = max(left.shape, right.shape)
+    let result = Tensor<StorageType>(shape: shape)
     div(left: left, right: right, result: result)
-    
     return result
 }
 
@@ -369,32 +224,11 @@ public func /=<StorageType:Storage where StorageType.ElementType:NumericType>
 public func mul<StorageType:Storage where StorageType.ElementType:NumericType>
     (left left:Tensor<StorageType>, right:Tensor<StorageType>, result:Tensor<StorageType>)
 {
-    elementwiseBinaryOp(left, right, result: result, op: { return $0 * $1 })
-}
-
-public func mul<StorageType:Storage where StorageType.ElementType:NumericType>
-    (left left:Matrix<StorageType>, right:ColumnVector<StorageType>, result:Matrix<StorageType>)
-{
-    // NxM + N
-    precondition(left.shape[0] == right.shape[0])
-    
-    let rows = left.shape[0]
-    let cols = left.shape[1]
-    for i in 0..<cols {
-        elementwiseBinaryOp(left[0..<rows, i], right, result: result[0..<rows, i], op: { $0 * $1 })
-    }
-}
-
-public func mul<StorageType:Storage where StorageType.ElementType:NumericType>
-    (left left:Matrix<StorageType>, right:RowVector<StorageType>, result:Matrix<StorageType>)
-{
-    // NxM + N
-    precondition(left.shape[0] == right.shape[0])
-    
-    let rows = left.shape[0]
-    let cols = left.shape[1]
-    for i in 0..<rows {
-        elementwiseBinaryOp(left[i, 0..<cols], right, result: result[i, 0..<cols], op: { $0 * $1 })
+    if left.shape == right.shape {
+        elementwiseBinaryOp(left, right, result: result, op: { return $0 * $1 })
+    } else {
+        let (l, r) = broadcast(left, right)
+        elementwiseBinaryOp(l, r, result: result, op: { return $0 * $1 })
     }
 }
 
@@ -413,41 +247,11 @@ public func mul<StorageType:Storage where StorageType.ElementType:NumericType>
 public func imul<StorageType:Storage where StorageType.ElementType:NumericType>
     (left left:Tensor<StorageType>, right:Tensor<StorageType>)
 {
-    // TODO
-    assert(false)
-}
-
-public func imul<StorageType:Storage where StorageType.ElementType:NumericType>
-    (left left:Vector<StorageType>, right:Vector<StorageType>)
-{
-    // NxM + N
-    precondition(left.shape.elements == right.shape.elements)
-    elementwiseBinaryOp(left, right, result: left, op: { $0 * $1 })
-}
-
-public func imul<StorageType:Storage where StorageType.ElementType:NumericType>
-    (left left:Matrix<StorageType>, right:ColumnVector<StorageType>)
-{
-    // NxM + N
-    precondition(left.shape[1] == right.shape[0])
-    
-    let rows = left.shape[0]
-    let cols = left.shape[1]
-    for i in 0..<rows {
-        elementwiseBinaryOp(left[i, 0..<cols], right, result: left[i, 0..<cols], op: { $0 * $1 })
-    }
-}
-
-public func imul<StorageType:Storage where StorageType.ElementType:NumericType>
-    (left left:Matrix<StorageType>, right:RowVector<StorageType>)
-{
-    // NxM + N
-    precondition(left.shape[0] == right.shape[0])
-    
-    let rows = left.shape[0]
-    let cols = left.shape[1]
-    for i in 0..<cols {
-        elementwiseBinaryOp(left[0..<rows, i], right, result: left[0..<rows, i], op: { $0 * $1 })
+    if left.shape == right.shape {
+        elementwiseBinaryOp(left, right, result: left, op: { $0 * $1 })
+    } else {
+        let (l, r) = broadcast(left, right)
+        elementwiseBinaryOp(l, r, result: left, op: { $0 * $1 })
     }
 }
 
@@ -460,27 +264,9 @@ public func imul<StorageType:Storage where StorageType.ElementType:NumericType>
 public func *<StorageType:Storage where StorageType.ElementType:NumericType>
     (left:Tensor<StorageType>, right:Tensor<StorageType>) -> Tensor<StorageType>
 {
-    let result = Tensor<StorageType>(shape: left.shape)
-    mul(left: left, right: right, result: result)
+    let shape = max(left.shape, right.shape)
+    let result = Tensor<StorageType>(shape: shape)
     
-    return result
-}
-
-public func *<StorageType:Storage where StorageType.ElementType:NumericType>
-    (left:Matrix<StorageType>, right:RowVector<StorageType>) -> Tensor<StorageType>
-{
-    let result = Matrix<StorageType>(shape: left.shape)
-    mul(left: left, right: right, result: result)
-    
-    return result
-}
-
-public func *<StorageType:Storage where StorageType.ElementType:NumericType>
-    (left:Matrix<StorageType>, right:ColumnVector<StorageType>) -> Tensor<StorageType>
-{
-    precondition(left.shape[0] == right.shape[0], "Number of rows of vector must match number of rows of matrix")
-    
-    let result = Matrix<StorageType>(shape: left.shape)
     mul(left: left, right: right, result: result)
     
     return result
@@ -553,75 +339,32 @@ public func dot<S:Storage where S.ElementType:NumericType>
     }
 }
 
-public func dot<StorageType:Storage where StorageType.ElementType:NumericType>
-    (left left:Vector<StorageType>, right:Vector<StorageType>) -> StorageType.ElementType
+public func dot<S:Storage where S.ElementType:NumericType>
+    (left left:Tensor<S>, right:Tensor<S>) -> S.ElementType
 {
-//    if left.shape.elements != right.shape.elements {
-//        throw TensorError.SizeMismatch(lhs: left.shape, rhs: right.shape)
-//    }
+    precondition(isVector(left.type) && isVector(right.type))
     precondition(left.shape.elements == right.shape.elements, "Number of elements must match")
-    
-    var result:StorageType.ElementType = 0
-    
-    let indexLeft = left.indices()
-    let indexRight = right.indices()
-    
-    for (l, r) in Zip2Sequence(indexLeft, indexRight) {
+
+    var result:S.ElementType = 0
+
+    for (l, r) in Zip2Sequence(left.indices(), right.indices()) {
         result = result + left[l]*right[r]
     }
 
     return result
 }
 
-// transform: nxm * mx1 -> nx1
-public func dot<StorageType:Storage where StorageType.ElementType:NumericType>
-    (left left:Matrix<StorageType>, right:ColumnVector<StorageType>, result:ColumnVector<StorageType>)
-{
-    precondition(left.shape[1] == right.shape[0], "Number of rows in vector must match number of rows of matrix")
-    precondition(left.shape[0] == result.shape[0], "Number of rows of result must match rows in matrix")
-    
-    // per row
-    for i in 0..<left.shape[0] {
-        // per column
-        for j in 0..<left.shape[1] {
-            result[i] = result[i] + left[i, j]*right[j]
-        }
-    }
-}
-
-// NxM * MxK -> NxK
-public func dot<StorageType:Storage where StorageType.ElementType:NumericType>
-    (left left:Matrix<StorageType>, right:Matrix<StorageType>, result:Tensor<StorageType>)
-{
-    precondition(left.shape[1] == right.shape[0], "Number of columns must match number of rows in matrices")
-    
-    for n in 0..<left.shape[0] {
-        for m in 0..<left.shape[1] {
-            for k in 0..<right.shape[1] {
-                result[n, k] = result[n, k] + left[n, m]*right[m, k]
-            }
-        }
-    }
-}
-
-public func ⊙<StorageType:Storage where StorageType.ElementType:NumericType>
-    (left:RowVector<StorageType>, right:ColumnVector<StorageType>) -> StorageType.ElementType
+public func ⊙<S:Storage where S.ElementType:NumericType>
+    (left:Tensor<S>, right:Tensor<S>) -> S.ElementType
 {
     return dot(left: left, right: right)
 }
 
-public func ⊙<StorageType:Storage where StorageType.ElementType:NumericType>
-    (left:Matrix<StorageType>, right:ColumnVector<StorageType>) -> ColumnVector<StorageType>
+public func ⊙<S:Storage where S.ElementType:NumericType>
+    (left:Tensor<S>, right:Tensor<S>) -> Tensor<S>
 {
-    let result = ColumnVector<StorageType>(rows: left.shape[0])
-    dot(left: left, right: right, result: result)
-    return result
-}
-
-public func ⊙<StorageType:Storage where StorageType.ElementType:NumericType>
-    (left:Matrix<StorageType>, right:Matrix<StorageType>) -> Matrix<StorageType>
-{
-    let result = Matrix<StorageType>(rows: left.shape[0], cols: right.shape[1])
+//    let result = Tensor<S>(shape: Extent(left.shape[0], 1))
+    let result = Tensor<S>(shape: Extent(left.shape[0], right.shape[1]))
     dot(left: left, right: right, result: result)
     return result
 }
@@ -631,13 +374,15 @@ public func ⊙<StorageType:Storage where StorageType.ElementType:NumericType>
 //
 
 public func outer<StorageType:Storage where StorageType.ElementType:NumericType>
-    (left left:Vector<StorageType>, right:Vector<StorageType>, result:Tensor<StorageType>)
+    (left left:Tensor<StorageType>, right:Tensor<StorageType>, result:Tensor<StorageType>)
 {
+    precondition(isVector(left.type))
+    precondition(isVector(right.type))
+    
     let indexLeft = left.indices()
     let indexRight = right.indices()
     var indexResult = result.indices()
     
-//    var o = GeneratorSequence(indexResult)
     for l in indexLeft {
         for r in indexRight {
             let pos = indexResult.next()!
@@ -647,17 +392,9 @@ public func outer<StorageType:Storage where StorageType.ElementType:NumericType>
 }
 
 public func ⊗<StorageType:Storage where StorageType.ElementType:NumericType>
-    (left:Vector<StorageType>, right:Vector<StorageType>) -> Matrix<StorageType>
+    (left:Tensor<StorageType>, right:Tensor<StorageType>) -> Tensor<StorageType>
 {
-    let result = Matrix<StorageType>(rows: left.shape.elements, cols: right.shape.elements)
-    outer(left: left, right: right, result: result)
-    return result
-}
-
-public func ⊗<StorageType:Storage where StorageType.ElementType:NumericType>
-    (left:ColumnVector<StorageType>, right:RowVector<StorageType>) -> Matrix<StorageType>
-{
-    let result = Matrix<StorageType>(rows: left.shape[0], cols: right.shape[1])
+    let result:Tensor<StorageType> = tensor(Extent(left.shape.elements, right.shape.elements))
     outer(left: left, right: right, result: result)
     return result
 }
@@ -686,13 +423,13 @@ public func isClose<StorageType:Storage where StorageType.ElementType:NumericTyp
 
 
 public func hist<StorageType:Storage where StorageType.ElementType == Double>
-    (tensor:Tensor<StorageType>, bins:Int) -> Vector<StorageType>
+    (t:Tensor<StorageType>, bins:Int) -> Tensor<StorageType>
 {
-    let h = Vector<StorageType>(rows: bins)
-    let m = max(tensor)
+    let h:Tensor<StorageType> = tensor(Extent(bins))
+    let m = max(t)
     let delta = m/StorageType.ElementType(bins)
-    for i in tensor.indices() {
-        let value = tensor[i]
+    for i in t.indices() {
+        let value = t[i]
         var bin = Int(value/delta)
         if bin >= bins {  bin = bins-1 }
         h[bin] = h[bin] + 1

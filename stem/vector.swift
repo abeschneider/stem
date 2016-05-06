@@ -23,6 +23,10 @@ public class Vector<StorageType:Storage>: Tensor<StorageType> {
         super.init(array: array, shape: Extent(dims))
     }
     
+    public init(_ array:[StorageType.ElementType], shape:Extent) {
+        super.init(array: array, shape: shape)
+    }
+    
     public init(_ tensor:Tensor<StorageType>, dimIndex:[Int]?=nil, view:StorageView<StorageType>?=nil) {
         assert(tensor.shape.span == 1)
         super.init(tensor)
@@ -56,7 +60,9 @@ public class Vector<StorageType:Storage>: Tensor<StorageType> {
 // constrained to be just a column vector
 public class ColumnVector<StorageType:Storage>: Vector<StorageType> {
     public init(_ array:[StorageType.ElementType]) {
-        super.init(array, axis: 0)
+//        super.init(array, axis: 0)
+        var dims = [array.count, 1]
+        super.init(array, shape: Extent(dims))
     }
     
     public override init(_ tensor:Tensor<StorageType>, dimIndex:[Int]?=nil, view:StorageView<StorageType>?=nil) {

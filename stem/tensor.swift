@@ -283,7 +283,7 @@ public class Tensor<StorageType:Storage> {
         }
         
         if let s = stride {
-            self.stride = s
+            self.stride = s //storage.calculateOrder(s)
         } else {
             self.stride = tensor.stride
         }
@@ -293,10 +293,20 @@ public class Tensor<StorageType:Storage> {
         storage = tensor.storage
         internalShape = shape
         offset = 0
+//        self.stride = storage.calculateOrder(stride)
         self.stride = stride
+        
+        // check if we need to increase the size of tensor.view.offset
+        if tensor.view.offset.count < shape.count {
+            let diff = shape.count - tensor.view.offset.count
+            for i in 0..<diff {
+                tensor.view.offset.append(0)
+            }
+        }
+        
         self.view = ViewType(shape: shape, offset: tensor.view.offset)
         dimIndex = storage.calculateOrder(shape.count)
-    }
+    }    
 
     public func calculateOffset() -> Int {
         var pos = offset
@@ -308,10 +318,13 @@ public class Tensor<StorageType:Storage> {
         return pos
     }
 
+    // TODO: modified to allow less indices than dimensions to
+    // be specified (e.g. v: [3x1] can be indexed as v[i]
     public func calculateOffset(indices:[Int]) -> Int {
         var pos = offset
-        for i in 0..<dimIndex.count {
-            let di = dimIndex[i]
+        let start = dimIndex.count - indices.count
+        for i in 0..<indices.count { // was dimIndex.count
+            let di = dimIndex[i+start]
             pos += (indices[di]+view.offset[di])*stride[i]
         }
         
@@ -428,17 +441,98 @@ extension Tensor: CustomStringConvertible {
     }
 }
 
-//public class BroadcastTensor<StorageType:Storage>: Tensor<StorageType> {
-//    var broadcast:[Int]
-//    
-//    public init(_ tensor:Tensor<StorageType>, _ dims:[Int]) {
-//        broadcast = dims
-//        super.init(tensor)
-//    }
-//    
-//}
+// TODO: rewrite so we don't have to reverse at the end
+public func calculateBroadcastStride<S>(tensor:Tensor<S>, shape:Extent) -> [Int] {
+    var stride = [Int](count: shape.count, repeatedValue: 0)
+    
+    // if the dimensions grow, we want to offset where values are are placed
+    let start = shape.count - tensor.shape.count
+    let tensorStride = [Int](tensor.stride.reverse())
+    
+    for i in 0..<tensor.shape.count {
+        if shape[i+start] == tensor.shape[i] {
+            stride[i+start] = tensorStride[i]
+        } else if tensor.shape[i] != 1 {
+            print("error!")
+        }
+    }
+    
+    return stride.reverse()
+}
 
-func copy<StorageType:Storage>(from from:[[StorageType.ElementType]], to:Matrix<StorageType>)  {
+public func broadcast<S>(tensor:Tensor<S>, shape:Extent) -> Tensor<S> {
+    let newStride = calculateBroadcastStride(tensor, shape: shape)
+    return Tensor<S>(tensor: tensor, shape: shape, stride: newStride)
+}
+
+public func broadcast<S>(left:Tensor<S>, _ right:Tensor<S>) -> (Tensor<S>, Tensor<S>) {
+    if left.shape.count < right.shape.count {
+        return (broadcast(left, shape: right.shape), right)
+    } else {
+        return (left, broadcast(right, shape: left.shape))
+    }
+}
+
+
+public func rowvector<StorageType>(array:[StorageType.ElementType]) -> Tensor<StorageType> {
+    let cols = array.count
+    
+    let tensor = Tensor<StorageType>(shape: Extent(1, cols))
+    for (i, index) in tensor.indices().enumerate() {
+        tensor[index] = array[i]
+    }
+    
+    return tensor
+}
+
+public func colvector<StorageType>(array:[StorageType.ElementType]) -> Tensor<StorageType> {
+    let rows = array.count
+    
+    let tensor = Tensor<StorageType>(shape: Extent(rows, 1))
+    for (i, index) in tensor.indices().enumerate() {
+        tensor[index] = array[i]
+    }
+    
+    return tensor
+}
+
+public func tensor<StorageType>(array:[StorageType.ElementType], axis:Int) -> Tensor<StorageType> {
+    var shape = [Int](count: axis+1, repeatedValue: 0)
+    shape[axis] = array.count
+    
+    let tensor = Tensor<StorageType>(shape: Extent(shape))
+    for (i, index) in tensor.indices().enumerate() {
+        tensor[index] = array[i]
+    }
+    
+    return tensor
+}
+
+public func tensor<StorageType>(array:[[StorageType.ElementType]]) -> Tensor<StorageType> {
+    let rows = array.count
+    let cols = array[0].count
+    
+    let tensor = Tensor<StorageType>(shape: Extent(rows, cols))
+    
+    var indices = tensor.indices()
+    for i in 0..<rows {
+        for j in 0..<cols {
+            tensor[indices.next()!] = array[i][j]
+        }
+    }
+    
+    return tensor
+}
+
+public func tensor<StorageType>(shape:Extent) -> Tensor<StorageType> {
+    return Tensor<StorageType>(shape: shape)
+}
+
+public func tensor<StorageType>(tensor:Tensor<StorageType>) -> Tensor<StorageType> {
+    return Tensor<StorageType>(tensor)
+}
+
+func copy<StorageType:Storage>(from from:[[StorageType.ElementType]], to:Tensor<StorageType>)  {
     precondition(to.shape[0] != from.count || to.shape[1] != from[0].count,
                  "Destination and source must be the same size")
 
