@@ -21,7 +21,7 @@ import Foundation
 //    }
 //}
 
-
+/*
 protocol Op {
     associatedtype StorageType:Storage
     
@@ -247,7 +247,7 @@ class SigmoidGradient<S:Storage where S.ElementType:FloatNumericType>: Gradient 
             fill(g, value: 0)
         }
     }
-}
+}*/
 
 //class L2Loss<S:Storage where S.ElementType:NumericType>: Criterion {
 //    typealias StorageType = S

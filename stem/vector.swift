@@ -16,7 +16,7 @@ Matrix).
 */
 
 // can be either row or column vector
-public class Vector<StorageType:Storage>: Tensor<StorageType> {
+/*public class Vector<StorageType:Storage>: Tensor<StorageType> {
     public init(_ array:[StorageType.ElementType], axis:Int=0) {
         var dims = [Int](count: axis+1, repeatedValue: 1)
         dims[axis] = array.count
@@ -120,4 +120,4 @@ public class RowVector<StorageType:Storage>: Vector<StorageType> {
         let newDimIndex = Array(dimIndex.reverse())
         return ColumnVector<StorageType>(self, dimIndex: newDimIndex, stride: stride.reverse())
     }
-}
+}*/

@@ -9,20 +9,22 @@
 import Foundation
 
 func checkGradient<StorageType:Storage where StorageType.ElementType:FloatNumericType>( //) where StorageType.ElementType == Double>(
-    input:ColumnVector<StorageType>,
+    input:Tensor<StorageType>,
     var params:StorageType,
     gradParams:StorageType,
     eps:Double,
-    _ fn:(ColumnVector<StorageType>) -> StorageType.ElementType) -> Vector<StorageType>
+    _ fn:(Tensor<StorageType>) -> StorageType.ElementType) -> Tensor<StorageType>
 {
-    let result = Vector<StorageType>(rows: gradParams.size)
+//    let result = Vector<StorageType>(rows: gradParams.size)
+    let result = Tensor<StorageType>(shape: Extent(gradParams.size))
     
     // calculate gradients
     fn(input)
     
     // copy gradients from the last operation -- they will
     // be overwritten from subsequent calls to `fn`
-    let analytical_diff = Vector<StorageType>(storage: gradParams, shape: Extent(gradParams.size))
+//    let analytical_diff = Vector<StorageType>(storage: gradParams, shape: Extent(gradParams.size))
+    let analytical_diff = Tensor<StorageType>(storage: gradParams, shape: Extent(gradParams.size))
     
     for i in 0..<params.size {
         let old_value = params[i]

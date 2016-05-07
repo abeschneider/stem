@@ -357,7 +357,7 @@ class stemTests: XCTestCase {
     }
     
     func testStorageIndex5() {
-        let m = Matrix<D>(rows: 2, cols: 3)
+        let m = Tensor<D>(shape: Extent(2, 3))
         let sub1 = m[0, all]
         let sub2 = m[all, 0]
         
@@ -406,7 +406,7 @@ class stemTests: XCTestCase {
             k += 1
         }
 
-        let vector2 = Vector<D>(t[0..<3, 1])
+        let vector2 = t[0..<3, 1]
         let expected2:[Double] = [1, 6, 11]
 
         k = 0
@@ -529,9 +529,9 @@ class stemTests: XCTestCase {
     func testVectorIndexing3() {
         let v:Tensor<D> = colvector([1, 2, 3, 4, 5, 6, 7, 8])
         
-        v[2..<6] = Vector<D>([0, 0, 0, 0])
+        v[2..<6] = colvector([0, 0, 0, 0])
         
-        let expected = Vector<D>([1, 2, 0, 0, 0, 0, 7, 8])
+        let expected:Tensor<D> = colvector([1, 2, 0, 0, 0, 0, 7, 8])
         XCTAssert(isClose(v, expected, eps: 10e-4), "Not close")
     }
     
@@ -796,7 +796,7 @@ class stemTests: XCTestCase {
         let result = Tensor<D>(shape: Extent(3, 1))
         dot(left: m, right: v, result: result)
         
-        let expected = Vector<D>([1, 2, 3])
+        let expected:Tensor<D> = colvector([1, 2, 3])
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
     }
     
@@ -834,7 +834,7 @@ class stemTests: XCTestCase {
         
         outer(left: v1, right: v2, result: result)
         
-        let expected = Matrix<D>([[1, 2, 3], [2, 4, 6], [3, 6, 9]])
+        let expected:Tensor<D> = tensor([[1, 2, 3], [2, 4, 6], [3, 6, 9]])
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
     }
     
@@ -843,11 +843,11 @@ class stemTests: XCTestCase {
         let v2:Tensor<D> = rowvector([2, 2, 2, 2])
         let result = v1⊗v2
         
-        let expected = Matrix<D>([
-            [  2,   2,  2,  2],
-            [  4,   4,  4,  4],
-            [  6,   6,  6,  6],
-            [  8,   8,  8,  8]])
+        let expected:Tensor<D> =
+            tensor([[  2,   2,  2,  2],
+                    [  4,   4,  4,  4],
+                    [  6,   6,  6,  6],
+                    [  8,   8,  8,  8]])
         
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
     }
@@ -1001,7 +1001,7 @@ class stemTests: XCTestCase {
         let f = Float(t)
         XCTAssertEqual(f, 1.0)
         
-        let m = Matrix<F>([[2.0]])
+        let m:Tensor<F> = tensor([[2.0]])
         let f2 = Float(m)
         XCTAssertEqual(f2, 2.0)
     }

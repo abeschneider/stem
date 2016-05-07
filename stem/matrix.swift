@@ -8,7 +8,7 @@
 
 import Foundation
 
-public class Matrix<StorageType:Storage>: Tensor<StorageType> {
+/*public class Matrix<StorageType:Storage>: Tensor<StorageType> {
     public init(_ array:[[StorageType.ElementType]], copyTransposed:Bool=false) {
         let rows = array.count
         let cols = array[0].count
@@ -78,4 +78,4 @@ public class Matrix<StorageType:Storage>: Tensor<StorageType> {
         let newView = StorageView<StorageType>(shape: newShape, offset: newOffset)
         return Matrix(self, dimIndex: newDimIndex, view: newView, stride: stride)
     }
-}
+}*/

@@ -8,7 +8,7 @@ import XCPlayground
 
 //: Convenience aliases
 //: -------------------
-typealias Vec = Vector<NativeStorage<Float>>
+/*typealias Vec = Vector<NativeStorage<Float>>
 typealias RowVec = RowVector<NativeStorage<Float>>
 typealias ColVec = ColumnVector<NativeStorage<Float>>
 typealias Mat = Matrix<NativeStorage<Float>>
@@ -88,21 +88,26 @@ let vr2 = m1[0..<2, 1..<3]
 print("\(vr2)")
 
 m2[0..<2, 1..<3] = Mat([[1, 1], [1, 1]])
-print("\(m2)")
+String((m2))
 
-print("\(m2[all, 0])")
+String(m2[all, 0])
 
-print("\(m2[all, 1])")
+String(m2[all, 1])
 
-print("\(m2[all, 2])")
+String(m2[all, 2])
 
 //: Matrix operations
 //: -----------------
-print("\(m1)")
+String(m1)
 
 let v14 = ColVec([1, 1, 1])
 let v15 = m1⊙v14
 
 let m3 = Mat([[1, 2, 3], [1, 2, 3]])
 let m4 = m1⊙m3.transpose()
-print("\(m4)")
+String(m4)
+
+
+let s = Extent(3)
+let s2 = Extent(s, over: 5)
+print("\(s2.dims)")*/
