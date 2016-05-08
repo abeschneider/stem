@@ -293,13 +293,12 @@ public class Tensor<StorageType:Storage> {
         storage = tensor.storage
         internalShape = shape
         offset = 0
-//        self.stride = storage.calculateOrder(stride)
         self.stride = stride
         
         // check if we need to increase the size of tensor.view.offset
         if tensor.view.offset.count < shape.count {
             let diff = shape.count - tensor.view.offset.count
-            for i in 0..<diff {
+            for _ in 0..<diff {
                 tensor.view.offset.append(0)
             }
         }
@@ -447,17 +446,17 @@ public func calculateBroadcastStride<S>(tensor:Tensor<S>, shape:Extent) -> [Int]
     
     // if the dimensions grow, we want to offset where values are are placed
     let start = shape.count - tensor.shape.count
-    let tensorStride = [Int](tensor.stride.reverse())
+    let tensorStride = tensor.storage.calculateOrder(tensor.stride)
     
     for i in 0..<tensor.shape.count {
         if shape[i+start] == tensor.shape[i] {
             stride[i+start] = tensorStride[i]
         } else if tensor.shape[i] != 1 {
-            print("error!")
+            assertionFailure("Cannot broadcast on dimension \(i)")
         }
     }
     
-    return stride.reverse()
+    return tensor.storage.calculateOrder(stride)
 }
 
 public func broadcast<S>(tensor:Tensor<S>, shape:Extent) -> Tensor<S> {
@@ -496,8 +495,8 @@ public func colvector<StorageType>(array:[StorageType.ElementType]) -> Tensor<St
     return tensor
 }
 
-public func tensor<StorageType>(array:[StorageType.ElementType], axis:Int) -> Tensor<StorageType> {
-    var shape = [Int](count: axis+1, repeatedValue: 0)
+public func vector<StorageType>(array:[StorageType.ElementType], axis:Int) -> Tensor<StorageType> {
+    var shape = [Int](count: axis+1, repeatedValue: 1)
     shape[axis] = array.count
     
     let tensor = Tensor<StorageType>(shape: Extent(shape))
@@ -514,7 +513,7 @@ public func tensor<StorageType>(array:[[StorageType.ElementType]]) -> Tensor<Sto
     
     let tensor = Tensor<StorageType>(shape: Extent(rows, cols))
     
-    var indices = tensor.indices()
+    var indices = tensor.indices(.ColumnMajor)
     for i in 0..<rows {
         for j in 0..<cols {
             tensor[indices.next()!] = array[i][j]
@@ -565,18 +564,14 @@ func fill<StorageType:Storage>(tensor:Tensor<StorageType>, value:StorageType.Ele
 
 // concats two tensors along the given axis (0: rows, 1: cols, etc.)
 func concat<StorageType:Storage>(tensor1:Tensor<StorageType>, _ tensor2:Tensor<StorageType>, axis:Int=0) -> Tensor<StorageType> {
-    // verify other dimensions match
     let maxDims = max(tensor1.shape.count, tensor2.shape.count)
     
-//    if axis >= maxDims {
-//        throw TensorError.IllegalAxis(axis: axis)
-//    }
+    // verify other dimensions match
     precondition(axis < maxDims, "Axis is greater than number of dimensions")
     
     for i in 0..<maxDims {
         if (i != axis) {
             if tensor1.shape[i] != tensor2.shape[i] {
-//                throw TensorError.SizeMismatch(lhs: tensor1.shape, rhs: tensor2.shape)
                 precondition(tensor1.shape[i] == tensor2.shape[i],
                              "Dimensions of tensors do not match")
             }
@@ -590,13 +585,10 @@ func concat<StorageType:Storage>(tensor1:Tensor<StorageType>, _ tensor2:Tensor<S
     var rpos = result.indices()
     
     for pos in tensor1.indices() {
-//        result.storage[rpos.next()!] = tensor1.storage[pos]
         result[rpos.next()!] = tensor1[pos]
     }
     
-//    for pos in tensor2.storageIndices() {
     for pos in tensor2.indices() {
-//        result.storage[rpos.next()!] = tensor2.storage[pos]
         result[rpos.next()!] = tensor2[pos]
     }
     

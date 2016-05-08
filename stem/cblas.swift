@@ -57,7 +57,7 @@ func add(
     right:Tensor<CBlasStorage<Double>>,
     result:Tensor<CBlasStorage<Double>>)
 {
-    // if they're both vectors
+    // use accelerated methods if they're both vectors
     if left.shape.span == 1 && right.shape.span == 1 {
         let v1Ptr = UnsafePointer<Double>(left.storage.array.memory) + left.calculateOffset()
         let v2Ptr = UnsafePointer<Double>(right.storage.array.memory) + right.calculateOffset()
@@ -70,6 +70,7 @@ func add(
         // result += right
         cblas_daxpy(numElements, 1.0, v1Ptr, Int32(left.stride[0]), resultPtr, Int32(result.stride[0]))
     } else {
+        // TODO: should be able to accelerate matrix/vector broadcasts (for other ops as well)
         let (l, r) = broadcast(left, right)
         elementwiseBinaryOp(l, r, result: result, op: { $0 + $1 })
     }
