@@ -107,50 +107,6 @@ public struct IndexGenerator: GeneratorType {
     }
 }
 
-//public protocol TensorType {
-//    var shape:Extent { get }
-//}
-
-//public class TensorScalar<StorageType:Storage> {
-//    public var shape:Extent { return Extent(1) }
-//    public var value:StorageType.ElementType
-//    
-//    public init(_ value:StorageType.ElementType) {
-//        self.value = value
-//    }
-//    
-//    public subscript(indices:[Int]) -> StorageType.ElementType {
-//        get {
-//            precondition(indices.count == 1)
-//            precondition(indices[0] == 0)
-//            return value
-//        }
-//        set {
-//            precondition(indices.count == 1)
-//            precondition(indices[0] == 0)
-//            value = newValue
-//        }
-//    }
-//    
-//    public subscript(indices:Int) -> StorageType.ElementType {
-//        get {
-//            precondition(indices == 0)
-//            return value
-//        }
-//        set {
-//            precondition(indices == 0)
-//            value = newValue
-//        }
-//    }
-//}
-//
-//extension Float {
-//    init<StorageType:Storage where StorageType.ElementType:FloatNumericType>(_ scalar:TensorScalar<StorageType>) {
-//        // TODO: this is dangerous
-//        self.init(scalar.value as! Float)
-//    }
-//}
-
 public class Tensor<StorageType:Storage> {
     public typealias ViewType = StorageView<StorageType>
     
@@ -177,6 +133,7 @@ public class Tensor<StorageType:Storage> {
     // step size to increment within storage for each dimension
     public var stride:[Int]
     
+    // TODO: look into determining this at initialization
     public var type:TensorType {
         if shape.span == 1 {
             if shape[0] > 1 {
@@ -196,6 +153,42 @@ public class Tensor<StorageType:Storage> {
     // convenience accessor to generate a transposed view
     public var T:Tensor<StorageType> {
         get { return transpose() }
+    }
+    
+    public convenience init(_ array:[StorageType.ElementType], axis:Int=0) {
+        var shapeValues = [Int](count: axis+1, repeatedValue: 1)
+        shapeValues[axis] = array.count
+        let shape = Extent(shapeValues)
+        
+        self.init(array: array, shape: shape)
+    }
+    
+    public convenience init(rowvector array:[StorageType.ElementType]) {
+        let cols = array.count
+        let shape = Extent(1, cols)
+        
+        self.init(array: array, shape: shape)
+    }
+    
+    public convenience init(colvector array:[StorageType.ElementType]) {
+        let rows = array.count
+        let shape = Extent(rows, 1)
+
+        self.init(array: array, shape: shape)
+    }
+
+    public convenience init(_ array:[[StorageType.ElementType]]) {
+        let rows = array.count
+        let cols = array[0].count
+        
+        self.init(shape: Extent(rows, cols))
+        
+        var index = indices(.ColumnMajor)
+        for i in 0..<rows {
+            for j in 0..<cols {
+                self[index.next()!] = array[i][j]
+            }
+        }
     }
     
     public init(array:[StorageType.ElementType], shape:Extent, offset:Int?=nil) {
@@ -283,7 +276,7 @@ public class Tensor<StorageType:Storage> {
         }
         
         if let s = stride {
-            self.stride = s //storage.calculateOrder(s)
+            self.stride = s
         } else {
             self.stride = tensor.stride
         }
@@ -470,65 +463,6 @@ public func broadcast<S>(left:Tensor<S>, _ right:Tensor<S>) -> (Tensor<S>, Tenso
     } else {
         return (left, broadcast(right, shape: left.shape))
     }
-}
-
-
-public func rowvector<StorageType>(array:[StorageType.ElementType]) -> Tensor<StorageType> {
-    let cols = array.count
-    
-    let tensor = Tensor<StorageType>(shape: Extent(1, cols))
-    for (i, index) in tensor.indices().enumerate() {
-        tensor[index] = array[i]
-    }
-    
-    return tensor
-}
-
-public func colvector<StorageType>(array:[StorageType.ElementType]) -> Tensor<StorageType> {
-    let rows = array.count
-    
-    let tensor = Tensor<StorageType>(shape: Extent(rows, 1))
-    for (i, index) in tensor.indices().enumerate() {
-        tensor[index] = array[i]
-    }
-    
-    return tensor
-}
-
-public func vector<StorageType>(array:[StorageType.ElementType], axis:Int) -> Tensor<StorageType> {
-    var shape = [Int](count: axis+1, repeatedValue: 1)
-    shape[axis] = array.count
-    
-    let tensor = Tensor<StorageType>(shape: Extent(shape))
-    for (i, index) in tensor.indices().enumerate() {
-        tensor[index] = array[i]
-    }
-    
-    return tensor
-}
-
-public func tensor<StorageType>(array:[[StorageType.ElementType]]) -> Tensor<StorageType> {
-    let rows = array.count
-    let cols = array[0].count
-    
-    let tensor = Tensor<StorageType>(shape: Extent(rows, cols))
-    
-    var indices = tensor.indices(.ColumnMajor)
-    for i in 0..<rows {
-        for j in 0..<cols {
-            tensor[indices.next()!] = array[i][j]
-        }
-    }
-    
-    return tensor
-}
-
-public func tensor<StorageType>(shape:Extent) -> Tensor<StorageType> {
-    return Tensor<StorageType>(shape: shape)
-}
-
-public func tensor<StorageType>(tensor:Tensor<StorageType>) -> Tensor<StorageType> {
-    return Tensor<StorageType>(tensor)
 }
 
 func copy<StorageType:Storage>(from from:[[StorageType.ElementType]], to:Tensor<StorageType>)  {

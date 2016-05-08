@@ -394,7 +394,7 @@ public func outer<StorageType:Storage where StorageType.ElementType:NumericType>
 public func ⊗<StorageType:Storage where StorageType.ElementType:NumericType>
     (left:Tensor<StorageType>, right:Tensor<StorageType>) -> Tensor<StorageType>
 {
-    let result:Tensor<StorageType> = tensor(Extent(left.shape.elements, right.shape.elements))
+    let result = Tensor<StorageType>(shape: Extent(left.shape.elements, right.shape.elements))
     outer(left: left, right: right, result: result)
     return result
 }
@@ -425,7 +425,7 @@ public func isClose<StorageType:Storage where StorageType.ElementType:NumericTyp
 public func hist<StorageType:Storage where StorageType.ElementType == Double>
     (t:Tensor<StorageType>, bins:Int) -> Tensor<StorageType>
 {
-    let h:Tensor<StorageType> = tensor(Extent(bins))
+    let h = Tensor<StorageType>(shape: Extent(bins))
     let m = max(t)
     let delta = m/StorageType.ElementType(bins)
     for i in t.indices() {

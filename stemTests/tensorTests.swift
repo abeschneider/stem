@@ -54,7 +54,7 @@ class stemTests: XCTestCase {
     }
     
     func testTensorView2() {
-        let t1:Tensor<D> = tensor(Extent(3, 5))
+        let t1 = Tensor<D>(shape: Extent(3, 5))
 
         // top row
         let t2 = t1[0, 0..<5]
@@ -249,7 +249,7 @@ class stemTests: XCTestCase {
     
     func testCreateVector() {
         let array = (0..<20).map { Double($0) }
-        let v:Tensor<D> = colvector(array)
+        let v = Tensor<D>(colvector: array)
         
         for i in 0..<v.shape[0] {
             XCTAssertEqual(v[i], array[i])
@@ -258,7 +258,7 @@ class stemTests: XCTestCase {
     
     func testCreateIntegerVector() {
         let array = (0..<20).map { Int($0) }
-        let v:Tensor<I> = colvector(array)
+        let v = Tensor<I>(colvector: array)
         
         for i in 0..<v.shape[0] {
             XCTAssertEqual(v[i], array[i])
@@ -300,7 +300,7 @@ class stemTests: XCTestCase {
     
     func testCreateMatrix() {
         let array:[[Double]] = [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11]]
-        let m:Tensor<D> = tensor(array)
+        let m = Tensor<D>(array)
         
         XCTAssertEqual(m.shape, Extent(3, 4))
 
@@ -314,7 +314,7 @@ class stemTests: XCTestCase {
     
     func testCreateMatrixFromMatrix() {
         let array:[[Double]] = [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11]]
-        let matrix1:Tensor<D> = tensor(array)
+        let matrix1 = Tensor<D>(array)
         let matrix2 = matrix1[1..<3, 2..<4]
         
         let expected2:[[Double]] = [[6, 7],
@@ -335,7 +335,7 @@ class stemTests: XCTestCase {
     
     func testMatrixTranspose() {
         let array:[[Double]] = [[0, 1, 2, 3, 4], [5, 6, 7, 8, 9]]
-        let matrix1:Tensor<D> = tensor(array)
+        let matrix1 = Tensor<D>(array)
         let matrix2 = matrix1.transpose()
         
         // verify dimensions are correct
@@ -364,7 +364,7 @@ class stemTests: XCTestCase {
     
     func testMatrixTransposeOnReshape() {
         let array:[[Double]] = [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11]]
-        let m:Tensor<D> = tensor(array)
+        let m = Tensor<D>(array)
         let ms = m.reshape(Extent(2,6))
         let mt = ms.transpose()
         
@@ -382,7 +382,7 @@ class stemTests: XCTestCase {
     }
     
     func testVectorIndexing1() {
-        let v:Tensor<D> = colvector([1, 2, 3, 4])
+        let v = Tensor<D>(colvector: [1, 2, 3, 4])
         let expected:[Double] = [1, 2, 3, 4]
         
         for i in 0..<v.shape[0] {
@@ -391,24 +391,24 @@ class stemTests: XCTestCase {
     }
     
     func testVectorIndexing2() {
-        let v:Tensor<D> = colvector([1, 2, 3, 4, 5, 6, 7, 8])
-        let expected:Tensor<D> = colvector([3, 4, 5, 6])
+        let v = Tensor<D>(colvector: [1, 2, 3, 4, 5, 6, 7, 8])
+        let expected = Tensor<D>(colvector: [3, 4, 5, 6])
         
         let v2 = v[2..<6]
         XCTAssert(isClose(v2, expected, eps: 10e-4), "Not close")
     }
     
     func testVectorIndexing3() {
-        let v:Tensor<D> = colvector([1, 2, 3, 4, 5, 6, 7, 8])
+        let v = Tensor<D>(colvector: [1, 2, 3, 4, 5, 6, 7, 8])
         
-        v[2..<6] = colvector([0, 0, 0, 0])
+        v[2..<6] = Tensor<D>(colvector: [0, 0, 0, 0])
         
-        let expected:Tensor<D> = colvector([1, 2, 0, 0, 0, 0, 7, 8])
+        let expected = Tensor<D>(colvector: [1, 2, 0, 0, 0, 0, 7, 8])
         XCTAssert(isClose(v, expected, eps: 10e-4), "Not close")
     }
     
     func testMatrixIndexing1() {
-        let m:Tensor<D> = tensor([[1, 2, 3, 4], [5, 6, 7, 8]])
+        let m = Tensor<D>([[1, 2, 3, 4], [5, 6, 7, 8]])
         let expected:[[Double]] = [[1, 2, 3, 4], [5, 6, 7, 8]]
         
         for i in 0..<m.shape[0] {
@@ -419,30 +419,30 @@ class stemTests: XCTestCase {
     }
     
     func testMatrixIndexing2() {
-        let m:Tensor<D> = tensor([[1, 2, 3, 4], [5, 6, 7, 8]])
-        let expected:Tensor<D> = tensor([[2, 3], [6, 7]])
+        let m = Tensor<D>([[1, 2, 3, 4], [5, 6, 7, 8]])
+        let expected = Tensor<D>([[2, 3], [6, 7]])
         
         let m2 = m[0..<2, 1..<3]
         XCTAssert(isClose(m2, expected, eps: 10e-4), "Not close")
     }
     
     func testMatrixIndexing3() {
-        let m:Tensor<D> = tensor([[1, 2, 3, 4], [5, 6, 7, 8]])
-        let expected:Tensor<D> = tensor([[1, 0, 0, 4], [5, 0, 0, 8]])
+        let m = Tensor<D>([[1, 2, 3, 4], [5, 6, 7, 8]])
+        let expected = Tensor<D>([[1, 0, 0, 4], [5, 0, 0, 8]])
         
-        m[0..<2, 1..<3] = tensor([[0, 0], [0, 0]])
+        m[0..<2, 1..<3] = Tensor<D>([[0, 0], [0, 0]])
         XCTAssert(isClose(m, expected, eps: 10e-4), "Not close")
     }
     
     func testVectorToString() {
-        let v:Tensor<D> = rowvector([1, 2, 3, 4, 5])
+        let v = Tensor<D>(rowvector: [1, 2, 3, 4, 5])
         
         let expected = "[[1.0,\t2.0,\t3.0,\t4.0,\t5.0]]"
         XCTAssertEqual(String(v), expected)
     }
     
     func testMatrixToString() {
-        let m:Tensor<D> = tensor([[1, 2, 3, 4], [5, 6, 7, 8]])
+        let m = Tensor<D>([[1, 2, 3, 4], [5, 6, 7, 8]])
         
         // layout should be row-major
         let expected = "[[1.0,\t2.0,\t3.0,\t4.0]\n [5.0,\t6.0,\t7.0,\t8.0]]"
@@ -450,162 +450,162 @@ class stemTests: XCTestCase {
     }
 
     func testVectorAdd() {
-        let m1:Tensor<D> = colvector([1, 2, 3, 4, 5, 6, 7, 8])
-        let m2:Tensor<D> = colvector([8, 7, 6, 5, 4, 3, 2, 1])
-        let result:Tensor<D> = tensor(Extent(m1.shape[0]))
+        let m1 = Tensor<D>(colvector: [1, 2, 3, 4, 5, 6, 7, 8])
+        let m2 = Tensor<D>(colvector: [8, 7, 6, 5, 4, 3, 2, 1])
+        let result = Tensor<D>(shape: Extent(m1.shape[0]))
         
         add(left: m1, right: m2, result: result)
         
-        let expected:Tensor<D> = colvector([9, 9, 9, 9, 9, 9, 9, 9])
+        let expected = Tensor<D>(colvector: [9, 9, 9, 9, 9, 9, 9, 9])
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
     }
     
     func testVectorAdd2() {
-        let m1:Tensor<D> = colvector([1, 2, 3, 4, 5, 6, 7, 8])
-        let m2:Tensor<D> = colvector([8, 7, 6, 5, 4, 3, 2, 1])
+        let m1 = Tensor<D>(colvector: [1, 2, 3, 4, 5, 6, 7, 8])
+        let m2 = Tensor<D>(colvector: [8, 7, 6, 5, 4, 3, 2, 1])
         
         let result = m1 + m2
         
-        let expected:Tensor<D> = colvector([9, 9, 9, 9, 9, 9, 9, 9])
+        let expected = Tensor<D>(colvector: [9, 9, 9, 9, 9, 9, 9, 9])
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
     }
     
     func testVectorAdd3() {
-        let m1:Tensor<D> = colvector([1, 2, 3, 4, 5, 6, 7, 8])
-        let m2:Tensor<D> = colvector([8, 7, 6, 5, 4, 3, 2, 1])
+        let m1 = Tensor<D>(colvector: [1, 2, 3, 4, 5, 6, 7, 8])
+        let m2 = Tensor<D>(colvector: [8, 7, 6, 5, 4, 3, 2, 1])
         
         let result = m1 + m2 + m1 + m2
         
-        let expected:Tensor<D> = colvector([18, 18, 18, 18, 18, 18, 18, 18])
+        let expected = Tensor<D>(colvector: [18, 18, 18, 18, 18, 18, 18, 18])
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
     }
     
     func testMatrixAdd1() {
-        let m1:Tensor<D> = tensor([[1, 2, 3, 4], [5, 6, 7, 8]])
-        let m2:Tensor<D> = tensor([[8, 7, 6, 5], [4, 3, 2, 1]])
-        let result:Tensor<D> = tensor(m1.shape)
+        let m1 = Tensor<D>([[1, 2, 3, 4], [5, 6, 7, 8]])
+        let m2 = Tensor<D>([[8, 7, 6, 5], [4, 3, 2, 1]])
+        let result = Tensor<D>(shape: m1.shape)
         
         add(left: m1, right: m2, result: result)
         
-        let expected:Tensor<D> = tensor([[9, 9, 9, 9], [9, 9, 9, 9]])
+        let expected = Tensor<D>([[9, 9, 9, 9], [9, 9, 9, 9]])
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
     }
     
     func testMatrixVectorAdd1() {
-        let m1:Tensor<D> = tensor([[1, 2, 3, 4], [5, 6, 7, 8]])
-        let v1:Tensor<D> = rowvector([1, 1, 1, 1])
-        let v2:Tensor<D> = colvector([0.5, 0.5])
-        let result:Tensor<D> = tensor(m1.shape)
+        let m1 = Tensor<D>([[1, 2, 3, 4], [5, 6, 7, 8]])
+        let v1 = Tensor<D>(rowvector: [1, 1, 1, 1])
+        let v2 = Tensor<D>(colvector: [0.5, 0.5])
+        let result = Tensor<D>(shape: m1.shape)
         
         add(left: m1, right: v1, result: result)
         iadd(left: result, right: v2)
         
-        let expected:Tensor<D> = tensor([[2.5, 3.5, 4.5, 5.5], [6.5, 7.5, 8.5, 9.5]])
+        let expected = Tensor<D>([[2.5, 3.5, 4.5, 5.5], [6.5, 7.5, 8.5, 9.5]])
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
     }
     
     func testVectorSub() {
-        let m1:Tensor<D> = colvector([1, 2, 3, 4, 5, 6, 7, 8])
-        let m2:Tensor<D> = colvector([8, 7, 6, 5, 4, 3, 2, 1])
-        let result:Tensor<D> = tensor(m1.shape)
+        let m1 = Tensor<D>(colvector: [1, 2, 3, 4, 5, 6, 7, 8])
+        let m2 = Tensor<D>(colvector: [8, 7, 6, 5, 4, 3, 2, 1])
+        let result = Tensor<D>(shape: m1.shape)
         
         sub(left: m1, right: m2, result: result)
         
-        let expected:Tensor<D> = colvector([-7, -5, -3, -1, 1, 3, 5, 7])
+        let expected = Tensor<D>(colvector: [-7, -5, -3, -1, 1, 3, 5, 7])
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
     }
     
     func testVectorSub2() {
-        let m1:Tensor<D> = colvector([1, 2, 3, 4, 5, 6, 7, 8])
-        let m2:Tensor<D> = colvector([8, 7, 6, 5, 4, 3, 2, 1])
+        let m1 = Tensor<D>(colvector: [1, 2, 3, 4, 5, 6, 7, 8])
+        let m2 = Tensor<D>(colvector: [8, 7, 6, 5, 4, 3, 2, 1])
         
         let result = m1 - m2
         
-        let expected:Tensor<D> = colvector([-7, -5, -3, -1, 1, 3, 5, 7])
+        let expected = Tensor<D>(colvector: [-7, -5, -3, -1, 1, 3, 5, 7])
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
     }
     
     func testVectorScalarMul1() {
-        let v:Tensor<D> = colvector([1, 2, 3, 4, 5, 6, 7, 8])
+        let v = Tensor<D>(colvector: [1, 2, 3, 4, 5, 6, 7, 8])
         let s:Double = 0.5
-        let result:Tensor<D> = tensor(v.shape)
+        let result = Tensor<D>(shape: v.shape)
         
         mul(left: v, right: s, result: result)
         
-        let expected:Tensor<D> = colvector([0.5, 1, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0])
+        let expected = Tensor<D>(colvector: [0.5, 1, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0])
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
     }
     
     func testVectorScalarMul2() {
-        let v:Tensor<D> = colvector([1, 2, 3, 4, 5, 6, 7, 8])
+        let v = Tensor<D>(colvector: [1, 2, 3, 4, 5, 6, 7, 8])
         let s:Double = 0.5
-        let result:Tensor<D> = tensor(v.shape)
+        let result = Tensor<D>(shape: v.shape)
         
         mul(left: s, right: v, result: result)
         
-        let expected:Tensor<D> = colvector([0.5, 1, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0])
+        let expected = Tensor<D>(colvector: [0.5, 1, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0])
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
     }
     
     func testVectorScalarMul3() {
-        let v:Tensor<D> = colvector([1, 2, 3, 4, 5, 6, 7, 8])
+        let v = Tensor<D>(colvector: [1, 2, 3, 4, 5, 6, 7, 8])
         let s:Double = 0.5
         let result = v*s
         
-        let expected:Tensor<D> = colvector([0.5, 1, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0])
+        let expected = Tensor<D>(colvector: [0.5, 1, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0])
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
     }
     
     func testVectorScalarMul4() {
-        let v:Tensor<D> = colvector([1, 2, 3, 4, 5, 6, 7, 8])
+        let v = Tensor<D>(colvector: [1, 2, 3, 4, 5, 6, 7, 8])
         let s:Double = 0.5
         let result = s*v
         
-        let expected:Tensor<D> = colvector([0.5, 1, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0])
+        let expected = Tensor<D>(colvector: [0.5, 1, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0])
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
     }
     
     func testMatrixScalarMul1() {
-        let m:Tensor<D> = tensor([[1, 2, 3, 4], [5, 6, 7, 8]])
+        let m = Tensor<D>([[1, 2, 3, 4], [5, 6, 7, 8]])
         let result = 0.5*m
         
-        let expected:Tensor<D> = tensor([[0.5, 1.0, 1.5, 2.0], [2.5, 3.0, 3.5, 4.0]])
+        let expected = Tensor<D>([[0.5, 1.0, 1.5, 2.0], [2.5, 3.0, 3.5, 4.0]])
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
     }
     
     func testMatrixScalarMul2() {
-        let m:Tensor<D> = tensor([[1, 2, 3, 4], [5, 6, 7, 8]])
+        let m = Tensor<D>([[1, 2, 3, 4], [5, 6, 7, 8]])
         let result = m*0.5
         
-        let expected:Tensor<D> = tensor([[0.5, 1.0, 1.5, 2.0], [2.5, 3.0, 3.5, 4.0]])
+        let expected = Tensor<D>([[0.5, 1.0, 1.5, 2.0], [2.5, 3.0, 3.5, 4.0]])
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
     }
     
     func testMatrixRowVectorMul1() {
-        let m:Tensor<D> = tensor([[1, 2, 3, 4], [5, 6, 7, 8]])
-        let v:Tensor<D> = colvector([2, 1])
+        let m = Tensor<D>([[1, 2, 3, 4], [5, 6, 7, 8]])
+        let v = Tensor<D>(colvector: [2, 1])
         
         let result = m*v
         
-        let expected:Tensor<D> = tensor([[2, 4, 6, 8], [5, 6, 7, 8]])
+        let expected = Tensor<D>([[2, 4, 6, 8], [5, 6, 7, 8]])
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
     }
     
     func testDotProductVectorVector1() {
-        let m:Tensor<D> = tensor([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
-        let v:Tensor<D> = colvector([1, 2, 3])
+        let m = Tensor<D>([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+        let v = Tensor<D>(colvector: [1, 2, 3])
         
         // 3x3*3x1 - > 3x1
         let result = Tensor<D>(shape: Extent(3, 1))
         dot(left: m, right: v, result: result)
         
-        let expected:Tensor<D> = colvector([1, 2, 3])
+        let expected = Tensor<D>(colvector: [1, 2, 3])
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
     }
     
     func testDotProductVectorVector2() {
-        let v1:Tensor<D> = colvector([1, 2, 3, 4])
-        let v2:Tensor<D> = rowvector([2, 2, 2, 2])
+        let v1 = Tensor<D>(colvector: [1, 2, 3, 4])
+        let v2 = Tensor<D>(rowvector: [2, 2, 2, 2])
         let v3 = v1+v1
         
         let result:Double = v2 ⊙ v3
@@ -613,76 +613,75 @@ class stemTests: XCTestCase {
     }
     
     func testDotProductMatrixVector() {
-        let m:Tensor<D> = tensor([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
-        let v:Tensor<D> = colvector([1, 2, 3])
+        let m = Tensor<D>([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+        let v = Tensor<D>(colvector: [1, 2, 3])
         
         let result:Tensor<D> = m ⊙ v
         
-        let expected:Tensor<D> = colvector([1, 2, 3])
+        let expected = Tensor<D>(colvector: [1, 2, 3])
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
     }
     
     func testDotProductMatrixMatrix() {
-        let m:Tensor<D> = tensor([[1, 2, 3], [3, 4, 5]])
+        let m = Tensor<D>([[1, 2, 3], [3, 4, 5]])
         let result:Tensor<D> = m ⊙ m.transpose()
         
-        let expected:Tensor<D> = tensor([[14, 26], [26, 50]])
+        let expected = Tensor<D>([[14, 26], [26, 50]])
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
     }
     
     func testOuterProduct1() {
-        let v1:Tensor<D> = colvector([1, 2, 3])
-        let v2:Tensor<D> = colvector([1, 2, 3])
-        let result:Tensor<D> = tensor(Extent(3, 3))
+        let v1 = Tensor<D>(colvector: [1, 2, 3])
+        let v2 = Tensor<D>(colvector: [1, 2, 3])
+        let result = Tensor<D>(shape: Extent(3, 3))
         
         outer(left: v1, right: v2, result: result)
         
-        let expected:Tensor<D> = tensor([[1, 2, 3], [2, 4, 6], [3, 6, 9]])
+        let expected = Tensor<D>([[1, 2, 3], [2, 4, 6], [3, 6, 9]])
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
     }
     
     func testOuterProduct2() {
-        let v1:Tensor<D> = colvector([1, 2, 3, 4])
-        let v2:Tensor<D> = rowvector([2, 2, 2, 2])
+        let v1 = Tensor<D>(colvector: [1, 2, 3, 4])
+        let v2 = Tensor<D>(rowvector: [2, 2, 2, 2])
         let result = v1⊗v2
         
-        let expected:Tensor<D> =
-            tensor([[  2,   2,  2,  2],
-                    [  4,   4,  4,  4],
-                    [  6,   6,  6,  6],
-                    [  8,   8,  8,  8]])
+        let expected = Tensor<D>([  [  2,   2,  2,  2],
+                                    [  4,   4,  4,  4],
+                                    [  6,   6,  6,  6],
+                                    [  8,   8,  8,  8]])
         
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
     }
     
     func testNativeVectorSum() {
-        let v:Tensor<D> = colvector([1, 2, 3, 4, 5, 6, 7, 8, 9])
+        let v = Tensor<D>(colvector: [1, 2, 3, 4, 5, 6, 7, 8, 9])
         let s = sum(v)
         XCTAssertEqual(s, 45.0)
     }
     
     func testNativeVectorMax() {
-        let v:Tensor<D> = colvector([5, 1, 3, 2, 6, 10, 0, 42, 5, 2, 1])
+        let v = Tensor<D>(colvector: [5, 1, 3, 2, 6, 10, 0, 42, 5, 2, 1])
         let s = max(v)
         XCTAssertEqual(s, 42.0)
     }
     
     func testNativeMatrixSum1() {
-        let v:Tensor<D> = tensor([[1, 2, 3, 4], [5, 6, 7, 8]])
+        let v = Tensor<D>([[1, 2, 3, 4], [5, 6, 7, 8]])
         let s = sum(v, axis: 0)
-        let expected:Tensor<D> = colvector([6, 8, 10, 12])
+        let expected = Tensor<D>(colvector: [6, 8, 10, 12])
         XCTAssert(isClose(s, expected, eps: 10e-4), "Not close")
     }
     
     func testNativeMatrixSum2() {
-        let v:Tensor<D> = tensor([[1, 2, 3, 4], [5, 6, 7, 8]])
+        let v = Tensor<D>([[1, 2, 3, 4], [5, 6, 7, 8]])
         let s = sum(v, axis: 1)
-        let expected:Tensor<D> = colvector([10, 26])
+        let expected = Tensor<D>(colvector: [10, 26])
         XCTAssert(isClose(s, expected, eps: 10e-4), "Not close")
     }
     
     func testNativeVectorPower() {
-        let v:Tensor<F> = colvector([1, 2, 3, 4, 5, 6, 7, 8, 9])
+        let v = Tensor<F>(colvector: [1, 2, 3, 4, 5, 6, 7, 8, 9])
         let p = v**2.0
         
         let expected:[Float] = [1, 4, 9, 16, 25, 36, 49, 64, 81]
@@ -695,22 +694,20 @@ class stemTests: XCTestCase {
     }
 
     func testConcat1() {
-        let v1:Tensor<D> = rowvector([1, 2, 3, 4])
-        let v2:Tensor<D> = rowvector([5, 6, 7, 8])
+        let v1 = Tensor<D>(rowvector: [1, 2, 3, 4])
+        let v2 = Tensor<D>(rowvector: [5, 6, 7, 8])
         let result = concat(v1, v2, axis: 1)
         
-        let expected:Tensor<D> = rowvector([1, 2, 3, 4, 5, 6, 7, 8])
+        let expected = Tensor<D>(rowvector: [1, 2, 3, 4, 5, 6, 7, 8])
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
     }
 
     func testConcat2() {
-        let v1:Tensor<D> = colvector([1, 2, 3, 4])
-        let v2:Tensor<D> = colvector([5, 6, 7, 8])
+        let v1 = Tensor<D>(colvector: [1, 2, 3, 4])
+        let v2 = Tensor<D>(colvector: [5, 6, 7, 8])
         let result = concat(v1, v2, axis: 0)
         
-        print("\(result)")
-        
-        let expected:Tensor<D> = tensor([[1, 2, 3, 4, 5, 6, 7, 8]])
+        let expected = Tensor<D>([[1, 2, 3, 4, 5, 6, 7, 8]])
         XCTAssert(isClose(result, expected.transpose(), eps: 10e-4), "Not close")
     }
     
@@ -733,11 +730,11 @@ class stemTests: XCTestCase {
 //    }
     
     func testConcat4() {
-        let v1:Tensor<D> = tensor([[1, 2, 3, 4], [5, 6, 7, 8]])
-        let v2:Tensor<D> = tensor([[9, 10, 11, 12], [13, 14, 15, 16]])
+        let v1 = Tensor<D>([[1, 2, 3, 4], [5, 6, 7, 8]])
+        let v2 = Tensor<D>([[9, 10, 11, 12], [13, 14, 15, 16]])
         let result = concat(v1, v2, axis: 0)
         
-        let expected:Tensor<D> = tensor([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12], [13, 14, 15, 16]])
+        let expected = Tensor<D>([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12], [13, 14, 15, 16]])
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
     }
     
@@ -759,12 +756,12 @@ class stemTests: XCTestCase {
 //    }
     
     func testConcat6() {
-        let v1:Tensor<D> = rowvector([1, 2, 3, 4])
-        let v2:Tensor<D> = rowvector([5, 6, 7, 8])
+        let v1 = Tensor<D>(rowvector: [1, 2, 3, 4])
+        let v2 = Tensor<D>(rowvector: [5, 6, 7, 8])
         
         let result = concat(v1, v2, axis: 1)
         
-        let expected:Tensor<D> = rowvector([1, 2, 3, 4, 5, 6, 7, 8])
+        let expected = Tensor<D>(rowvector: [1, 2, 3, 4, 5, 6, 7, 8])
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
     }
     
@@ -787,52 +784,51 @@ class stemTests: XCTestCase {
 //    }
     
     func testConcat8() {
-        let v1:Tensor<D> = tensor([[1, 2, 3, 4], [5, 6, 7, 8]])
-        let v2:Tensor<D> = tensor([[9, 10, 11, 12], [13, 14, 15, 16]])
+        let v1 = Tensor<D>([[1, 2, 3, 4], [5, 6, 7, 8]])
+        let v2 = Tensor<D>([[9, 10, 11, 12], [13, 14, 15, 16]])
         let result = concat(v1, v2, axis: 1)
         
-        print("\(result)")
-        
-        let expected:Tensor<D> = tensor([   [1, 2, 3, 4, 5, 6, 7, 8],
-                                            [9, 10, 11, 12, 13, 14, 15, 16]])
+        let expected = Tensor<D>([
+            [1, 2, 3, 4, 5, 6, 7, 8],
+            [9, 10, 11, 12, 13, 14, 15, 16]])
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
     }
     
     func testFloatFromTensor() {
-        let t:Tensor<F> = tensor(Extent(1, 1))
+        let t = Tensor<F>(shape: Extent(1, 1))
         t[0, 0] = 1.0
         let f = Float(t)
         XCTAssertEqual(f, 1.0)
         
-        let m:Tensor<F> = tensor([[2.0]])
+        let m = Tensor<F>([[2.0]])
         let f2 = Float(m)
         XCTAssertEqual(f2, 2.0)
     }
 
     func testBroadcast0() {
-        let v1:Tensor<D> = rowvector([1, 2, 3]) // shape: (1, 3)
+        let v1 = Tensor<D>(rowvector: [1, 2, 3]) // shape: (1, 3)
         let s1 = calculateBroadcastStride(v1, shape: Extent(3, 3))
         XCTAssertEqual(s1, [1, 0])
 
-        let m1:Tensor<D> = tensor([[1, 2, 3]]) // shape: (1, 3)
+        let m1 = Tensor<D>([[1, 2, 3]]) // shape: (1, 3)
         let s3 = calculateBroadcastStride(m1, shape: Extent(3, 3))
         XCTAssertEqual(s3, [1, 0])
         
-        let v2:Tensor<D> = colvector([1, 2, 3]) // shape: (3, 1)
+        let v2 = Tensor<D>(colvector: [1, 2, 3]) // shape: (3, 1)
         let s2 = calculateBroadcastStride(v2, shape: Extent(3, 3))
         XCTAssertEqual(s2, [0, 1])
 
-        let m2:Tensor<D> = tensor([[1], [2], [3]]) // shape: (3, 1)
+        let m2 = Tensor<D>([[1], [2], [3]]) // shape: (3, 1)
         let s4 = calculateBroadcastStride(m2, shape: Extent(3, 3))
         XCTAssertEqual(s4, [0, 1])
 
-        let m3:Tensor<D> = tensor([[1, 2, 3], [4, 5, 6]]) // shape: (2, 3)
+        let m3 = Tensor<D>([[1, 2, 3], [4, 5, 6]]) // shape: (2, 3)
         let s5 = calculateBroadcastStride(m3, shape: Extent(2, 2, 3))
         XCTAssertEqual(s5, [1, 3, 0])
     }
     
     func testBroadcast1() {
-        let v:Tensor<D> = rowvector([1, 2, 3])
+        let v = Tensor<D>(rowvector: [1, 2, 3])
         let b = broadcast(v, shape: Extent(3, 3))
         
         let expected = [1.0, 2.0, 3.0,
@@ -847,7 +843,7 @@ class stemTests: XCTestCase {
     }
     
     func testBroadcast2() {
-        let v:Tensor<D> = colvector([1, 2, 3])
+        let v = Tensor<D>(colvector: [1, 2, 3])
         let b = broadcast(v, shape: Extent(3, 3))
         
         let expected = [1.0, 1.0, 1.0,
@@ -862,7 +858,7 @@ class stemTests: XCTestCase {
     }
     
     func testBroadcast3() {
-        let m:Tensor<D> = tensor([[1, 2, 3], [4, 5, 6]])
+        let m = Tensor<D>([[1, 2, 3], [4, 5, 6]])
         let b = broadcast(m, shape: Extent(2, 2, 3))
         
         let expected = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
@@ -873,8 +869,8 @@ class stemTests: XCTestCase {
     }
     
     func testBroadcast4() {
-        let m:Tensor<D> = tensor([[1, 2, 3], [4, 5, 6]])
-        let v:Tensor<D> = rowvector([1, 2, 3])
+        let m = Tensor<D>([[1, 2, 3], [4, 5, 6]])
+        let v = Tensor<D>(rowvector: [1, 2, 3])
         
         let (m2, v2) = broadcast(m, v)
         
