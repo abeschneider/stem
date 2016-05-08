@@ -13,24 +13,24 @@ typealias I = NativeStorage<Int>
 
 //: Creating vectors
 //: ----------------
-let v1:Tensor<F> = colvector([1, 2, 3, 4])
+let v1 = Tensor<F>([1, 2, 3, 4])
 String(v1)
 
-let v2:Tensor<F> = rowvector([1, 2, 3, 4])
+let v2 = Tensor<F>(rowvector: [1, 2, 3, 4])
 String(v2)
 
-let v3:Tensor<F> = vector([1, 2, 3, 4], axis: 0)
+let v3 = Tensor<F>([1, 2, 3, 4], axis: 0)
 String(v3)
 
-let v4:Tensor<F> = vector([1, 2, 3, 4], axis: 1)
+let v4 = Tensor<F>([1, 2, 3, 4], axis: 1)
 String(v4)
 
-let v5:Tensor<F> = vector([1, 2, 4, 5], axis:2)
+let v5 = Tensor<F>([1, 2, 3, 4], axis: 2)
 String(v5)
 
 
 // integer vectors
-let iv1:Tensor<I> = rowvector([1, 2, 3, 4, 5])
+let iv1 = Tensor<I>(rowvector: [1, 2, 3, 4, 5])
 String(iv1)
 
 //: Vector indexing
@@ -41,14 +41,19 @@ let d1:Float = v1[0]
 let d2:Float = v1[1]
 
 v1[0] = 10
-v2[1] = 20
+v1[1] = 20
 
 // ranges
-let vr1 = v1[1, 0...2]
+let vr1 = v1[0...2]
 String(vr1)
 
-vr1[0...2] = colvector([1, 2, 3])
+String(v1)
+
+
+vr1[0...2] = Tensor<F>([1, 2, 3])
 String(vr1)
+
+String(v1)
 
 //: Vector operations
 //: -----------------
@@ -57,7 +62,8 @@ let v7 = v1+v1
 let v8 = 0.5*v1
 let v9 = v1**2
 
-let v10:Tensor<F> = rowvector([2, 2, 2, 2])
+let v10 = Tensor<F>(rowvector: [2, 2, 2, 2])
+String(v10)
 
 
 // Hadamard product
@@ -75,17 +81,20 @@ String(v13)
 
 //: Matrix creation
 //: ---------------
-let m1:Tensor<F> = tensor([[1, 2, 3], [4, 5, 6]])
-let m2:Tensor<F> = tensor(Extent(3, 3))
+let m1 = Tensor<F>([[1, 2, 3], [4, 5, 6]])
+String(m1)
+
+let m2 = Tensor<F>(shape: Extent(3, 3))
+String(m2)
 
 //: Matrix indexing
 //: ---------------
 let d3:Float = m1[0, 0]
 let d4:Float = m1[1, 2]
 let vr2 = m1[0..<2, 1..<3]
-print("\(vr2)")
+String(vr2)
 
-m2[0..<2, 1..<3] = tensor([[1, 1], [1, 1]])
+m2[0..<2, 1..<3] = Tensor<F>([[1, 1], [1, 1]])
 String((m2))
 
 String(m2[all, 0])
@@ -98,11 +107,11 @@ String(m2[all, 2])
 //: -----------------
 String(m1)
 
-let v14:Tensor<F> = colvector([1, 1, 1])
+let v14 = Tensor<F>(colvector: [1, 1, 1])
 let v15:Tensor<F> = m1⊙v14
 String(v15)
 
-let m3:Tensor<F> = tensor([[1, 2, 3], [1, 2, 3]])
+let m3:Tensor<F> = Tensor<F>([[1, 2, 3], [1, 2, 3]])
 let m4:Tensor<F> = m1⊙m3.transpose()
 String(m4)
 
