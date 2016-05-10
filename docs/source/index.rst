@@ -10,8 +10,10 @@ Contents:
 
 .. toctree::
    :maxdepth: 2
+   :numbered:
 
    tensor
+   functions
    random
    nn
 
