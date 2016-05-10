@@ -108,23 +108,30 @@ The ``Storage`` protocol is defined as:
 .. code:: swift
 
   public protocol Storage {
-    typealias ElementType:NumericType
+    associatedtype ElementType:NumericType
+
+    var size:Int { get }
+    var order:DimensionOrder { get }
 
     init(size:Int)
     init(array:[ElementType])
     init(storage:Self)
     init(storage:Self, copy:Bool)
 
-    var size:Int { get }
     subscript(index:Int) -> ElementType {get set}
-    func calculateStride(shape:Extent) -> [Int]
+
+    // returns the order of dimensions to traverse
+    func calculateOrder(dims:Int) -> [Int]
+
+    // re-order list in order of dimensions to traverse
+    func calculateOrder(values:[Int]) -> [Int]
   }
 
 An implementation of ``Storage`` determines the allocation through the ``init``
 methods, ``subscript`` determines how the storage gets indexed, and ``calculateStride``
 allows the ``Storage`` to be iterated through in a sequential fashion.
 
-The |Tensor| class frequently makes use of the generator ``TensorStorageIndex`` to iterate
+The |Tensor| class frequently makes use of the generator ``IndexGenerator`` to iterate
 through the ``Storage`` class. This provides a convenient way to access all the
 elements without knowing the underyling memory allocation.
 
@@ -132,8 +139,12 @@ To do so, the |Tensor| class defined the methid:
 
 .. code:: swift
 
-  public func storageIndices() -> GeneratorSequence<TensorStorageIndex<StorageType>> {
-    return GeneratorSequence<TensorStorageIndex<StorageType>>(TensorStorageIndex<StorageType>(self))
+  public func indices(order:DimensionOrder?=nil) -> GeneratorSequence<IndexGenerator> {
+    if let o = order {
+        return GeneratorSequence<IndexGenerator>(IndexGenerator(shape, order: o))
+    } else {
+        return GeneratorSequence<IndexGenerator>(IndexGenerator(shape, order: storage.order))
+    }
   }
 
 which can be used like:
@@ -141,7 +152,7 @@ which can be used like:
 .. code:: swift
 
   func fill<StorageType:Storage>(tensor:Tensor<StorageType>, value:StorageType.ElementType) {
-      for i in tensor.storageIndices() {
+      for i in tensor.indices() {
           tensor.storage[i] = value
       }
   }
@@ -154,7 +165,7 @@ operation exists, you can write:
   // This will be used if the Tensor's storage type is CBlasStorage for doubles,
   // an alternative can be specified for Floats separately.
   func fill(tensor:Tensor<CBlasStorage<Double>>, value:StorageType.ElementType) {
-    // ..
+    // call custom library
   }
 
 
@@ -174,16 +185,6 @@ The |Tensor| class hold an instance of ``Storage`` along with a view into
 the storage. Multiple instances of |Tensor| may point to the same ``Storage``
 providing different views of the same data. This allows operations such as indexing
 to operate in an efficient manner without requiring copies of the memory to be made.
-
-Subclasses of |Tensor| include:
-
-* |Vector|
-* ``RowVector``
-* ``ColumnVector``
-* |Matrix|
-
-These subclasses provide convience constructors as well a the ability to
-provide function overloading to handle special cases (e.g. broadcasting).
 
 .. _Tensor_Construction:
 
@@ -211,126 +212,191 @@ To create a view of a |Tensor| with the ability to shuffle the dimensions, where
 
   init(_ tensor:Tensor, dimIndex:[Int]?=nil, view:StorageView<StorageType>?=nil, copy:Bool=false)
 
-Vector
-++++++
-
-To construct a |Vector| along an arbritrary axis with contents read from an array:
-
-.. code:: swift
-
-  init(_ array:[StorageType.ElementType], axis:Int=0)
-
-To construct a view of a |Vector|:
-
-.. code:: swift
-
-  init(_ vector:Vector<StorageType>, dimIndex:[Int]?=nil, view:StorageView<StorageType>?=nil)
-
-To construct a ``RowVector`` (i.e. a |Vector| that lies along dimension 0) with contents read from an array:
-
-.. code:: swift
-
-  init(_ array:[StorageType.ElementType])
-
-To construct a ``ColumnVector`` (i.e. a |Vector| that lies along dimension 1) with contents read from an array:
-
-.. code:: swift
-
-  init(_ array:[StorageType.ElementType])
-
-Matrix
-++++++
-
-To construct a |Matrix| with contents from a 2 dimensional array:
-
-.. code:: swift
-
-  init(_ array:[[StorageType.ElementType]], copyTransposed:Bool=false)
-
-To construct a |Matrix| view:
-
-.. code:: swift
-
-  init(storage:StorageType, shape:Extent, view:StorageView<StorageType>?=nil, offset:Int?=nil)
-
-.. _Functions:
 
 Functions
 ---------
 
-.. csv-table:: Addition
-  :header: "Operator", "Equivalent function", "Broadcasts"
-  :widths: 20, 20, 5
+.. function:: add(lhs:Tensor<S>, rhs:Tensor<S>, result:Tensor<S>)
+              add(lhs:Tensor<S>, rhs:NumericType, result:Tensor<S>)
+              add(lhs:NumericType, rhs:Tensor<S>, result:Tensor<S>)
+              +(lhs:Tensor<S>, rhs:Tensor<S>) -> Tensor<S>
+              +(lhs:Tensor<S>, rhs:NumericType) -> Tensor<S>
+              +(lhs:NumericType, rhs:Tensor<S>) -> Tensor<S>
 
-  "|Tensor| + |Tensor| -> |Tensor|", "add(left:|Tensor|, right:|Tensor|, result:|Tensor|)", "False"
-  "|Matrix| + ``RowVector`` -> |Matrix|", "add(left:|Matrix|, right:``RowVector``, result:|Matrix|)", "True"
-  "|Matrix| + ``ColumnVector`` -> |Matrix|", "add(left:|Matrix|, right:``ColumnVector``)", "True"
-  "|Tensor| += |Tensor|", "iadd(left:|Tensor|, right:|Tensor|)", "False"
-  "|Vector| += |Vector|", "iadd(left:|Vector|, right:|Vector|)", "False"
-  "|Matrix| += ``RowVector``", "iadd(left:|Matrix|, right:``RowVector``)", "True"
-  "|Matrix| += ``ColumnVector``", "iadd(left:|Matrix|, right:``ColumnVector``)", "True"
+   Adds ``lhs`` and ``rhs`` together, either place results in ``result``
+   or returning its value. If the shape of ``lhs`` and ``rhs`` do not
+   match, will either use ``broadcast`` to match their size, or use
+   optimized methods to accomplish the same purpose.
 
-.. csv-table:: Subtraction
-  :header: "Operator", "Equivalent function", "Broadcasts"
-  :widths: 20, 20, 5
+.. function:: sub(lhs:Tensor<S>, rhs:Tensor<S>, result:Tensor<S>)
+              sub(lhs:Tensor<S>, rhs:NumericType, result:Tensor<S>)
+              sub(lhs:NumericType, rhs:Tensor<S>, result:Tensor<S>)
+              -(lhs:Tensor<S>, rhs:Tensor<S>) -> Tensor<S>
+              -(lhs:Tensor<S>, rhs:NumericType) -> Tensor<S>
+              -(lhs:NumericType, rhs:Tensor<S>) -> Tensor<S>
 
-  "|Tensor| - |Tensor| -> |Tensor|", "sub(left:|Tensor|, right:|Tensor|, result:|Tensor|)", "False"
-  "|Matrix| - ``RowVector`` -> |Matrix|", "sub(left:|Matrix|, right:``RowVector``, result:|Matrix|)", "True"
-  "|Matrix| - ``ColumnVector`` -> |Matrix|", "sub(left:|Matrix|, right:``ColumnVector``)", "True"
-  "|Tensor| -= |Tensor|", "isub(left:|Tensor|, right:|Tensor|)", "False"
-  "|Vector| -= |Vector|", "isub(left:|Vector|, right:|Vector|)", "False"
-  "|Matrix| -= ``RowVector``", "isub(left:|Matrix|, right:``RowVector``)", "True"
-  "|Matrix| -= ``ColumnVector``", "isub(left:|Matrix|, right:``ColumnVector``)", "True"
+  Subtracts ``lhs`` from ``rhs``, either place results in ``result``
+  or returning its value. If the shape of ``lhs`` and ``rhs`` do not
+  match, will either use ``broadcast`` to match their size, or use
+  optimized methods to accomplish the same purpose.
 
-.. csv-table:: Elementwise Multiplication
-  :header: "Operator", "Equivalent function", "Broadcasts"
-  :widths: 20, 20, 5
+.. function:: mul(lhs:Tensor<S>, rhs:Tensor<S>, result:Tensor<S>)
+              mul(lhs:Tensor<S>, rhs:NumericType, result:Tensor<S>)
+              mul(lhs:NumericType, rhs:Tensor<S>, result:Tensor<S>)
+              *(lhs:Tensor<S>, rhs:Tensor<S>) -> Tensor<S>
+              *(lhs:Tensor<S>, rhs:NumericType) -> Tensor<S>
+              *(lhs:NumericType, rhs:Tensor<S>) -> Tensor<S>
 
-  "|Tensor| * |Tensor| -> |Tensor|", "mul(left:|Tensor|, right:|Tensor|, result:|Tensor|)", "False"
-  "|Tensor| * |Number| -> |Tensor|", "mul(left:|Number|, right:|Tensor|, result:|Tensor|)", "False"
-  "|Number| * |Tensor| -> |Tensor|", "mul(left:|Tensor|, right:|Number|, result:|Tensor|)", "False"
-  "|Vector| *= |Vector|", "imul(left:|Vector|, right:|Vector|)", "False"
-  "|Matrix| *= ``RowVector``", "imul(left:|Matrix|, right:``RowVector``)", "True"
-  "|Matrix| *= ``ColumnVector``", "imul(left:|Matrix|, right:``ColumnVector``)", "True"
-  "|Tensor| *= |Number|", "imul(left:|Tensor|, right:|Number|)", "False"
+   Performs element-wise multiplication between ``lhs`` and ``rhs``,
+   either place results in ``result`` or returning its value. If the
+   shape of ``lhs`` and ``rhs`` do not match, will either use ``broadcast``
+   to match their size, or use optimized methods to accomplish the same purpose.
 
-.. csv-table:: Elementwise Division
-  :header: "Operator", "Equivalent function", "Broadcasts"
-  :widths: 20, 20, 5
+.. function:: div(lhs:Tensor<S>, rhs:Tensor<S>, result:Tensor<S>)
+              div(lhs:Tensor<S>, rhs:NumericType, result:Tensor<S>)
+              div(lhs:NumericType, rhs:Tensor<S>, result:Tensor<S>)
+              /(lhs:Tensor<S>, rhs:Tensor<S>) -> Tensor<S>
+              /(lhs:Tensor<S>, rhs:NumericType) -> Tensor<S>
+              /(lhs:NumericType, rhs:Tensor<S>) -> Tensor<S>
 
-  "|Tensor| / |Number| -> |Tensor|", "div(left:|Tensor|, right:|Number|, result:|Tensor|)", "False"
-  "|Vector| / |Vector| -> |Vector|", "div(left:|Vector|, right:|Vector|, result:|Vector|)", "False"
-  "|Matrix| / ``RowVector`` -> |Matrix|", "div(left:|Matrix|, right:``RowVector``, result:|Matrix|)", "True"
-  "|Matrix| / ``ColumnVector`` -> |Matrix|", "div(left:|Matrix|, right:``ColumnVector``, result:|Matrix|)", "True"
+  Performs element-wise division between ``lhs`` and ``rhs``,
+  either place results in ``result`` or returning its value. If the
+  shape of ``lhs`` and ``rhs`` do not match, will either use ``broadcast``
+  to match their size, or use optimized methods to accomplish the same purpose.
 
-Elementwise Exponentiation
-++++++++++++++++++++++++++
-* |Tensor| ^ |Number| -> |Tensor|
-* pow(|Tensor|, |Number|) -> |Tensor|
-* exp(|Tensor|) -> |Tensor|
+.. function:: iadd(lhs:Tensor<S>, rhs:Tensor<S>)
+              iadd(lhs:Tensor<S>, rhs:NumericType)
+              iadd(lhs:NumericType, rhs:Tensor<S>)
+              +=(lhs:Tensor<S>, rhs:Tensor<S>) -> Tensor<S>
+              +=(lhs:Tensor<S>, rhs:NumericType) -> Tensor<S>
+              +=(lhs:NumericType, rhs:Tensor<S>) -> Tensor<S>
 
-Liner Algebra
-+++++++++++++
-* ``Vector`` ⋅ ``Vector`` -> |Number|
-* |Matrix| ⋅ ``ColumnVector`` -> ``RowVector``
-* |Matrix| ⋅ |Matrix| -> ``RowVector``
-* dot(|Vector|, |Vector|) -> |Number|
-* ``ColumnVector`` ⨯ ``RowVector`` -> |Matrix|
-* outer(|Vector|, |Vector|) -> |Matrix|
+   Adds ``lhs`` to ``rhs`` and stores result in ``lhs``,
+   either place results in ``result`` or returning its value. If the
+   shape of ``lhs`` and ``rhs`` do not match, will either use ``broadcast``
+   to match their size, or use optimized methods to accomplish the same purpose.
 
-Other
+.. function:: isub(lhs:Tensor<S>, rhs:Tensor<S>)
+              isub(lhs:Tensor<S>, rhs:NumericType)
+              isub(lhs:NumericType, rhs:Tensor<S>)
+              -=(lhs:Tensor<S>, rhs:Tensor<S>) -> Tensor<S>
+              -=(lhs:Tensor<S>, rhs:NumericType) -> Tensor<S>
+              -=(lhs:NumericType, rhs:Tensor<S>) -> Tensor<S>
+
+  Subtracts ``rhs`` from ``lhs`` and stores result in ``lhs``,
+  either place results in ``result`` or returning its value. If the
+  shape of ``lhs`` and ``rhs`` do not match, will either use ``broadcast``
+  to match their size, or use optimized methods to accomplish the same purpose.
+
+.. function:: imul(lhs:Tensor<S>, rhs:Tensor<S>)
+              imul(lhs:Tensor<S>, rhs:NumericType)
+              imul(lhs:NumericType, rhs:Tensor<S>)
+              *=(lhs:Tensor<S>, rhs:Tensor<S>) -> Tensor<S>
+              *=(lhs:Tensor<S>, rhs:NumericType) -> Tensor<S>
+              *=(lhs:NumericType, rhs:Tensor<S>) -> Tensor<S>
+
+  Multiplies ``lhs`` by ``rhs`` and stores result in ``lhs``,
+  either place results in ``result`` or returning its value. If the
+  shape of ``lhs`` and ``rhs`` do not match, will either use ``broadcast``
+  to match their size, or use optimized methods to accomplish the same purpose.
+
+.. function:: idiv(lhs:Tensor<S>, rhs:Tensor<S>)
+              idiv(lhs:Tensor<S>, rhs:NumericType)
+              idiv(lhs:NumericType, rhs:Tensor<S>)
+              /=(lhs:Tensor<S>, rhs:Tensor<S>) -> Tensor<S>
+              /=(lhs:Tensor<S>, rhs:NumericType) -> Tensor<S>
+              /=(lhs:NumericType, rhs:Tensor<S>) -> Tensor<S>
+
+  Divides ``lhs`` by ``rhs`` and stores results in ``lhs``,
+  either place results in ``result`` or returning its value. If the
+  shape of ``lhs`` and ``rhs`` do not match, will either use ``broadcast``
+  to match their size, or use optimized methods to accomplish the same purpose.
+
+.. function:: pow(lhs:Tensor<S>, exp:NumericType) -> Tensor<S>
+              **(lhs:Tensor<S>, exp:NumericType) -> Tensor<S>
+
+  Raises every element of ``lhs`` by ``exp``.
+
+.. function:: exp(op::Tensor<S>) -> Tensor<S>
+
+  Returns an element-wise exponentiation of ``op``.
+
+.. function:: dot(lhs:Tensor<S>, rhs:Tensor<S>) -> NumericType
+              ⊙(lhs:Tensor<S>, rhs:Tensor<S>) -> NumericType
+
+  Returns the dot product between two vectors.
+  Both ``lhs`` and ``rhs`` must be vectors.
+
+.. function:: outer(lhs:Tensor<S>, rhs:Tensor<S>) -> NumericType
+              ⊗(lhs:Tensor<S>, rhs:Tensor<S>) -> NumericType
+
+  Returns the outer product between two vectors.
+  Both ``lhs`` and ``rhs`` must be vectors.
+
+.. function:: abs(op:Tensor<S>) -> Tensor<S>
+
+  Performs an elementwise ``abs`` on Tensor.
+
+.. function:: concat(op1:Tensor<S>, op2:Tensor<S>, ..., opN:Tensor<S>, axis:Int)
+
+  Concats N Tensors along ``axis``.
+
+.. function:: vstack(op1:Tensor<S>, op2:Tensor<S>) -> Tensor<S>
+
+  Returns a new Tensor that is a composite of ``op1`` and ``op2`` vertically
+  stacked.
+
+.. function:: hstack(op1:Tensor<S>, op2:Tensor<S>) -> Tensor<S>
+
+  Returns a new Tensor that is a composite of ``op1`` and ``op2`` horizontally
+  stacked.
+
+.. function:: broadcast(op1:Tensor<S>, op2:Tensor<S>) -> (Tensor<S>, Tensor<S>)
+
+  Returns two Tensors of the same shape broadcasted from ``op1`` and ``op2``.
+  Need to go into much more detail about broadcasting.
+
+.. function:: reduce(op:Tensor<S>, fn:(Tensor<S>, Tensor<S>) -> NumericType) -> NumericType
+
+  Applies ``fn`` to elements of Tensor, returns a scalar.
+
+.. function:: sum(op:Tensor<S>, axis:Int) -> Tensor<S>
+              sum(op:Tensor<S>) -> NumericType
+
+  When ``axis`` is specified, sums ``op`` along ``axis`` and returns resulting
+  Tensor. When no ``axis`` is specified, returns entire Tensor summed.
+
+.. function:: max(op:Tensor<S>, axis:Int) -> Tensor<S>
+              max(op:Tensor<S>) -> NumericType
+
+  When ``axis`` is specified, find the maximum value ``op`` across ``axis``
+  and returns resulting Tensor. When no ``axis`` is specified, returns
+  maximum value of entire Tensor.
+
+.. function:: min(op:Tensor<S>, axis:Int) -> Tensor<S>
+              min(op:Tensor<S>) -> NumericType
+
+  When ``axis`` is specified, find the minimum value ``op`` across ``axis``
+  and returns resulting Tensor. When no ``axis`` is specified, returns
+  minimum value of entire Tensor.
+
+.. function:: fill(op:Tensor<S>, value:NumericType)
+
+  Sets all elements of ``op`` to ``value``.
+
+.. function:: copy(op:Tensor<S>) -> Tensor<S>
+              copy(from:Tensor<S>, to:Tensor<S>)
+
+    First form creates a new Tensor and copies ``op`` into it. The second form
+    copies ``op`` into an already existing Tensor.
+
+.. function:: map(op:Tensor<S>, fn:(NumericType) -> NumericType) -> Tensor<S>
+
+  Applies ``fn`` to each element of Tensor and returns resulting Tensor.
+
+TODO
 +++++
-* abs(|Tensor|) -> |Tensor|
-* concat(``Tensor1``, ``Tensor2``, ..., axis: ``axis``)
-* vstack(``Tensor1``, ``Tensor2``)
-* hstack(``Tensor1``, ``Tensor2``)
-* sum(|Tensor|, axis: ``axis``)
 * norm(|Tensor|, axis: ``axis``)
-* max(|Tensor|, axis: ``axis``)
-* fill(|Tensor|, |Number|)
-* copy(from:|Tensor|, to:|Tensor|)
-* copy(|Tensor|) -> |Tensor|
-* map(|Tensor|, (|Number|) -> |Number|) -> |Tensor|
 * hist(|Tensor|, bins:``Int``) -> |Vector|
 * isClose(``Tensor1``, ``Tensor2``) -> ``Bool``
 
