@@ -180,7 +180,11 @@ Tensor Construction
 
 .. function:: Tensor<S>(colvector:[NumericType])
 
-  Constructs a row vector (equivalent to ``Tensor<S>([NumericType], axis:0)``)
+  Constructs a column vector (equivalent to ``Tensor<S>([NumericType], axis:0)``)
+
+.. function:: Tensor<S>(rowvector:[NumericType])
+
+  Constructs a row vector (equivalent to ``Tensor<S>([NumericType], axis:1)``)
 
 .. function:: Tensor<S>([[NumericType]])
 
