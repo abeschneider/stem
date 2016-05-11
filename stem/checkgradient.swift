@@ -16,7 +16,7 @@ func checkGradient<StorageType:Storage where StorageType.ElementType:FloatNumeri
     _ fn:(Tensor<StorageType>) -> StorageType.ElementType) -> Tensor<StorageType>
 {
 //    let result = Vector<StorageType>(rows: gradParams.size)
-    let result = Tensor<StorageType>(shape: Extent(gradParams.size))
+    let result = Tensor<StorageType>(Extent(gradParams.size))
     
     // calculate gradients
     fn(input)

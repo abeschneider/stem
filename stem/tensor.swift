@@ -155,6 +155,13 @@ public class Tensor<StorageType:Storage> {
         get { return transpose() }
     }
     
+    /**
+     Creates a vector along a specified axis.
+     
+     - Parameter array: contents of array
+     - Parameter axis: axis vector lies on
+ 
+     */
     public convenience init(_ array:[StorageType.ElementType], axis:Int=0) {
         var shapeValues = [Int](count: axis+1, repeatedValue: 1)
         shapeValues[axis] = array.count
@@ -163,6 +170,12 @@ public class Tensor<StorageType:Storage> {
         self.init(array: array, shape: shape)
     }
     
+    /**
+
+     Creates a row vector
+     
+     - Parameter rowvector: contents of array
+     */
     public convenience init(rowvector array:[StorageType.ElementType]) {
         let cols = array.count
         let shape = Extent(1, cols)
@@ -181,7 +194,7 @@ public class Tensor<StorageType:Storage> {
         let rows = array.count
         let cols = array[0].count
         
-        self.init(shape: Extent(rows, cols))
+        self.init(Extent(rows, cols))
         
         var index = indices(.ColumnMajor)
         for i in 0..<rows {
@@ -191,7 +204,17 @@ public class Tensor<StorageType:Storage> {
         }
     }
     
-    public init(array:[StorageType.ElementType], shape:Extent, offset:Int?=nil) {
+    public init(_ shape:Extent) {
+        storage = StorageType(size: shape.elements)
+        internalShape = shape
+        offset = 0
+        self.stride = calculateStride(Extent(storage.calculateOrder(shape.dims)))
+        dimIndex = storage.calculateOrder(shape.count)
+        
+        view = ViewType(shape: shape, offset: Array<Int>(count: shape.count, repeatedValue: 0))
+    }
+    
+    init(array:[StorageType.ElementType], shape:Extent, offset:Int?=nil) {
         storage = StorageType(array: array)
         internalShape = shape
         self.stride = calculateStride(Extent(storage.calculateOrder(shape.dims)))
@@ -206,7 +229,7 @@ public class Tensor<StorageType:Storage> {
         view = ViewType(shape: shape, offset: Array<Int>(count: shape.count, repeatedValue: 0))
     }
     
-    public init(storage:StorageType, shape:Extent, view:StorageView<StorageType>?=nil, offset:Int?=nil) {
+    init(storage:StorageType, shape:Extent, view:StorageView<StorageType>?=nil, offset:Int?=nil) {
         self.storage = storage
         internalShape = shape
         self.stride = calculateStride(Extent(storage.calculateOrder(shape.dims)))
@@ -217,7 +240,7 @@ public class Tensor<StorageType:Storage> {
         } else {
             self.offset = 0
         }
-
+        
         if let v = view {
             self.view = v
         } else {
@@ -225,17 +248,7 @@ public class Tensor<StorageType:Storage> {
         }
     }
     
-    public init(shape:Extent) {
-        storage = StorageType(size: shape.elements)
-        internalShape = shape
-        offset = 0
-        self.stride = calculateStride(Extent(storage.calculateOrder(shape.dims)))
-        dimIndex = storage.calculateOrder(shape.count)
-
-        view = ViewType(shape: shape, offset: Array<Int>(count: shape.count, repeatedValue: 0))
-    }
-    
-    public init(_ tensor:Tensor, window:[Range<Int>]) {
+    init(_ tensor:Tensor, window:[Range<Int>]) {
         storage = tensor.storage
         internalShape = tensor.internalShape
         offset = 0
@@ -253,7 +266,7 @@ public class Tensor<StorageType:Storage> {
         dimIndex = tensor.storage.calculateOrder(viewShape.count)
     }
     
-    public init(_ tensor:Tensor, dimIndex:[Int]?=nil, view:StorageView<StorageType>?=nil, stride: [Int]?=nil, copy:Bool=false) {
+    init(_ tensor:Tensor, dimIndex:[Int]?=nil, view:StorageView<StorageType>?=nil, stride: [Int]?=nil, copy:Bool=false) {
         if copy {
             storage = tensor.storage
         } else {
@@ -282,7 +295,7 @@ public class Tensor<StorageType:Storage> {
         }
     }
     
-    public init(tensor:Tensor, shape:Extent, stride:[Int]) {
+    init(tensor:Tensor, shape:Extent, stride:[Int]) {
         storage = tensor.storage
         internalShape = shape
         offset = 0
@@ -515,7 +528,7 @@ func concat<StorageType:Storage>(tensor1:Tensor<StorageType>, _ tensor2:Tensor<S
     var shape = tensor1.shape
     shape[axis] += tensor2.shape[axis]
     
-    let result = Tensor<StorageType>(shape: shape)
+    let result = Tensor<StorageType>(shape)
     var rpos = result.indices()
     
     for pos in tensor1.indices() {
@@ -570,7 +583,7 @@ func map<StorageType:Storage>(
     tensor:Tensor<StorageType>,
     fn:(StorageType.ElementType) -> StorageType.ElementType) -> Tensor<StorageType>
 {
-    let result = Tensor<StorageType>(shape: tensor.shape)
+    let result = Tensor<StorageType>(tensor.shape)
     for i in tensor.indices() {
         result[i] = fn(tensor[i])
     }

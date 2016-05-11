@@ -12,9 +12,6 @@ What aren't STEM's goals?
 There are many uses for a Tensor library. STEM isn't trying to create an all encompassing framework.
 Instead its goal is to provide a basis on which many other libraries can be written against.
 
-Thus, STEM is not attempting to create a graphing library, Machine Learning library (though that is
-being written in conjunction to STEM), or an automatic differentiation library. These
-
 Why Swift?
 ----------
 While Swift is still a new language, it has many qualities that make it great for Machine Learning:

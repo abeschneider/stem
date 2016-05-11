@@ -142,7 +142,7 @@ public func iadd<S:Storage where S.ElementType:NumericType>
 public func +<S:Storage where S.ElementType:NumericType>
     (lhs:Tensor<S>, rhs:Tensor<S>) -> Tensor<S>
 {
-    let result = Tensor<S>(shape: lhs.shape)
+    let result = Tensor<S>(lhs.shape)
     add(lhs, rhs, result: result)
     
     return result
@@ -158,7 +158,7 @@ public func +<S:Storage where S.ElementType:NumericType>
 public func +<S:Storage where S.ElementType:NumericType>
     (lhs:Tensor<S>, rhs:S.ElementType) -> Tensor<S>
 {
-    let result = Tensor<S>(shape: lhs.shape)
+    let result = Tensor<S>(lhs.shape)
     add(lhs, rhs, result: result)
     
     return result
@@ -174,7 +174,7 @@ public func +<S:Storage where S.ElementType:NumericType>
 public func +<S:Storage where S.ElementType:NumericType>
     (lhs:S.ElementType, rhs:Tensor<S>) -> Tensor<S>
 {
-    let result = Tensor<S>(shape: rhs.shape)
+    let result = Tensor<S>(rhs.shape)
     add(lhs, rhs, result: result)
     
     return result
@@ -240,7 +240,7 @@ public func isub<StorageType:Storage where StorageType.ElementType:NumericType>
 public func -<StorageType:Storage where StorageType.ElementType:NumericType>
     (lhs:Tensor<StorageType>, rhs:Tensor<StorageType>) -> Tensor<StorageType>
 {
-    let result = Tensor<StorageType>(shape: lhs.shape)
+    let result = Tensor<StorageType>(lhs.shape)
     sub(lhs, rhs, result: result)
     
     return result
@@ -249,7 +249,7 @@ public func -<StorageType:Storage where StorageType.ElementType:NumericType>
 public func -<StorageType:Storage where StorageType.ElementType:NumericType>
     (lhs:StorageType.ElementType, rhs:Tensor<StorageType>) -> Tensor<StorageType>
 {
-    let result = Tensor<StorageType>(shape: rhs.shape)
+    let result = Tensor<StorageType>(rhs.shape)
     sub(lhs, rhs, result: result)
     
     return result
@@ -302,7 +302,7 @@ public func /<StorageType:Storage where StorageType.ElementType:NumericType>
     (lhs:Tensor<StorageType>, rhs:Tensor<StorageType>) -> Tensor<StorageType>
 {
     let shape = max(lhs.shape, rhs.shape)
-    let result = Tensor<StorageType>(shape: shape)
+    let result = Tensor<StorageType>(shape)
     div(lhs, rhs: rhs, result: result)
     return result
 }
@@ -367,7 +367,7 @@ public func *<StorageType:Storage where StorageType.ElementType:NumericType>
     (lhs:Tensor<StorageType>, rhs:Tensor<StorageType>) -> Tensor<StorageType>
 {
     let shape = max(lhs.shape, rhs.shape)
-    let result = Tensor<StorageType>(shape: shape)
+    let result = Tensor<StorageType>(shape)
     
     mul(lhs, rhs, result: result)
     
@@ -377,7 +377,7 @@ public func *<StorageType:Storage where StorageType.ElementType:NumericType>
 public func *<StorageType:Storage where StorageType.ElementType:NumericType>
     (lhs:StorageType.ElementType, rhs:Tensor<StorageType>) -> Tensor<StorageType>
 {
-    let result = Tensor<StorageType>(shape: rhs.shape)
+    let result = Tensor<StorageType>(rhs.shape)
     mul(lhs, rhs, result: result)
 
     return result
@@ -386,7 +386,7 @@ public func *<StorageType:Storage where StorageType.ElementType:NumericType>
 public func *<StorageType:Storage where StorageType.ElementType:NumericType>
     (lhs:Tensor<StorageType>, rhs:StorageType.ElementType) -> Tensor<StorageType>
 {
-    let result = Tensor<StorageType>(shape: lhs.shape)
+    let result = Tensor<StorageType>(lhs.shape)
     mul(lhs, rhs: rhs, result: result)
 
     return result
@@ -466,7 +466,7 @@ public func ⊙<S:Storage where S.ElementType:NumericType>
     (lhs:Tensor<S>, rhs:Tensor<S>) -> Tensor<S>
 {
 //    let result = Tensor<S>(shape: Extent(left.shape[0], 1))
-    let result = Tensor<S>(shape: Extent(lhs.shape[0], rhs.shape[1]))
+    let result = Tensor<S>(Extent(lhs.shape[0], rhs.shape[1]))
     dot(lhs, rhs, result: result)
     return result
 }
@@ -496,7 +496,7 @@ public func outer<StorageType:Storage where StorageType.ElementType:NumericType>
 public func ⊗<StorageType:Storage where StorageType.ElementType:NumericType>
     (lhs:Tensor<StorageType>, rhs:Tensor<StorageType>) -> Tensor<StorageType>
 {
-    let result = Tensor<StorageType>(shape: Extent(lhs.shape.elements, rhs.shape.elements))
+    let result = Tensor<StorageType>(Extent(lhs.shape.elements, rhs.shape.elements))
     outer(lhs, rhs, result: result)
     return result
 }
@@ -504,7 +504,7 @@ public func ⊗<StorageType:Storage where StorageType.ElementType:NumericType>
 public func abs<StorageType:Storage where StorageType.ElementType:NumericType>
     (tensor:Tensor<StorageType>) -> Tensor<StorageType>
 {
-    let result = Tensor<StorageType>(shape: tensor.shape)
+    let result = Tensor<StorageType>(tensor.shape)
     for index in tensor.indices() {
         result[index] = abs(tensor[index])
     }
@@ -527,7 +527,7 @@ public func isClose<StorageType:Storage where StorageType.ElementType:NumericTyp
 public func hist<StorageType:Storage where StorageType.ElementType == Double>
     (t:Tensor<StorageType>, bins:Int) -> Tensor<StorageType>
 {
-    let h = Tensor<StorageType>(shape: Extent(bins))
+    let h = Tensor<StorageType>(Extent(bins))
     let m = max(t)
     let delta = m/StorageType.ElementType(bins)
     for i in t.indices() {
@@ -556,7 +556,7 @@ func reduce<StorageType:Storage>(tensor:Tensor<StorageType>,
     let newShape = reduced.map { $0.element }
     
     // create tensor to hold results
-    let result = Tensor<StorageType>(shape: Extent(newShape))
+    let result = Tensor<StorageType>(Extent(newShape))
     
     // index `i` is the axis we are summing along
     for i in 0..<tensor.shape[axis] {
@@ -632,7 +632,7 @@ public func **<StorageType:Storage where StorageType.ElementType:FloatNumericTyp
 public func pow<StorageType:Storage where StorageType.ElementType:FloatNumericType>
     (tensor:Tensor<StorageType>, _ power:StorageType.ElementType) -> Tensor<StorageType>
 {
-    let result = Tensor<StorageType>(shape: tensor.shape)
+    let result = Tensor<StorageType>(tensor.shape)
     for i in result.indices() {
         result[i] = StorageType.ElementType.pow(tensor[i], power)
     }
@@ -643,7 +643,7 @@ public func pow<StorageType:Storage where StorageType.ElementType:FloatNumericTy
 func exp<StorageType:Storage where StorageType.ElementType:FloatNumericType>
     (tensor:Tensor<StorageType>) -> Tensor<StorageType>
 {
-    let result = Tensor<StorageType>(shape: tensor.shape)
+    let result = Tensor<StorageType>(tensor.shape)
     for i in result.indices() {
         result[i] = StorageType.ElementType.exp(tensor[i])
     }
@@ -660,7 +660,7 @@ func sqrt<StorageType:Storage where StorageType.ElementType:FloatNumericType>
     (tensor:Tensor<StorageType>) -> Tensor<StorageType>
 {
     let indices = tensor.indices()
-    let result = Tensor<StorageType>(shape: tensor.shape)
+    let result = Tensor<StorageType>(tensor.shape)
     for index in indices {
         result[index] = StorageType.ElementType.sqrt(tensor[index])
     }

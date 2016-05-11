@@ -52,7 +52,7 @@ class randomTests: XCTestCase {
         let expected = Double(size)/Double(bins)
         let expected_margin = expected - expected*margin
         
-        let tensor = Tensor<NativeStorage<Double>>(shape: Extent(size))
+        let tensor = Tensor<NativeStorage<Double>>(Extent(size))
         tensor.uniform(rng)
         let h = hist(tensor, bins: bins)
         for i in h.indices() {

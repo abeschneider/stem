@@ -124,7 +124,7 @@ The |Tensor| class frequently makes use of the generator ``IndexGenerator`` to i
 through the ``Storage`` class. This provides a convenient way to access all the
 elements without knowing the underyling memory allocation.
 
-To do so, the |Tensor| class defined the methid:
+To do so, the |Tensor| class defined the method:
 
 .. code:: swift
 
@@ -170,36 +170,40 @@ operation exists, you can write:
 
 Tensor Class
 ------------
-The |Tensor| class hold an instance of ``Storage`` along with a view into
-the storage. Multiple instances of |Tensor| may point to the same ``Storage``
-providing different views of the same data. This allows operations such as indexing
-to operate in an efficient manner without requiring copies of the memory to be made.
+The ``Tensor`` class is parameterized by the ``Storage`` type, allowing instances
+of the class to maintain a pointer to the underlying memory. The ``Tensor`` class
+also has an instance of ``ViewType``, which allows different views of the same
+memory to be constructed, and the array ``dimIndex``, which determines the order
+that the dimensions in the ``Tensor`` are traversed. These features allow for
+multiple ``Tensor`` s to provide a different view to the same memory (e.g. a slice
+of a ``Tensor`` can be created by changing the ``ViewType`` instance, or a
+``Tensor`` can be transposed by shuffling ``dimIndex``).
+
+.. note::
+
+  Throughout the documentation ``Tensor<S>`` indicates the parameterization of
+  the ``Tensor`` class by ``Storage`` type ``S``, and ``NumericType`` refers to
+  ``S.NumericType`` (see section on ``Storage`` for details).
 
 .. _Tensor_Construction:
 
 Tensor Construction
 -------------------
-The |Tensor| class comes with three constructors. To construct a |Tensor| with a given shape:
+.. function:: Tensor<S>(_ shape:Extent)
 
-.. code:: swift
+  Constructs a tensor with the given shape.
 
-  init(shape:Extent)
+.. function:: Tensor<S>([NumericType], axis:Int)
 
+  Constructs a vector along the given axis
 
-To create a view of a |Tensor|, where ``window`` is an array of ``Range`` with
-each element representing a single dimension:
+.. function:: Tensor<S>(colvector:[NumericType])
 
-.. code:: swift
+  Constructs a row vector (equivalent to ``Tensor<S>([NumericType], axis:0)``)
 
-  init(_ tensor:Tensor, window:[Range<Int>])
+.. function:: Tensor<S>([[NumericType]])
 
-
-To create a view of a |Tensor| with the ability to shuffle the dimensions, where
-``dimIndex`` is the order of the dimensions and ``view`` is the view used:
-
-.. code:: swift
-
-  init(_ tensor:Tensor, dimIndex:[Int]?=nil, view:StorageView<StorageType>?=nil, copy:Bool=false)
+  Constructs a matrix
 
 .. _Indexing:
 

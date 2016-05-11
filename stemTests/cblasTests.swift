@@ -74,7 +74,7 @@ class cblasTests: XCTestCase {
     
     func testCBlasTensorView2() {
         //        let tensor1 = Tensor<CD>(shape: Extent(3, 5))
-        let t1:Tensor<CD> = Tensor<CD>(shape: Extent(3, 5))
+        let t1:Tensor<CD> = Tensor<CD>(Extent(3, 5))
         
         // top row
         let t2 = t1[0, 0..<5]
@@ -144,7 +144,7 @@ class cblasTests: XCTestCase {
     func testCBlasVectorAdd() {
         let m1 = Tensor<CD>(colvector: [1, 2, 3, 4, 5, 6, 7, 8])
         let m2 = Tensor<CD>(colvector: [8, 7, 6, 5, 4, 3, 2, 1])
-        let result = Tensor<CD>(shape: Extent(m1.shape[0]))
+        let result = Tensor<CD>(Extent(m1.shape[0]))
         
         add(left: m1, right: m2, result: result)
         
@@ -165,7 +165,7 @@ class cblasTests: XCTestCase {
     func testCBlasMatrixAdd1() {
         let m1 = Tensor<CD>([[1, 2, 3, 4], [5, 6, 7, 8]])
         let m2 = Tensor<CD>([[8, 7, 6, 5], [4, 3, 2, 1]])
-        let result = Tensor<CD>(shape: m1.shape)
+        let result = Tensor<CD>(m1.shape)
         
         add(left: m1, right: m2, result: result)
         
@@ -178,7 +178,7 @@ class cblasTests: XCTestCase {
 
         let v1 = Tensor<CD>(rowvector: [1, 1, 1, 1])
         let v2 = Tensor<CD>(colvector: [0.5, 0.5])
-        let result = Tensor<CD>(shape: Extent(m.shape))
+        let result = Tensor<CD>(Extent(m.shape))
 
         add(left: m, right: v1, result: result)
         iadd(left: result, right: v2)
@@ -191,9 +191,9 @@ class cblasTests: XCTestCase {
     func testCBlasVectorSub() {
         let m1 = Tensor<CD>(colvector: [1, 2, 3, 4, 5, 6, 7, 8])
         let m2 = Tensor<CD>(colvector: [8, 7, 6, 5, 4, 3, 2, 1])
-        let result = Tensor<CD>(shape: m1.shape)
+        let result = Tensor<CD>(m1.shape)
         
-        sub(left: m1, right: m2, result: result)
+        sub(m1, m2, result: result)
         
         let expected = Tensor<CD>(colvector: [-7, -5, -3, -1, 1, 3, 5, 7])
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
@@ -274,7 +274,7 @@ class cblasTests: XCTestCase {
     }
 
     func testBenchmarkCBlas1() {
-        let v1 = Tensor<CD>(shape: Extent(100000))
+        let v1 = Tensor<CD>(Extent(100000))
         
         self.measureBlock {
             let _ = v1 + v1
@@ -282,7 +282,7 @@ class cblasTests: XCTestCase {
     }
     
     func testBenchmarkNative() {
-        let v1 = Tensor<D>(shape: Extent(100000))
+        let v1 = Tensor<D>(Extent(100000))
         
         self.measureBlock {
             let _ = v1 + v1

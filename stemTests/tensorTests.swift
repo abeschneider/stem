@@ -54,7 +54,7 @@ class stemTests: XCTestCase {
     }
     
     func testTensorView2() {
-        let t1 = Tensor<D>(shape: Extent(3, 5))
+        let t1 = Tensor<D>(Extent(3, 5))
 
         // top row
         let t2 = t1[0, 0..<5]
@@ -220,7 +220,7 @@ class stemTests: XCTestCase {
     }
     
     func testStorageIndex4() {
-        let t = Tensor<D>(shape: Extent(2, 3))
+        let t = Tensor<D>(Extent(2, 3))
         let sub1 = t[0, all]
         let sub2 = t[all, 0]
         
@@ -229,7 +229,7 @@ class stemTests: XCTestCase {
     }
     
     func testStorageIndex5() {
-        let m = Tensor<D>(shape: Extent(2, 3))
+        let m = Tensor<D>(Extent(2, 3))
         let sub1 = m[0, all]
         let sub2 = m[all, 0]
         
@@ -238,7 +238,7 @@ class stemTests: XCTestCase {
     }
     
     func testStorageIndex6() {
-        let cube = Tensor<D>(shape: Extent(3, 4, 5))
+        let cube = Tensor<D>(Extent(3, 4, 5))
         let expected = (0..<cube.shape.elements).map { $0 }
         
         for (i, index) in GeneratorSequence(IndexGenerator(cube.shape, order:.ColumnMajor)).enumerate() {
@@ -452,9 +452,9 @@ class stemTests: XCTestCase {
     func testVectorAdd() {
         let m1 = Tensor<D>([1, 2, 3, 4, 5, 6, 7, 8])
         let m2 = Tensor<D>([8, 7, 6, 5, 4, 3, 2, 1])
-        let result = Tensor<D>(shape: Extent(m1.shape[0]))
+        let result = Tensor<D>(Extent(m1.shape[0]))
         
-        add(left: m1, right: m2, result: result)
+        add(m1, m2, result: result)
         
         let expected = Tensor<D>([9, 9, 9, 9, 9, 9, 9, 9])
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
@@ -483,9 +483,9 @@ class stemTests: XCTestCase {
     func testMatrixAdd1() {
         let m1 = Tensor<D>([[1, 2, 3, 4], [5, 6, 7, 8]])
         let m2 = Tensor<D>([[8, 7, 6, 5], [4, 3, 2, 1]])
-        let result = Tensor<D>(shape: m1.shape)
+        let result = Tensor<D>(m1.shape)
         
-        add(left: m1, right: m2, result: result)
+        add(m1, m2, result: result)
         
         let expected = Tensor<D>([[9, 9, 9, 9], [9, 9, 9, 9]])
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
@@ -495,10 +495,10 @@ class stemTests: XCTestCase {
         let m1 = Tensor<D>([[1, 2, 3, 4], [5, 6, 7, 8]])
         let v1 = Tensor<D>(rowvector: [1, 1, 1, 1])
         let v2 = Tensor<D>(colvector: [0.5, 0.5])
-        let result = Tensor<D>(shape: m1.shape)
+        let result = Tensor<D>(m1.shape)
         
-        add(left: m1, right: v1, result: result)
-        iadd(left: result, right: v2)
+        add(m1, v1, result: result)
+        iadd(result, v2)
         
         let expected = Tensor<D>([[2.5, 3.5, 4.5, 5.5], [6.5, 7.5, 8.5, 9.5]])
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
@@ -507,9 +507,9 @@ class stemTests: XCTestCase {
     func testVectorSub() {
         let m1 = Tensor<D>([1, 2, 3, 4, 5, 6, 7, 8])
         let m2 = Tensor<D>([8, 7, 6, 5, 4, 3, 2, 1])
-        let result = Tensor<D>(shape: m1.shape)
+        let result = Tensor<D>(m1.shape)
         
-        sub(left: m1, right: m2, result: result)
+        sub(m1, m2, result: result)
         
         let expected = Tensor<D>([-7, -5, -3, -1, 1, 3, 5, 7])
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
@@ -528,9 +528,9 @@ class stemTests: XCTestCase {
     func testVectorScalarMul1() {
         let v = Tensor<D>([1, 2, 3, 4, 5, 6, 7, 8])
         let s:Double = 0.5
-        let result = Tensor<D>(shape: v.shape)
+        let result = Tensor<D>(v.shape)
         
-        mul(left: v, right: s, result: result)
+        mul(v, rhs: s, result: result)
         
         let expected = Tensor<D>([0.5, 1, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0])
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
@@ -539,9 +539,9 @@ class stemTests: XCTestCase {
     func testVectorScalarMul2() {
         let v = Tensor<D>([1, 2, 3, 4, 5, 6, 7, 8])
         let s:Double = 0.5
-        let result = Tensor<D>(shape: v.shape)
+        let result = Tensor<D>(v.shape)
         
-        mul(left: s, right: v, result: result)
+        mul(s, v, result: result)
         
         let expected = Tensor<D>([0.5, 1, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0])
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
@@ -596,8 +596,8 @@ class stemTests: XCTestCase {
         let v = Tensor<D>(colvector: [1, 2, 3])
         
         // 3x3*3x1 - > 3x1
-        let result = Tensor<D>(shape: Extent(3, 1))
-        dot(left: m, right: v, result: result)
+        let result = Tensor<D>(Extent(3, 1))
+        dot(m, v, result: result)
         
         let expected = Tensor<D>([1, 2, 3])
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
@@ -633,9 +633,9 @@ class stemTests: XCTestCase {
     func testOuterProduct1() {
         let v1 = Tensor<D>([1, 2, 3])
         let v2 = Tensor<D>([1, 2, 3])
-        let result = Tensor<D>(shape: Extent(3, 3))
+        let result = Tensor<D>(Extent(3, 3))
         
-        outer(left: v1, right: v2, result: result)
+        outer(v1, v2, result: result)
         
         let expected = Tensor<D>([[1, 2, 3], [2, 4, 6], [3, 6, 9]])
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
@@ -795,7 +795,7 @@ class stemTests: XCTestCase {
     }
     
     func testFloatFromTensor() {
-        let t = Tensor<F>(shape: Extent(1, 1))
+        let t = Tensor<F>(Extent(1, 1))
         t[0, 0] = 1.0
         let f = Float(t)
         XCTAssertEqual(f, 1.0)

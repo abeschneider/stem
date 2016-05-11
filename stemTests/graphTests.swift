@@ -44,9 +44,9 @@ class graphTests: XCTestCase {
     
     func testExamples2() {
         typealias D = NativeStorage<Double>
-        let v1 = Tensor<D>(shape: Extent(1, 3))
-        let v2 = Tensor<D>(shape: Extent(3, 1))
-        let result = Tensor<D>(shape: Extent(1, 1))
-        dot(left: v1, right: v2, result: result)
+        let v1 = Tensor<D>(Extent(1, 3))
+        let v2 = Tensor<D>(Extent(3, 1))
+        let result = Tensor<D>(Extent(1, 1))
+        dot(v1, v2, result: result)
     }
 }

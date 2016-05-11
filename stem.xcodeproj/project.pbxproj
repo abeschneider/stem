@@ -29,6 +29,9 @@
 		2DC0CF871C19E0C1003CB088 /* random.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DC0CF861C19E0C1003CB088 /* random.swift */; };
 		2DC0CF891C19F25B003CB088 /* randomTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DC0CF881C19F25B003CB088 /* randomTests.swift */; };
 		2DC0CF8C1C1B067D003CB088 /* numerictype.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DC0CF8A1C1B055A003CB088 /* numerictype.swift */; };
+		38C235201CBB444F00330A06 /* graph3.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38C2351F1CBB444F00330A06 /* graph3.swift */; };
+		38C235231CC3FAF800330A06 /* graphTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38C235221CC3FAF800330A06 /* graphTests.swift */; };
+		38CE89421CDE6277005F7DD5 /* cblasTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38CE89411CDE6277005F7DD5 /* cblasTests.swift */; };
 		38ED5A021C8936A100000C3B /* storageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38ED5A011C8936A100000C3B /* storageTests.swift */; };
 /* End PBXBuildFile section */
 
@@ -70,6 +73,10 @@
 		2DC0CF861C19E0C1003CB088 /* random.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = random.swift; sourceTree = "<group>"; };
 		2DC0CF881C19F25B003CB088 /* randomTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = randomTests.swift; sourceTree = "<group>"; };
 		2DC0CF8A1C1B055A003CB088 /* numerictype.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = numerictype.swift; sourceTree = "<group>"; };
+		38C2351F1CBB444F00330A06 /* graph3.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = graph3.swift; path = stem/graph3.swift; sourceTree = "<group>"; };
+		38C235211CC2C13800330A06 /* GraphPlayground.playground */ = {isa = PBXFileReference; lastKnownFileType = file.playground; path = GraphPlayground.playground; sourceTree = "<group>"; };
+		38C235221CC3FAF800330A06 /* graphTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = graphTests.swift; sourceTree = "<group>"; };
+		38CE89411CDE6277005F7DD5 /* cblasTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = cblasTests.swift; sourceTree = "<group>"; };
 		38ED5A011C8936A100000C3B /* storageTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = storageTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -95,6 +102,7 @@
 		2D17562B1BF98678009C397D = {
 			isa = PBXGroup;
 			children = (
+				38C235211CC2C13800330A06 /* GraphPlayground.playground */,
 				2D1756621BF9FA7E009C397D /* StemPlayground.playground */,
 				2D1756601BF9884B009C397D /* README.md */,
 				2D17565F1BF987DC009C397D /* COPYING */,
@@ -144,6 +152,8 @@
 				2D6A5F461C113A42001838D4 /* nnTests.swift */,
 				2DC0CF881C19F25B003CB088 /* randomTests.swift */,
 				2D1756461BF98678009C397D /* Info.plist */,
+				38C235221CC3FAF800330A06 /* graphTests.swift */,
+				38CE89411CDE6277005F7DD5 /* cblasTests.swift */,
 			);
 			path = stemTests;
 			sourceTree = "<group>";
@@ -154,6 +164,7 @@
 				2D6A5F411C0BE6E4001838D4 /* nn.swift */,
 				2D9C028E1C2C5D53003CB936 /* graph.swift */,
 				2D46F0571C60DAB7001C8BCB /* graph2.swift */,
+				38C2351F1CBB444F00330A06 /* graph3.swift */,
 			);
 			name = nn;
 			sourceTree = "<group>";
@@ -277,6 +288,7 @@
 				2D1756591BF9869A009C397D /* storage.swift in Sources */,
 				2D50D0A61C19269000C5A107 /* tensorops.swift in Sources */,
 				2D1756561BF9869A009C397D /* tensor.swift in Sources */,
+				38C235201CBB444F00330A06 /* graph3.swift in Sources */,
 				2D46F0581C60DAB7001C8BCB /* graph2.swift in Sources */,
 				2D17565A1BF9869A009C397D /* view.swift in Sources */,
 				2D1756581BF9869A009C397D /* extent.swift in Sources */,
@@ -291,7 +303,9 @@
 			files = (
 				2DC0CF891C19F25B003CB088 /* randomTests.swift in Sources */,
 				2D1756611BF9884B009C397D /* README.md in Sources */,
+				38C235231CC3FAF800330A06 /* graphTests.swift in Sources */,
 				2D6A5F471C113A42001838D4 /* nnTests.swift in Sources */,
+				38CE89421CDE6277005F7DD5 /* cblasTests.swift in Sources */,
 				2D17565E1BF986B7009C397D /* tensorTests.swift in Sources */,
 				38ED5A021C8936A100000C3B /* storageTests.swift in Sources */,
 			);

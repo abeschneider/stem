@@ -79,7 +79,7 @@ func add(
 func +(left:Tensor<CBlasStorage<Double>>,
        right:Tensor<CBlasStorage<Double>>) -> Tensor<CBlasStorage<Double>>
 {
-    let result = Tensor<CBlasStorage<Double>>(shape: Extent(left.shape[0]))
+    let result = Tensor<CBlasStorage<Double>>(Extent(left.shape[0]))
     add(left: left, right: right, result: result)
     
     return result
