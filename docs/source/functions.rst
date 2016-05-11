@@ -56,9 +56,9 @@ Basic Math
 .. function:: iadd(lhs:Tensor<S>, rhs:Tensor<S>)
               iadd(lhs:Tensor<S>, rhs:NumericType)
               iadd(lhs:NumericType, rhs:Tensor<S>)
-              +=(lhs:Tensor<S>, rhs:Tensor<S>) -> Tensor<S>
-              +=(lhs:Tensor<S>, rhs:NumericType) -> Tensor<S>
-              +=(lhs:NumericType, rhs:Tensor<S>) -> Tensor<S>
+              +=(lhs:Tensor<S>, rhs:Tensor<S>)
+              +=(lhs:Tensor<S>, rhs:NumericType)
+              +=(lhs:NumericType, rhs:Tensor<S>)
 
    Adds ``lhs`` to ``rhs`` and stores result in ``lhs``,
    either place results in ``result`` or returning its value. If the
@@ -68,9 +68,9 @@ Basic Math
 .. function:: isub(lhs:Tensor<S>, rhs:Tensor<S>)
               isub(lhs:Tensor<S>, rhs:NumericType)
               isub(lhs:NumericType, rhs:Tensor<S>)
-              -=(lhs:Tensor<S>, rhs:Tensor<S>) -> Tensor<S>
-              -=(lhs:Tensor<S>, rhs:NumericType) -> Tensor<S>
-              -=(lhs:NumericType, rhs:Tensor<S>) -> Tensor<S>
+              -=(lhs:Tensor<S>, rhs:Tensor<S>)
+              -=(lhs:Tensor<S>, rhs:NumericType)
+              -=(lhs:NumericType, rhs:Tensor<S>)
 
   Subtracts ``rhs`` from ``lhs`` and stores result in ``lhs``,
   either place results in ``result`` or returning its value. If the
@@ -80,9 +80,9 @@ Basic Math
 .. function:: imul(lhs:Tensor<S>, rhs:Tensor<S>)
               imul(lhs:Tensor<S>, rhs:NumericType)
               imul(lhs:NumericType, rhs:Tensor<S>)
-              *=(lhs:Tensor<S>, rhs:Tensor<S>) -> Tensor<S>
-              *=(lhs:Tensor<S>, rhs:NumericType) -> Tensor<S>
-              *=(lhs:NumericType, rhs:Tensor<S>) -> Tensor<S>
+              *=(lhs:Tensor<S>, rhs:Tensor<S>)
+              *=(lhs:Tensor<S>, rhs:NumericType)
+              *=(lhs:NumericType, rhs:Tensor<S>)
 
   Multiplies ``lhs`` by ``rhs`` and stores result in ``lhs``,
   either place results in ``result`` or returning its value. If the
@@ -92,9 +92,9 @@ Basic Math
 .. function:: idiv(lhs:Tensor<S>, rhs:Tensor<S>)
               idiv(lhs:Tensor<S>, rhs:NumericType)
               idiv(lhs:NumericType, rhs:Tensor<S>)
-              /=(lhs:Tensor<S>, rhs:Tensor<S>) -> Tensor<S>
-              /=(lhs:Tensor<S>, rhs:NumericType) -> Tensor<S>
-              /=(lhs:NumericType, rhs:Tensor<S>) -> Tensor<S>
+              /=(lhs:Tensor<S>, rhs:Tensor<S>)
+              /=(lhs:Tensor<S>, rhs:NumericType)
+              /=(lhs:NumericType, rhs:Tensor<S>)
 
   Divides ``lhs`` by ``rhs`` and stores results in ``lhs``,
   either place results in ``result`` or returning its value. If the
