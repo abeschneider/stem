@@ -13,40 +13,35 @@ Tensor Overview
 Synopsis
 --------
 
-First, we will define a few convenience aliases:
+First, we will define a convenience alias:
 
 .. code:: swift
 
-  typealias RowVector<NativeStorage<Double>> RowVec
-  typealias ColumnVector<NativeStorage<Double>> ColVec
-  typealias Matrix<NativeStorage<Double>> Mat
-  typealias Tensor<NativeStorage<Double>> T
+  typealias NativeStorage<Double> D
 
 Next, we can create two vectors:
 
 .. code:: swift
 
   // construct vector with values
-  let v1 = RowVec([1, 2, 3])
+  let v1 = Tensor<D>([1, 2, 3])
 
-  // construct vector by size
-  let v2 = ColVec(rows: 5)
+  // construct Tensor with a specific size
+  let v2 = Tensor<D>(Extent(5, 3))
 
-  // construct vector using another vector
-  let v3 = RowVec(v1)
-
-  // set v2's values manually
-  for i in 0..<5 {
-    v2[i] = 2*i
-  }
+  // construct a matrix with values
+  let v3 = Tensor<D>([[1, 2, 3], [4, 5, 6]])
 
 
 |STEM| supports standard linear algebra operators:
 
 .. code:: swift
 
-  // take the outer product (results in a matrix)
-  let m1 = v1⨯v2
+  // take the dot product (result is a scalar)
+  let s1 = v1⊙v2
+
+  // take the outer product (result is a matrix)
+  let m1 = v1⊗v2
 
   // add two vectors together
   let v4 = v1+v3
@@ -66,20 +61,6 @@ and |Matrix| classes are specializations of the |Tensor| class. These
 specializations allow for simpler construction methods as well as the
 use of accelerated libraries such as **CBLAS** and **CUDA** or **OpenCL**
 through function overloading.
-
-Function overloading also allows |STEM| to support broadcasting:
-
-.. code:: swift
-
-  let m3 = Mat([[1, 2, 3], [4, 5, 6]])
-  let v7 = RowVec([1, 1, 1])
-  let v8 = ColVec([2, 2])
-
-  // applies v7 to each row of m3
-  let m4 = m3+v7
-
-  // applies v8 to each column of m3
-  let m5 = m3+v8
 
 .. _Storage:
 
