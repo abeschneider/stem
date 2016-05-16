@@ -19,7 +19,7 @@ public protocol Storage {
     var size:Int { get }
     var order:DimensionOrder { get }
     
-    init(size:Int)
+    init(size:Int, value:ElementType)
     init(array:[ElementType])
     init(storage:Self)
     init(storage:Self, copy:Bool)
