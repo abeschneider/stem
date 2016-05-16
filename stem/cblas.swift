@@ -17,8 +17,8 @@ public class CBlasStorage<T:NumericType>: Storage {
     public var size:Int { return array.memory.count }
     public var order:DimensionOrder { return .RowMajor }
     
-    public required init(size:Int) {
-        array = SharedArray<ElementType>(count: size, repeatedValue: ElementType(0))
+    public required init(size:Int, value:ElementType=0) {
+        array = SharedArray<ElementType>(count: size, repeatedValue: value)
     }
     
     public required init(array:[T]) {

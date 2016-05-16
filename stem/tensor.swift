@@ -121,7 +121,10 @@ public class Tensor<StorageType:Storage> {
     // external shape
     public var shape:Extent {
         get { return view.shape }
-//        set { view.shape = newValue }
+        set {
+            precondition(view.shape.elements == newValue.elements, "Number of elements must match")
+            view.shape = newValue
+        }
     }
     
     // view into storage
@@ -204,8 +207,8 @@ public class Tensor<StorageType:Storage> {
         }
     }
     
-    public init(_ shape:Extent) {
-        storage = StorageType(size: shape.elements)
+    public init(_ shape:Extent, value:StorageType.ElementType=0) {
+        storage = StorageType(size: shape.elements, value: value)
         internalShape = shape
         offset = 0
         self.stride = calculateStride(Extent(storage.calculateOrder(shape.dims)))
@@ -327,9 +330,9 @@ public class Tensor<StorageType:Storage> {
     // be specified (e.g. v: [3x1] can be indexed as v[i]
     public func calculateOffset(indices:[Int]) -> Int {
         var pos = offset
-        let start = dimIndex.count - indices.count
-        for i in 0..<indices.count { // was dimIndex.count
-            let di = dimIndex[i+start]
+        let size = min(indices.count, dimIndex.count)
+        for i in 0..<size { // was dimIndex.count
+            let di = dimIndex[i] // + start
             pos += (indices[di]+view.offset[di])*stride[i]
         }
         
@@ -444,6 +447,26 @@ extension Tensor: CustomStringConvertible {
             return convertToString(indices, dim: 0)
         }
     }
+}
+
+public func ones<S:Storage>(shape:Extent) -> Tensor<S> {
+    return Tensor<S>(shape, value: S.ElementType(1))
+}
+
+public func zeros<S:Storage>(shape:Extent) -> Tensor<S> {
+    return Tensor<S>(shape, value: S.ElementType(0))
+}
+
+//public func diagIndices(shape:Extent) -> 
+
+// TODO: change to support N dimensions (requires diagIndices)
+public func eye<S:Storage>(size:Int) -> Tensor<S> {
+    let tensor:Tensor<S> = zeros(Extent(size, size))
+    for i in 0..<size {
+        tensor[i, i] = 1
+    }
+    
+    return tensor
 }
 
 // TODO: rewrite so we don't have to reverse at the end
