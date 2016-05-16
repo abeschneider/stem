@@ -8,87 +8,13 @@
 
 import Foundation
 
-
-//
-////protocol GraphModule {
-////    associatedtype StorageType:Storage
-////    
-////    var inputs:Int { get }
-////    var outputs:Int { get }
-////    
-////    func apply(inputs:[Tensor<StorageType>], outputs: [Tensor<StorageType>])
-////}
-//
-
-public class Symbol<S:Storage> {
-    public var value:Tensor<S>?
-    public var set:Bool
-    
-    public init() {
-        set = false
-    }
-    
-    public init(shape:Extent) {
-        value = Tensor<S>(shape)
-        set = false
-    }
-    
-    public init(value:Tensor<S>, copy makeCopy:Bool=false) {
-        if makeCopy {
-            self.value = copy(value)
-        } else {
-            self.value = value
-        }
-        set = false
-    }
-    
-    public func setValue(value:Tensor<S>, copy makeCopy:Bool=false) {
-        if makeCopy {
-            self.value = copy(value)
-        } else {
-            self.value = value
-        }
-        set = true
-    }
-    
-    public func reset() {
-        set = false
-    }
-}
-
-//public class SymbolArray<StorageType:Storage> {
-//    var symbols:[Symbol<StorageType>]
-//    var isSet:[Bool]
-//    
-//    public init(symbols:[Symbol<StorageType>]) {
-//        self.symbols = symbols
-//        isSet = [Bool](count: symbols.count, repeatedValue: false)
-//    }
-//    
-//    public func reset() {
-//        for i in 0..<isSet.count {
-//            isSet[i] = false
-//        }
-//    }
-//    
-//    public subscript(index:Int) -> Symbol<StorageType> {
-//        get {
-//           return symbols[index]
-//        }
-//        set {
-//            symbols[index] = newValue
-//            isSet[index] = true
-//        }
-//    }
-//}
-
 public protocol Operation {
     associatedtype StorageType:Storage
     
-    var inputs:[Symbol<StorageType>] { get }
-    var outputs:[Symbol<StorageType>] { get }
+    var inputs:[AnyOp<StorageType>] { get }
+    var output:Tensor<StorageType> { get }
+    var id:Int { get }
 
-    func ready() -> Bool
     func apply()
 }
 
@@ -97,283 +23,244 @@ internal func _abstract(file: StaticString = #file, line: UInt = #line) {
     fatalError("Method must be overridden", file: file, line: line)
 }
 
-public class AnyGraphModule<S:Storage>: Operation {
+public class AnyOp<S:Storage>: Operation, Hashable {
     public typealias StorageType = S
     
-//    var inputs:Int { return _box.inputs }
-//    var outputs:Int { return _box.outputs }
-//    var outputShape:[Extent] { return _box.outputShape }
-    public var inputs:[Symbol<StorageType>] { return _box.inputs }
-    public var outputs:[Symbol<StorageType>] { return _box.outputs }
+    public var inputs:[AnyOp<StorageType>] { return _box.inputs }
+    public var output:Tensor<StorageType> { return _box.output }
+    public var id:Int { return _box.id }
     
-
-    
-    init<M:Operation where M.StorageType==S>(_ base:M) {
-        self._box = _AnyGraphModuleBox(base)
+    public init<M:Operation where M.StorageType==S>(_ base:M) {
+        self._box = _AnyGraphOpBox(base)
     }
     
-//    func apply(inputs:[Tensor<StorageType>], outputs: [Tensor<StorageType>]) {
-//        return _box.apply(inputs, outputs: outputs)
-//    }
-    
-    public func ready() -> Bool { return _box.ready() }
     public func apply() { return _box.apply() }
+    
+    public var hashValue:Int { return id }
     
     internal let _box: _AnyGraphModuleBoxBase<S>
 }
 
-class _AnyGraphModuleBase {}
-class _AnyGraphModuleBoxBase<S:Storage>:
-    _AnyGraphModuleBase, Operation
-{
-    
-//    internal var inputs:Int { _abstract() }
-//    internal var outputs:Int { _abstract() }
-//    internal var outputShape:[Extent] { _abstract() }
-    internal var inputs:[Symbol<S>] { _abstract() }
-    internal var outputs:[Symbol<S>] { _abstract() }
+public func ==<S:Storage>(lhs:AnyOp<S>, rhs:AnyOp<S>) -> Bool {
+    return lhs.id == rhs.id
+}
 
-//    internal func apply(inputs:[Tensor<S>], outputs: [Tensor<S>]) {
-//        _abstract()
-//    }
-    
-    internal func ready() -> Bool { _abstract() }
+
+class _AnyGraphOpBase {}
+class _AnyGraphModuleBoxBase<S:Storage>:
+    _AnyGraphOpBase, Operation
+{
+    internal var inputs:[AnyOp<S>] { _abstract() }
+    internal var output:Tensor<S> { _abstract() }
+    internal var id:Int { _abstract() }
     internal func apply() { _abstract() }
 }
 
-class _AnyGraphModuleBox<Base:Operation>:
+class _AnyGraphOpBox<Base:Operation>:
     _AnyGraphModuleBoxBase<Base.StorageType>
 {
     internal init(_ base: Base) { self._base = base }
     
-//    override var inputs:Int { return _base.inputs }
-//    override var outputs:Int { return _base.outputs }
-    override var inputs:[Symbol<Base.StorageType>] { return _base.inputs }
-    override var outputs:[Symbol<Base.StorageType>] { return _base.outputs }
+    override var inputs:[AnyOp<Base.StorageType>] { return _base.inputs }
+    override var output:Tensor<Base.StorageType> { return _base.output }
+    override var id:Int { return _base.id }
     
-//    override func apply(inputs:[Tensor<Base.StorageType>], outputs: [Tensor<Base.StorageType>]) {
-//        _base.apply(inputs, outputs: outputs)
-//    }
-    
-    override func ready() -> Bool { return _base.ready() }
     override func apply() { _base.apply() }
     
     internal var _base: Base
 }
 
-public struct Sigmoid<StorageType:Storage where StorageType.ElementType:FloatNumericType>: Operation {
-//    var inputs:Int { return 1 }
-//    var outputs:Int { return 1 }
-//    var outputShape:[Extent] { return [Extent(-1)] }
-    public var inputs:[Symbol<StorageType>]
-    public var outputs:[Symbol<StorageType>]
+public func anyOp<Op:Operation>(op:Op) -> AnyOp<Op.StorageType>
+{
+    return AnyOp<Op.StorageType>(op)
+}
+
+// TODO: replace with random numbers
+var idCounter:Int = 0
+
+internal func nextId() -> Int {
+    let value = idCounter
+    idCounter += 1
+    return value
+}
+
+public class Symbol<S:Storage>: Operation {
+    public var inputs:[AnyOp<S>] = []
+    public var output:Tensor<S>
+    public var id:Int
     
-    public init(input:Symbol<StorageType>) {
-        inputs = [input]
-        let symbol = Symbol<StorageType>(shape: input.value!.shape)
-        outputs = [symbol]
+    public init(_ input:Tensor<S>) {
+        output = input
+        id = nextId()
     }
     
-    public func ready() -> Bool {
-        return inputs[0].set
+    public init(_ shape:Extent) {
+        output = Tensor<S>(shape)
+        id = nextId()
+    }
+    
+    public func set(input:Tensor<S>) {
+        output = input
+    }
+    
+    public func apply() {}
+}
+
+public class Sigmoid<S:Storage where S.ElementType:FloatNumericType>: Operation {
+    public var inputs:[AnyOp<S>]
+    public var output:Tensor<S>
+    public var id:Int
+    
+    public init<Op:Operation where Op.StorageType==S>(input:Op) {
+        inputs = [anyOp(input)]
+        output = Tensor<StorageType>(inputs[0].output.shape)
+        id = nextId()
     }
     
     public func apply() {
         // check that value exists, if not, allocate with proper shape
-        sigmoid(inputs[0].value!, output: outputs[0].value!)
+        sigmoid(inputs[0].output, output: output)
     }
-//    func apply(inputs:[Tensor<StorageType>], outputs:[Tensor<StorageType>]) {
-//        sigmoid(inputs[0], output: outputs[0])
-//    }
 }
 
-public struct Linear<StorageType:Storage where StorageType.ElementType:FloatNumericType>: Operation {
-//    var inputs:Int { return 1  }
-//    var outputs:Int { return 1 }
-//    var outputShape:[Extent]
-    public var inputs:[Symbol<StorageType>]
-    public var outputs:[Symbol<StorageType>]
+public class Linear<S:Storage where S.ElementType:FloatNumericType>: Operation {
+    public var inputs:[AnyOp<S>] = []
+    public var output:Tensor<S>
+    public var id:Int
     
-//    var weight:Matrix<StorageType>
-//    var bias:Vector<StorageType>
-    var weight:Symbol<StorageType>
-    var bias:Symbol<StorageType>
+    public var weight:Tensor<S>
+    public var bias:Tensor<S>
     
-    public init(input:Symbol<StorageType>, weight:Symbol<StorageType>, bias:Symbol<StorageType>) {
+    
+    public init(numInputs:Int, numOutputs:Int) {
+        weight = uniform(Extent(numOutputs, numInputs))
+        bias = zeros(Extent(numOutputs))
+        output = zeros(Extent(numOutputs, numInputs))
+        id = nextId()
+    }
+    
+    public init<Op:Operation where Op.StorageType==S>(input:Op, numOutputs:Int) {
+        inputs = [anyOp(input)]
+        
+        let inputSize = input.output.shape[0]
+        weight = uniform(Extent(numOutputs, inputSize))
+        bias = zeros(Extent(numOutputs))
+        
+        // TOOD: think about letting output be passed as an optional parameter
+        output = zeros(bias.shape)
+        id = nextId()
+    }
+    
+    public init<Op:Operation where Op.StorageType==S>(input:Op, weight:Tensor<S>, bias:Tensor<S>) {
         self.weight = weight
         self.bias = bias
         
-        inputs = [input]
-        let symbol = Symbol<StorageType>(shape: bias.value!.shape)
-        outputs = [symbol]
+        inputs = [anyOp(input)]
+        output = zeros(bias.shape)
+        id = nextId()
     }
     
-    public func ready() -> Bool {
-        return inputs[0].set
-    }
-
-//    func apply(inputs:[Tensor<StorageType>], outputs:[Tensor<StorageType>]) {
     public func apply() {
         // check values exist, if not allocate
-        dot(weight.value!, inputs[0].value!, result: outputs[0].value!)
-        add(outputs[0].value!, bias.value!, result: outputs[0].value!)
+        dot(weight, inputs[0].output, result: output)
+        add(output, bias, result: output)
     }
 }
-
-//public struct Variable<StorageType:Storage>: Operation {
-//    public var inputs:[Symbol<StorageType>]
-//    public var outputs:[Symbol<StorageType>]
-//    
-//    public init(tensor:Tensor<StorageType>) {
-//        let symbol = Symbol<StorageType>(value:tensor)
-//        outputs = [symbol]
-//        inputs = []
-//    }
-//    
-//    public func apply() {
-//        // do nothing
-//    }
-//}
 
 public protocol Traversal {
     associatedtype StorageType:Storage
-    var ops:[AnyGraphModule<StorageType>] { get }
-    func add<Op:Operation where Op.StorageType == StorageType>(op:Op)
-    func update()
+    var ops:[AnyOp<StorageType>] { get }
+    func apply()
 }
 
-public class SequentialTraversal<StorageType:Storage>: Traversal {
-    public var ops:[AnyGraphModule<StorageType>]
-
-    public init() {
-        // can't figure out a way to allow variadic parameters with
-        // varying generic types, so for now can only create a
-        // Traversal using `add`
-        self.ops = [] //ops.map { AnyGraphModule<StorageType>($0) }
+public class SequentialTraversal<S:Storage where S.ElementType:FloatNumericType>: Traversal {
+    public var ops:[AnyOp<S>] = []
+    
+    public init() {}
+    
+    public init(_ ops:AnyOp<S>...) {
+        self.ops = ops
     }
     
-    public func add<Op:Operation where Op.StorageType == StorageType>
+    public func add<Op:Operation where Op.StorageType == S>
         (op:Op)
     {
-        ops.append(AnyGraphModule<StorageType>(op))
+        ops.append(AnyOp<StorageType>(op))
     }
     
-    public func update() {
+    public func apply() {
         for op in ops {
             op.apply()
         }
     }
 }
 
-//public class Graph<StorageType:Storage>: Operation {
-//    public var inputs:[Symbol<StorageType>]
-//    public var outputs:[Symbol<StorageType>]
-//    
-//    public var ops:[AnyGraphModule<StorageType>]
-//
-//    public init() {
-//        inputs = []
-//        outputs = []
-//        ops = []
-//    }
-//    
-//    public func add(op:AnyGraphModule<StorageType>) {
-//        ops.append(op)
-//    }
-//    
-//    public func ready() -> Bool {
-//        return !(ops.map { $0.ready() }).contains(false)
-//    }
-//    
-//    public func apply() {
-//        //prioritize based on dependencies?
-//        for op in ops {
-//            if op.ready() {
-//                op.apply()
-//            }
-//        }
-//    }
-//}
+// returns input -> output dependencies
+public func calcDependencies<S:Storage>(ops:[AnyOp<S>]) -> ([AnyOp<S>:[AnyOp<S>]], [AnyOp<S>]) {
+    var deps:[AnyOp<S>:[AnyOp<S>]] = [:]
+    var nodeps = Set<AnyOp<S>>(ops)
+    
+    for op in ops {
+        for input in op.inputs {
+            if var dep = deps[input] {
+                dep.append(op)
+            } else {
+                deps[input] = [op]
+            }
+            
+            // if it receives input, remove it from the no-dependency list
+            nodeps.remove(op)
+        }
+    }
+    
+    return (deps, Array<AnyOp<S>>(nodeps))
+}
 
-//struct Port<StorageType:Storage> {
-//    var input:AnyGraphModule<StorageType>
-//    var output:AnyGraphModule<StorageType>
-//
-//    var inputIndex:Int
-//    var outputIndex:Int
-//    
-//    init(_ input:AnyGraphModule<StorageType>, _ inputIndex:Int, _ output:AnyGraphModule<StorageType>, _ outputIndex:Int) {
-//        self.input = input
-//        self.inputIndex = inputIndex
-//        self.output = output
-//        self.outputIndex = outputIndex
-//    }
-//}
-
-//class Connector<StorageType:Storage> {
-////    var from:[AnyGraphModule<StorageType>]
-//    var target:AnyGraphModule<StorageType>
-//    var outputs:[Tensor<StorageType>]
-//    var ports:[Port<StorageType>]
-////    var expectedIncoming:Int
-//    var incoming:Int
-//    
-//    init(target:AnyGraphModule<StorageType>) {
-//        self.target = target
-//        incoming = 0
-//    }
-//    
-//    func connect(source:AnyGraphModule<StorageType>, sourceIndex:Int, targetIndex:Int) {
-//        let port = Port<StorageType>(source, sourceIndex, target, targetIndex)
-//        ports.append(port)
-//    }
-//    
-//    func isReady() -> Bool {
-//        return false
-//    }
-//}
-
-//class Graph<StorageType:Storage> {
-//    var ops:[String: AnyGraphModule<StorageType>] = [:]
-////    var connectors:[Connector<StorageType>] = []
-//    var connectors:[String: Connector<StorageType>] = [:]
-//    
-//    func add(name:String, op:AnyGraphModule<StorageType>) {
-//        ops[name] = op
-//    }
-//    
-//    func connect(source:String, sourceIndex:Int, target:String, targetIndex:Int) {
-//        let sourceOp = ops[source]!
-//        let targetOp = ops[target]!
-//        
-//        if let connector = connectors[target] {
-//            connector.connect(sourceOp, sourceIndex: sourceIndex, targetIndex: targetIndex)
-//        } else {
-//            let connector = Connector(target: targetOp)
-//            connectors[target] = connector
-//            connector.connect(sourceOp, sourceIndex: sourceIndex, targetIndex: targetIndex)
-//        }
-////        connectors.append(connector)
-//    }
-//    
-//    func update() {
-//        for connector in connectors {
-//            if connector.isReady() {
-//                // toOp.apply()
-//            }
-//        }
-//    }
-//}
-
-/*
-
- 
- let linear = Linear<D>(inputs: 5, outputs: 5)
- let sigmoid = Sigmoid<D>()
- 
- let g = Graph()
- g.add("l1", linear)
- g.add("s1", sigmoid)
- g.connect("l1", "s1")
- 
-*/
+public class Graph<S:Storage>: Traversal {
+    public var ops:[AnyOp<S>] = []
+    public var deps:[AnyOp<S>:[AnyOp<S>]] = [:]
+    public var inputs:[AnyOp<S>] = []
+    var needsBuild:Bool = true
+    
+    public init() {}
+    
+    public init(_ ops:AnyOp<S>...) {
+        self.ops = ops
+        build()
+    }
+    
+    func build() {
+        (deps, inputs) = calcDependencies(ops)
+        needsBuild = false
+    }
+    
+    public func add<Op:Operation where Op.StorageType == S>
+        (op:Op)
+    {
+        ops.append(anyOp(op))
+        needsBuild = true
+    }
+    
+    public func apply() {
+        if needsBuild {
+            build()
+        }
+        
+        traverse(inputs)
+    }
+    
+    func traverse(sub:[AnyOp<S>]) {
+        var next:[AnyOp<S>] = []
+        for op in sub {
+            op.apply()
+            
+            if let nextOps = deps[op] {
+                next.appendContentsOf(nextOps)
+            }
+        }
+            
+        if next.count > 0 {
+            traverse(next)
+        }
+    }
+}
