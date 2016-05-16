@@ -84,7 +84,7 @@ class RandomNumberGenerator {
         mt[0] = seed & UInt64(0xffffffff)
 
         let m1:UInt64 = 1812433253
-        for (mti=1; mti<N; mti++) {
+        for (mti=1; mti<N; mti += 1) {
             mt[mti] = (m1 * (mt[mti-1] ^ (mt[mti-1] >> 30)) + UInt64(mti))
             
             /* See Knuth TAOCP Vol2. 3rd Ed. P.106 for multiplier. */
@@ -130,28 +130,29 @@ class RandomNumberGenerator {
     }
 }
 
+var globalRng = RandomNumberGenerator()
+
 /*
 TODO:
 bool: 	return [self randomUInt32] < 2147483648;
 int32: 	return start + (floor([self randomDouble0To1Exclusive] * (double)width))
 */
 
-extension Tensor where StorageType.ElementType == Float {
+extension Tensor where StorageType.ElementType:FloatNumericType {
     func uniform(rng:RandomNumberGenerator) {
+        let prob:StorageType.ElementType = StorageType.ElementType(1.0/4294967295.0)
         for i in indices() {
-            // FIXME: this is probably incorrect
-            self[i] = Float(rng.next())*(1.0/4294967295.0)
+            self[i] = StorageType.ElementType(rng.next())*prob
         }
     }
 }
 
-extension Tensor where StorageType.ElementType == Double {
-    func uniform(rng:RandomNumberGenerator) {
-        for i in indices() {
-            self[i] = Double(rng.next())*(1.0/4294967295.0)
-        }
-    }
+public func uniform<S:Storage where S.ElementType:FloatNumericType>(shape:Extent) -> Tensor<S> {
+    let tensor = Tensor<S>(shape)
+    tensor.uniform(globalRng)    
+    return tensor
 }
+
 
 //extension Tensor where StorageType.ElementType == Int {
 //    func uniform(rng:RandomNumberGenerator, first:Int, last:Int, closed:Bool=false) {
