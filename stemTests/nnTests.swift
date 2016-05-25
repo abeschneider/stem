@@ -41,27 +41,123 @@ class nnTests: XCTestCase {
         print(l.grad.gradInput!)
     }*/
 
-    /*func testLinearForwardVector() {
-        let w = Matrix<NativeStorage<Double>>([[1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 0, 0]], copyTransposed: true)
-        XCTAssertEqual(w.shape, Extent(3, 4))
+    func testLinearForwardVector() {
+        typealias D = NativeStorage<Double>
+        let w = Tensor<D>([[1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 0, 0]])
+        let b:Tensor<D> = zeros(Extent(4))
+        XCTAssertEqual(w.shape, Extent(4, 3))
         
-        let linear = LinearModule<NativeStorage<Double>>(weight: w)
-        let input = ColumnVector<NativeStorage<Double>>([1, 2, 3])
-        let output = linear.forward(input)
+        let input = Symbol<D>(Tensor<D>([1, 2, 3]))
+        let linear = Linear<D>(input: input, weight: w, bias: b)
+        linear.apply()
 
-        let expected = Vector<NativeStorage<Double>>([1, 2, 3, 0])
-        XCTAssert(isClose(output, expected, eps: 10e-4), "Not close")
+        let expected = Tensor<D>([1, 2, 3, 0])
+        XCTAssert(isClose(linear.output, expected, eps: 10e-4), "Not close")
 
-        let w2 = Matrix<CBlasStorage<Double>>([[1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 0, 0]], copyTransposed: true)
-        let linear2 = LinearModule<CBlasStorage<Double>>(weight: w2)
-        let input2 = ColumnVector<CBlasStorage<Double>>([1, 2, 3])
-        let output2 = linear2.forward(input2)
-        
-        let expected2 = Vector<CBlasStorage<Double>>([1, 2, 3, 0])
-        XCTAssert(isClose(output2, expected2, eps: 10e-4), "Not close")
+//        let w2 = Matrix<CBlasStorage<Double>>([[1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 0, 0]], copyTransposed: true)
+//        let linear2 = LinearModule<CBlasStorage<Double>>(weight: w2)
+//        let input2 = ColumnVector<CBlasStorage<Double>>([1, 2, 3])
+//        let output2 = linear2.forward(input2)
+//        
+//        let expected2 = Vector<CBlasStorage<Double>>([1, 2, 3, 0])
+//        XCTAssert(isClose(output2, expected2, eps: 10e-4), "Not close")
     }
     
-    func testLinearForwardMatrix() {
+    func testLinearBackward() {
+        typealias D = NativeStorage<Double>
+        let w = Tensor<D>([[1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 0, 0]])
+        let b:Tensor<D> = zeros(Extent(4))
+        XCTAssertEqual(w.shape, Extent(4, 3))
+        
+        let input = Symbol<D>(Tensor<D>([1, 2, 3]))
+        let gradInput = Symbol<D>(Tensor<D>([1, 2, 3, 4]))
+        let linear = Linear<D>(input: input, weight: w, bias: b)
+        let linearGrad = LinearGrad<D>(input: linear, gradInput: gradInput)
+        
+        linear.apply()
+        linearGrad.apply()
+        
+        let expected = Tensor<D>([1, 2, 3])
+        XCTAssert(isClose(linearGrad.output, expected, eps: 10e-4), "Not close")
+        
+//        let w2 = Matrix<CBlasStorage<Double>>([[1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 0, 0]], copyTransposed: true)
+//        let linear2 = LinearGradientModule<CBlasStorage<Double>>(weight: w2)
+//        let input2 = ColumnVector<CBlasStorage<Double>>([1, 2, 3])
+//        linear2.forward(input2)
+//        
+//        let grad_output2 = ColumnVector<CBlasStorage<Double>>([1, 2, 3, 4])
+//        let grad_input2 = linear2.backward(input2, gradOutput: grad_output2)
+//        
+//        let expected2 = Vector<CBlasStorage<Double>>([1, 2, 3])
+//        XCTAssert(isClose(grad_input2, expected2, eps: 10e-4), "Not close")
+    }
+    
+//    func testModule<F:Op<S>, B:Op<S>, S:Storage where B:Gradient, S.ElementType:FloatNumericType>
+//        (rng:RandomNumberGenerator,
+//         forward:F,
+//         backward:B,
+//         storage:S,
+//         gradStorage:M.StorageType,
+//        numInputs:Int,
+//        numOutputs:Int)
+//    {
+//        let target = Tensors<S>(Extent(numOutputs))
+//        target.uniform(rng)
+//        
+//        let loss = L2Loss(target: target)
+//        
+//        let input = ColumnVector<S>(rows: numInputs)
+//        input.uniform(rng)
+//        
+//        let eps = 10e-6
+//        let result = checkGradient(input, params: storage, gradParams: gradStorage, eps: eps) {
+//            module.clear()
+//            
+//            // calculate error
+//            let output = ColumnVector<S>(module.forward($0))
+//            let error = loss.forward(output)
+//            
+//            // calculate gradient (for analytical gradient)
+//            let grad = loss.backward(output)
+//            module.backward($0, gradOutput: ColumnVector(grad))
+//            
+//            return error
+//        }
+//        
+//        for i in result.storageIndices() {
+//            XCTAssertLessThanOrEqual(result.storage[i], eps)
+//        }
+//    }
+    
+//    func testLinearGradient() {
+//        let input = Symbol<D>(Tensor<D>([1, 0, 1, 1, 0]))
+//        let target = Symbol<D>(Tensor<D>([2, 0, 2, 2, 0]))
+//        
+//        let linear = Linear<D>(input: input, numOutputs: 5)
+//        let loss = L2Loss<D>(value: linear, target: target)
+//        
+//        let lossgrad = L2LossGrad<D>(input: loss, target: target)
+//        let lineargrad = LinearGrad<D>(input: linear, gradInput: lossgrad)
+//        
+//        checkGradient(<#T##input: Tensor<StorageType>##Tensor<StorageType>#>, params: <#T##StorageType#>, gradParams: <#T##StorageType#>, eps: <#T##Double#>, <#T##fn: (Tensor<StorageType>) -> StorageType.ElementType##(Tensor<StorageType>) -> StorageType.ElementType#>)
+//        // reset
+//        lossgrad.reset()
+//        lineargrad.reset()
+//        
+//        // forward
+//        linear.apply()
+//        loss.apply()
+//        
+//        // backward
+//        lossgrad.apply()
+//        lineargrad.apply()
+//        
+//        // update
+//        lossgrad.update(alpha)
+//        lineargrad.update(alpha)
+//    }
+    
+    /*func testLinearForwardMatrix() {
         let w = Matrix<NativeStorage<Double>>([[1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 0, 0]], copyTransposed: true)
         let linear = LinearModule<NativeStorage<Double>>(weight: w)
         let input = Matrix<NativeStorage<Double>>([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
@@ -78,31 +174,7 @@ class nnTests: XCTestCase {
         let expected2 = Matrix<CBlasStorage<Double>>([[1, 2, 3], [4, 5, 6], [7, 8, 9], [0, 0, 0]])
         XCTAssert(isClose(output2, expected2, eps: 10e-4), "Not close")
     }
-    
-    func testLinearBackward() {
-        let w = Matrix<NativeStorage<Double>>([[1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 0, 0]], copyTransposed: true)
-        let linear = LinearGradientModule<NativeStorage<Double>>(weight: w)
-        let input = ColumnVector<NativeStorage<Double>>([1, 2, 3])
-        
-        linear.forward(input)
-        let grad_output = ColumnVector<NativeStorage<Double>>([1, 2, 3, 4])
-        let grad_input = linear.backward(input, gradOutput: grad_output)
-        
-        let expected = Vector<NativeStorage<Double>>([1, 2, 3])
-        XCTAssert(isClose(grad_input, expected, eps: 10e-4), "Not close")
-
-        let w2 = Matrix<CBlasStorage<Double>>([[1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 0, 0]], copyTransposed: true)
-        let linear2 = LinearGradientModule<CBlasStorage<Double>>(weight: w2)
-        let input2 = ColumnVector<CBlasStorage<Double>>([1, 2, 3])
-        linear2.forward(input2)
-        
-        let grad_output2 = ColumnVector<CBlasStorage<Double>>([1, 2, 3, 4])
-        let grad_input2 = linear2.backward(input2, gradOutput: grad_output2)
-        
-        let expected2 = Vector<CBlasStorage<Double>>([1, 2, 3])
-        XCTAssert(isClose(grad_input2, expected2, eps: 10e-4), "Not close")
-    }
-    
+     
     func testSharedStorage() {
         typealias S = NativeStorage<Double>
         

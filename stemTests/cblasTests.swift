@@ -239,7 +239,6 @@ class cblasTests: XCTestCase {
                         1.0, 2.0, 3.0,
                         1.0, 2.0, 3.0]
   
-        print("\(b)")
         var k = 0
         for i in b.indices(.ColumnMajor) {
             XCTAssertEqual(b[i], expected[k])
@@ -273,19 +272,19 @@ class cblasTests: XCTestCase {
         }
     }
 
-    func testBenchmarkCBlas1() {
-        let v1 = Tensor<CD>(Extent(100000))
-        
-        self.measureBlock {
-            let _ = v1 + v1
-        }
-    }
-    
-    func testBenchmarkNative() {
-        let v1 = Tensor<D>(Extent(100000))
-        
-        self.measureBlock {
-            let _ = v1 + v1
-        }
-    }
+//    func testBenchmarkCBlas1() {
+//        let v1 = Tensor<CD>(Extent(100000))
+//        
+//        self.measureBlock {
+//            let _ = v1 + v1
+//        }
+//    }
+//    
+//    func testBenchmarkNative() {
+//        let v1 = Tensor<D>(Extent(100000))
+//        
+//        self.measureBlock {
+//            let _ = v1 + v1
+//        }
+//    }
 }

@@ -11,24 +11,31 @@ import Foundation
 public class NativeStorage<T:NumericType>: Storage {
     public typealias ElementType = T
     
-    var array:SharedArray<T>
+    public var array:SharedArray<T>
+    public var offset:Int
     
     public var size:Int { return array.memory.count }
     public var order:DimensionOrder { return .ColumnMajor }
     
     public required init(size:Int, value:ElementType=0) {
         array = SharedArray<ElementType>(count: size, repeatedValue: value)
+        offset = 0
     }
     
     public required init(array:[T]) {
         self.array = SharedArray<T>(array)
+        offset = 0
     }
     
-    public required init(storage:NativeStorage) {
-        array = SharedArray<ElementType>(storage.array.memory)
+    public required init(storage:NativeStorage, offset:Int=0) {
+//        array = SharedArray<ElementType>(storage.array.memory, offset: offset)
+        array = storage.array
+//        array.offset = offset
+        self.offset = offset
     }
 
     public required init(storage:NativeStorage, copy:Bool) {
+        offset = 0
         if copy {
             array = SharedArray<ElementType>(count: storage.size, repeatedValue: ElementType(0))
             array.copy(storage.array)
@@ -43,8 +50,8 @@ public class NativeStorage<T:NumericType>: Storage {
     }
     
     public subscript(index:Int) -> T {
-        get { return array[index] }
-        set { array[index] = newValue }
+        get { return array[index+offset] }
+        set { array[index+offset] = newValue }
     }
     
     public func calculateOrder(dims:Int) -> [Int] {

@@ -346,6 +346,12 @@ public func mul<StorageType:Storage where StorageType.ElementType:NumericType>
     elementwiseBinaryOp(lhs, rhs, result: result, op: { return $0 * $1 })
 }
 
+public func mul<StorageType:Storage where StorageType.ElementType:NumericType>
+    (lhs:Tensor<StorageType>, _ rhs:StorageType.ElementType, result:Tensor<StorageType>)
+{
+    elementwiseBinaryOp(lhs, rhs, result: result, op: { return $0 * $1 })
+}
+
 public func imul<StorageType:Storage where StorageType.ElementType:NumericType>
     (lhs:Tensor<StorageType>, _ rhs:Tensor<StorageType>)
 {
@@ -424,14 +430,15 @@ func isCube(type:TensorType) -> Bool {
 // TODO: benchmark this against specific cases .. not sure
 // the specific cases are faster (and therefore should potentially
 // be removed)
-public func dot<S:Storage where S.ElementType:NumericType>
+public func dot<S:Storage where S.ElementType:FloatNumericType>
     (lhs:Tensor<S>, _ rhs:Tensor<S>, result:Tensor<S>)
 {
     precondition(lhs.shape.span < 3)
     precondition(rhs.shape.span < 3)
     precondition(lhs.shape[1] == rhs.shape[0], "Number of rows in vector must match number of rows of matrix")
     precondition(lhs.shape[0] == result.shape[0], "Number of rows of result must match rows in matrix")
-    
+ 
+    fill(result, value: 0)
     for n in 0..<lhs.shape[0] {
         for m in 0..<rhs.shape[0] {
             for k in 0..<rhs.shape[1] {
@@ -441,6 +448,7 @@ public func dot<S:Storage where S.ElementType:NumericType>
     }
 }
 
+// TODO: make version of `dot` that returns a result vector
 public func dot<S:Storage where S.ElementType:NumericType>
     (lhs:Tensor<S>, _ rhs:Tensor<S>) -> S.ElementType
 {
@@ -462,7 +470,7 @@ public func ⊙<S:Storage where S.ElementType:NumericType>
     return dot(lhs, rhs)
 }
 
-public func ⊙<S:Storage where S.ElementType:NumericType>
+public func ⊙<S:Storage where S.ElementType:FloatNumericType>
     (lhs:Tensor<S>, rhs:Tensor<S>) -> Tensor<S>
 {
 //    let result = Tensor<S>(shape: Extent(left.shape[0], 1))
@@ -489,6 +497,25 @@ public func outer<StorageType:Storage where StorageType.ElementType:NumericType>
         for r in indexRight {
             let pos = indexResult.next()!
             result[pos] = lhs[l]*rhs[r]
+        }
+    }
+}
+
+public func outer<StorageType:Storage where StorageType.ElementType:NumericType>
+    (lhs:Tensor<StorageType>, _ rhs:Tensor<StorageType>, addTo result:Tensor<StorageType>)
+{
+    precondition(isVector(lhs.type))
+    precondition(isVector(rhs.type))
+    precondition(result.shape.elements == lhs.shape.elements*rhs.shape.elements)
+    
+    let indexLeft = lhs.indices()
+    let indexRight = rhs.indices()
+    var indexResult = result.indices()
+    
+    for l in indexLeft {
+        for r in indexRight {
+            let pos = indexResult.next()!
+            result[pos] = result[pos] + lhs[l]*rhs[r]
         }
     }
 }
@@ -633,11 +660,16 @@ public func pow<StorageType:Storage where StorageType.ElementType:FloatNumericTy
     (tensor:Tensor<StorageType>, _ power:StorageType.ElementType) -> Tensor<StorageType>
 {
     let result = Tensor<StorageType>(tensor.shape)
+    pow(tensor, power, result: result)
+    return result
+}
+
+public func pow<StorageType:Storage where StorageType.ElementType:FloatNumericType>
+    (tensor:Tensor<StorageType>, _ power:StorageType.ElementType, result:Tensor<StorageType>)
+{
     for i in result.indices() {
         result[i] = StorageType.ElementType.pow(tensor[i], power)
     }
-    
-    return result
 }
 
 func exp<StorageType:Storage where StorageType.ElementType:FloatNumericType>

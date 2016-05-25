@@ -64,7 +64,7 @@ let MatrixA:UInt64 = 0x9908b0df     // constant vector a
 let UpperMask:UInt64 = 0x80000000   // most significant w-r bits
 let LowerMask:UInt64 = 0x7fffffff   // least significant r bits
 
-class RandomNumberGenerator {
+public class RandomNumberGenerator {
     var mt:[UInt64]
     var mti:Int
     
@@ -118,7 +118,8 @@ class RandomNumberGenerator {
             mti = 0
         }
         
-        var y = mt[mti++]
+        var y = mt[mti]
+        mti += 1
         
         // tempering
         y ^= (y >> 11)
@@ -139,7 +140,7 @@ int32: 	return start + (floor([self randomDouble0To1Exclusive] * (double)width))
 */
 
 extension Tensor where StorageType.ElementType:FloatNumericType {
-    func uniform(rng:RandomNumberGenerator) {
+    public func uniform(rng:RandomNumberGenerator=globalRng) {
         let prob:StorageType.ElementType = StorageType.ElementType(1.0/4294967295.0)
         for i in indices() {
             self[i] = StorageType.ElementType(rng.next())*prob
@@ -151,6 +152,14 @@ public func uniform<S:Storage where S.ElementType:FloatNumericType>(shape:Extent
     let tensor = Tensor<S>(shape)
     tensor.uniform(globalRng)    
     return tensor
+}
+
+public func uniform() -> UInt64 {
+    return globalRng.next()
+}
+
+public func uniform() -> Int {
+    return Int(globalRng.next())
 }
 
 

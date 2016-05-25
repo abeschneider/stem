@@ -21,7 +21,7 @@ public protocol Storage {
     
     init(size:Int, value:ElementType)
     init(array:[ElementType])
-    init(storage:Self)
+    init(storage:Self, offset:Int)
     init(storage:Self, copy:Bool)
     
     subscript(index:Int) -> ElementType {get set}

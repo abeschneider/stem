@@ -107,6 +107,44 @@ public struct IndexGenerator: GeneratorType {
     }
 }
 
+// returns blocks of indices .. blocks are from the major axis
+//public struct BlockIndexGenerator: GeneratorType {
+//    var indices:[Int]
+//    var shape:Extent
+//    var dimIndex:[Int]
+//    
+//    public init(_ shape:Extent, dimIndex:[Int]?=nil) {
+//        self.shape = shape
+//        indices = [Int](count: shape.count, repeatedValue: 0)
+//        
+//        if let dims = dimIndex {
+//            self.dimIndex = dims
+//        } else {
+//            self.dimIndex = (0..<shape.count).map { $0 }
+//        }
+//    }
+//    
+//    public init(_ shape:Extent, order:DimensionOrder) {
+//        self.shape = shape
+//        indices = [Int](count: shape.count, repeatedValue: 0)
+//        
+//        switch order {
+//        case .ColumnMajor:
+//            dimIndex = (0..<shape.count).map { shape.count-$0-1 }
+//            break
+//        case .RowMajor:
+//            dimIndex = (0..<shape.count).map { $0 }
+//            break
+//        }
+//    }
+//    
+//    public mutating func next() -> [[Int]]? {
+//        for i in 0..<shape[dimIndex[0]] {
+//            
+//        }
+//    }
+//}
+
 public class Tensor<StorageType:Storage> {
     public typealias ViewType = StorageView<StorageType>
     
@@ -217,6 +255,17 @@ public class Tensor<StorageType:Storage> {
         view = ViewType(shape: shape, offset: Array<Int>(count: shape.count, repeatedValue: 0))
     }
     
+    public init(_ shape:Extent, storage:StorageType, offset:Int=0) {
+//        storage = StorageType(size: shape.elements, value: value)
+        self.storage = StorageType(storage: storage, offset: offset)
+        internalShape = shape
+        self.offset = 0
+        self.stride = calculateStride(Extent(storage.calculateOrder(shape.dims)))
+        dimIndex = storage.calculateOrder(shape.count)
+        
+        view = ViewType(shape: shape, offset: Array<Int>(count: shape.count, repeatedValue: 0))
+    }
+    
     init(array:[StorageType.ElementType], shape:Extent, offset:Int?=nil) {
         storage = StorageType(array: array)
         internalShape = shape
@@ -271,7 +320,11 @@ public class Tensor<StorageType:Storage> {
     
     init(_ tensor:Tensor, dimIndex:[Int]?=nil, view:StorageView<StorageType>?=nil, stride: [Int]?=nil, copy:Bool=false) {
         if copy {
-            storage = tensor.storage
+//            storage = tensor.storage
+            storage = StorageType(size: tensor.shape.elements, value: 0)
+            for i in 0..<tensor.storage.size {
+                storage[i] = tensor.storage[i]
+            }
         } else {
             storage = tensor.storage
         }

@@ -8,39 +8,37 @@
 
 import Foundation
 
-func checkGradient<StorageType:Storage where StorageType.ElementType:FloatNumericType>( //) where StorageType.ElementType == Double>(
-    input:Tensor<StorageType>,
-    var params:StorageType,
-    gradParams:StorageType,
-    eps:Double,
-    _ fn:(Tensor<StorageType>) -> StorageType.ElementType) -> Tensor<StorageType>
+public func checkGradient<S:Storage where S.ElementType:FloatNumericType>
+    (params params:Tensor<S>,
+     gradParams:Tensor<S>,
+     eps:Double,
+     _ fn:() -> S.ElementType) -> Tensor<S>
 {
-//    let result = Vector<StorageType>(rows: gradParams.size)
-    let result = Tensor<StorageType>(Extent(gradParams.size))
+    let result = Tensor<S>(gradParams.shape)
     
-    // calculate gradients
-    fn(input)
+    // calculate gradients for `analytical_diff`
+    fn()
     
-    // copy gradients from the last operation -- they will
-    // be overwritten from subsequent calls to `fn`
-//    let analytical_diff = Vector<StorageType>(storage: gradParams, shape: Extent(gradParams.size))
-    let analytical_diff = Tensor<StorageType>(storage: gradParams, shape: Extent(gradParams.size))
+    // copy gradients, they will be overwritten from subsequent calls to `fn`
+    let analytical_diff = copy(gradParams)
     
-    for i in 0..<params.size {
-        let old_value = params[i]
+    for i in 0..<params.shape[0] {
+        let old_value:S.ElementType = params[i]
         
         // positive direction
-        params[i] = old_value + StorageType.ElementType(eps)
-        let pvalue = fn(input)
+        params[i] = old_value + S.ElementType(eps)
+        let pvalue = fn()
         
         // negative direction
-        params[i] = old_value - StorageType.ElementType(eps)
-        let nvalue = fn(input)
+        params[i] = old_value - S.ElementType(eps)
+        let nvalue = fn()
         
         // return to original value
         params[i] = old_value
         
-        let numerical_diff = (pvalue - nvalue) / StorageType.ElementType(2.0*eps)
+        let numerical_diff = (pvalue - nvalue) / S.ElementType(2.0*eps)
+        
+        // TODO: Look into alternate formulations (e.g. either norm of both, or max of denom.)
         result[i] = (numerical_diff - analytical_diff[i])/analytical_diff[i]
     }
     

@@ -8,249 +8,89 @@
 
 import Foundation
 
-public protocol Operation {
-    associatedtype StorageType:Storage
-    
-    var inputs:[AnyOp<StorageType>] { get }
-    var output:Tensor<StorageType> { get }
-    var id:Int { get }
-
-    func apply()
-}
-
-@noreturn @inline(never)
-internal func _abstract(file: StaticString = #file, line: UInt = #line) {
-    fatalError("Method must be overridden", file: file, line: line)
-}
-
-public class AnyOp<S:Storage>: Operation, Hashable {
-    public typealias StorageType = S
-    
-    public var inputs:[AnyOp<StorageType>] { return _box.inputs }
-    public var output:Tensor<StorageType> { return _box.output }
-    public var id:Int { return _box.id }
-    
-    public init<M:Operation where M.StorageType==S>(_ base:M) {
-        self._box = _AnyGraphOpBox(base)
-    }
-    
-    public func apply() { return _box.apply() }
-    
-    public var hashValue:Int { return id }
-    
-    internal let _box: _AnyGraphModuleBoxBase<S>
-}
-
-public func ==<S:Storage>(lhs:AnyOp<S>, rhs:AnyOp<S>) -> Bool {
-    return lhs.id == rhs.id
-}
-
-
-class _AnyGraphOpBase {}
-class _AnyGraphModuleBoxBase<S:Storage>:
-    _AnyGraphOpBase, Operation
-{
-    internal var inputs:[AnyOp<S>] { _abstract() }
-    internal var output:Tensor<S> { _abstract() }
-    internal var id:Int { _abstract() }
-    internal func apply() { _abstract() }
-}
-
-class _AnyGraphOpBox<Base:Operation>:
-    _AnyGraphModuleBoxBase<Base.StorageType>
-{
-    internal init(_ base: Base) { self._base = base }
-    
-    override var inputs:[AnyOp<Base.StorageType>] { return _base.inputs }
-    override var output:Tensor<Base.StorageType> { return _base.output }
-    override var id:Int { return _base.id }
-    
-    override func apply() { _base.apply() }
-    
-    internal var _base: Base
-}
-
-public func anyOp<Op:Operation>(op:Op) -> AnyOp<Op.StorageType>
-{
-    return AnyOp<Op.StorageType>(op)
-}
-
-// TODO: replace with random numbers
-var idCounter:Int = 0
-
-internal func nextId() -> Int {
-    let value = idCounter
-    idCounter += 1
-    return value
-}
-
-public class Symbol<S:Storage>: Operation {
-    public var inputs:[AnyOp<S>] = []
-    public var output:Tensor<S>
-    public var id:Int
-    
-    public init(_ input:Tensor<S>) {
-        output = input
-        id = nextId()
-    }
-    
-    public init(_ shape:Extent) {
-        output = Tensor<S>(shape)
-        id = nextId()
-    }
-    
-    public func set(input:Tensor<S>) {
-        output = input
-    }
-    
-    public func apply() {}
-}
-
-public class Sigmoid<S:Storage where S.ElementType:FloatNumericType>: Operation {
-    public var inputs:[AnyOp<S>]
-    public var output:Tensor<S>
-    public var id:Int
-    
-    public init<Op:Operation where Op.StorageType==S>(input:Op) {
-        inputs = [anyOp(input)]
-        output = Tensor<StorageType>(inputs[0].output.shape)
-        id = nextId()
-    }
-    
-    public func apply() {
-        // check that value exists, if not, allocate with proper shape
-        sigmoid(inputs[0].output, output: output)
-    }
-}
-
-public class Linear<S:Storage where S.ElementType:FloatNumericType>: Operation {
-    public var inputs:[AnyOp<S>] = []
-    public var output:Tensor<S>
-    public var id:Int
-    
-    public var weight:Tensor<S>
-    public var bias:Tensor<S>
-    
-    
-    public init(numInputs:Int, numOutputs:Int) {
-        weight = uniform(Extent(numOutputs, numInputs))
-        bias = zeros(Extent(numOutputs))
-        output = zeros(Extent(numOutputs, numInputs))
-        id = nextId()
-    }
-    
-    public init<Op:Operation where Op.StorageType==S>(input:Op, numOutputs:Int) {
-        inputs = [anyOp(input)]
-        
-        let inputSize = input.output.shape[0]
-        weight = uniform(Extent(numOutputs, inputSize))
-        bias = zeros(Extent(numOutputs))
-        
-        // TOOD: think about letting output be passed as an optional parameter
-        output = zeros(bias.shape)
-        id = nextId()
-    }
-    
-    public init<Op:Operation where Op.StorageType==S>(input:Op, weight:Tensor<S>, bias:Tensor<S>) {
-        self.weight = weight
-        self.bias = bias
-        
-        inputs = [anyOp(input)]
-        output = zeros(bias.shape)
-        id = nextId()
-    }
-    
-    public func apply() {
-        // check values exist, if not allocate
-        dot(weight, inputs[0].output, result: output)
-        add(output, bias, result: output)
-    }
-}
 
 public protocol Traversal {
     associatedtype StorageType:Storage
-    var ops:[AnyOp<StorageType>] { get }
-    func apply()
+//    var ops:[AnyOp<StorageType>] { get }
+    var ops:[Op<StorageType>] { get }
+    func apply(fn:(Op<StorageType>) -> ())
 }
 
-public class SequentialTraversal<S:Storage where S.ElementType:FloatNumericType>: Traversal {
-    public var ops:[AnyOp<S>] = []
+public class SequentialTraversal<StorageType:Storage where StorageType.ElementType:FloatNumericType>: Traversal {
+    public var ops:[Op<StorageType>] = []
     
     public init() {}
     
-    public init(_ ops:AnyOp<S>...) {
+    public init(_ ops:Op<StorageType>...) {
         self.ops = ops
     }
     
-    public func add<Op:Operation where Op.StorageType == S>
-        (op:Op)
+//    public func add<Op:Operation where Op.StorageType == S>
+    public func add(op:Op<StorageType>)
     {
-        ops.append(AnyOp<StorageType>(op))
+//        ops.append(AnyOp<StorageType>(op))
+        ops.append(op)
     }
     
-    public func apply() {
+    public func apply(fn:(Op<StorageType>) -> ()) {
         for op in ops {
-            op.apply()
+            fn(op)
         }
     }
 }
 
-// returns input -> output dependencies
-public func calcDependencies<S:Storage>(ops:[AnyOp<S>]) -> ([AnyOp<S>:[AnyOp<S>]], [AnyOp<S>]) {
-    var deps:[AnyOp<S>:[AnyOp<S>]] = [:]
-    var nodeps = Set<AnyOp<S>>(ops)
+// deps:
+// input: tonode[0], tonode[1], ..., tonode[N]
+//
+// bdeps
+// fromnode[0]: input
+// fromnode[1]: input
+public func calcDependencies<S:Storage>(ops:[Op<S>]) -> ([Op<S>:[Op<S>]], [Op<S>:[Op<S>]], [Op<S>], [Op<S>]) {
+    var fdeps:[Op<S>:[Op<S>]] = [:]
+    var bdeps:[Op<S>:[Op<S>]] = [:]
+    var roots = [Op<S>]()
     
     for op in ops {
-        for input in op.inputs {
-            if var dep = deps[input] {
-                dep.append(op)
-            } else {
-                deps[input] = [op]
+        if op.inputs.count == 0 {
+            roots.append(op)
+        } else {
+            for input in op.inputs {
+                if var dep = fdeps[input] {
+                    dep.append(op)
+                } else {
+                    fdeps[input] = [op]
+                    bdeps[op] = [input]
+                }
             }
-            
-            // if it receives input, remove it from the no-dependency list
-            nodeps.remove(op)
         }
     }
     
-    return (deps, Array<AnyOp<S>>(nodeps))
+    let terminals:[Op<S>] = fdeps.filter { $1.count == 0 }.map { $0.0 }
+    
+    return (fdeps, bdeps, terminals, roots)
 }
 
+// TODO: if using extensions, need to allow function to be call to be
+// parameterized (apply or applyGradient)
 public class Graph<S:Storage>: Traversal {
-    public var ops:[AnyOp<S>] = []
-    public var deps:[AnyOp<S>:[AnyOp<S>]] = [:]
-    public var inputs:[AnyOp<S>] = []
-    var needsBuild:Bool = true
+    public var ops:[Op<S>] = []
+    public var deps:[Op<S>:[Op<S>]] = [:]
+    public var inputs:[Op<S>] = []
     
     public init() {}
     
-    public init(_ ops:AnyOp<S>...) {
+    public init(_ ops:[Op<S>], inputs:[Op<S>], deps:[Op<S>:[Op<S>]]) {
         self.ops = ops
-        build()
+        self.inputs = inputs
+        self.deps = deps
     }
     
-    func build() {
-        (deps, inputs) = calcDependencies(ops)
-        needsBuild = false
+    public func apply(fn:(Op<S>) -> ()) {
+        traverse(inputs, fn: fn)
     }
     
-    public func add<Op:Operation where Op.StorageType == S>
-        (op:Op)
-    {
-        ops.append(anyOp(op))
-        needsBuild = true
-    }
-    
-    public func apply() {
-        if needsBuild {
-            build()
-        }
-        
-        traverse(inputs)
-    }
-    
-    func traverse(sub:[AnyOp<S>]) {
-        var next:[AnyOp<S>] = []
+    func traverse(sub:[Op<S>], fn:(Op<S>) -> ()) {
+        var next:[Op<S>] = []
         for op in sub {
             op.apply()
             
@@ -260,7 +100,49 @@ public class Graph<S:Storage>: Traversal {
         }
             
         if next.count > 0 {
-            traverse(next)
+            traverse(next, fn: fn)
         }
     }
 }
+
+
+// [A] -> [B] -> [C]
+// C: inputs: [], output
+public class GradNetwork<S:Storage> {
+    public var forwardGraph:Graph<S>
+//    public var backwardGraph:Graph<S>
+    public var fdeps:[Op<S>:[Op<S>]]
+    public var bdeps:[Op<S>:[Op<S>]]
+    public var inputs:[Op<S>]
+    public var binputs:[Op<S>]
+    
+    public init(_ ops:[Op<S>]) {
+        (fdeps, bdeps, inputs, binputs) = calcDependencies(ops)
+        forwardGraph = Graph<S>(ops, inputs: inputs, deps: fdeps)
+        
+        
+        //backwardGraph = Graph<S>(ops, inputs: inputs, deps: bdeps)
+        // use bdeps to construct backwardGraph
+//        var bops = [Op<S>]()
+//        for (to, from) in bdeps {
+//            let opType = to.meta!["grad"]!
+//            let bop = opType(inputs: from)
+//        }
+        
+//        backwardGraph = Graph<S>(bops, inputs: binputs, deps: bdeps)
+    }
+    
+    public convenience init(_ ops:Op<S>...) {
+        self.init(ops)
+    }
+    
+    public func forward() {
+        forwardGraph.apply { $0.apply() }
+    }
+    
+    // This won't work because we'd have to redefine AnyOp to include applyGradient
+    public func backward() {
+//        backwardGraph.apply { $0.apply() }
+    }
+}
+

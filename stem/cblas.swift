@@ -22,11 +22,11 @@ public class CBlasStorage<T:NumericType>: Storage {
     }
     
     public required init(array:[T]) {
-        self.array = SharedArray<T>(array)
+        self.array = SharedArray<T>(array, offset: 0)
     }
     
-    public required init(storage:CBlasStorage) {
-        array = SharedArray<ElementType>(storage.array.memory)
+    public required init(storage:CBlasStorage, offset:Int=0) {
+        array = SharedArray<ElementType>(storage.array.memory, offset: offset)
     }
     
     public required init(storage:CBlasStorage, copy:Bool) {
@@ -34,7 +34,7 @@ public class CBlasStorage<T:NumericType>: Storage {
             array = SharedArray<ElementType>(count: storage.size, repeatedValue: ElementType(0))
             array.copy(storage.array)
         } else {
-            array = SharedArray<ElementType>(storage.array.memory)
+            array = SharedArray<ElementType>(storage.array.memory, offset: 0)
         }
     }
 
