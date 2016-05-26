@@ -64,21 +64,21 @@ class nnTests: XCTestCase {
     }
     
     func testLinearBackward() {
-        typealias D = NativeStorage<Double>
-        let w = Tensor<D>([[1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 0, 0]])
-        let b:Tensor<D> = zeros(Extent(4))
-        XCTAssertEqual(w.shape, Extent(4, 3))
-        
-        let input = Symbol<D>(Tensor<D>([1, 2, 3]))
-        let gradInput = Symbol<D>(Tensor<D>([1, 2, 3, 4]))
-        let linear = Linear<D>(input: input, weight: w, bias: b)
-        let linearGrad = LinearGrad<D>(input: linear, gradInput: gradInput)
-        
-        linear.apply()
-        linearGrad.apply()
-        
-        let expected = Tensor<D>([1, 2, 3])
-        XCTAssert(isClose(linearGrad.output, expected, eps: 10e-4), "Not close")
+//        typealias D = NativeStorage<Double>
+//        let w = Tensor<D>([[1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 0, 0]])
+//        let b:Tensor<D> = zeros(Extent(4))
+//        XCTAssertEqual(w.shape, Extent(4, 3))
+//        
+//        let input = Symbol<D>(Tensor<D>([1, 2, 3]))
+//        let gradInput = Symbol<D>(Tensor<D>([1, 2, 3, 4]))
+//        let linear = Linear<D>(input: input, weight: w, bias: b)
+//        let linearGrad = LinearGrad<D>(input: linear, gradInput: gradInput)
+//        
+//        linear.apply()
+//        linearGrad.apply()
+//        
+//        let expected = Tensor<D>([1, 2, 3])
+//        XCTAssert(isClose(linearGrad.output, expected, eps: 10e-4), "Not close")
         
 //        let w2 = Matrix<CBlasStorage<Double>>([[1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 0, 0]], copyTransposed: true)
 //        let linear2 = LinearGradientModule<CBlasStorage<Double>>(weight: w2)

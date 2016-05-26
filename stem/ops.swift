@@ -13,56 +13,36 @@ func createUID() -> Int {
 }
 
 
-// TODO: Not sure there is a good reason to still have OpBase,
-// merge together with Op?
-public class OpBase: Hashable {
+public class Op<StorageType:Storage>: Hashable {
     var id:Int
+
+    public var inputs:[Op<StorageType>] = []
+    public var output:Tensor<StorageType>
     
-    required public init() {
+    required public init(inputs:[Op<StorageType>], output:Tensor<StorageType>) {
+        self.inputs = inputs
+        self.output = output
         id = createUID()
     }
     
     public func apply() {
-        print("incorrect apply called")
         assertionFailure()
     }
     
     public var hashValue: Int { return id }
 }
 
-public class Op<StorageType:Storage>: OpBase {
-    //    associatedtype StorageType:Storage
-    // current not supported in generic types
-    
-    public var inputs:[Op<StorageType>] = [] //{ get }
-    public var output:Tensor<StorageType> //{ get }
-    
-    //    public var meta:MetadataAttr? {
-    //        return __meta__["\(self.dynamicType):\(StorageType.self)"]
-    //    }
-    
-    public override func apply() {
-        print("closer")
-        assertionFailure()
-    }
-    
-    required public init(inputs:[Op<StorageType>], output:Tensor<StorageType>) {
-        self.inputs = inputs
-        self.output = output
-    }
-}
-
-public func ==(lhs:OpBase, rhs:OpBase) -> Bool {
+public func ==<S:Storage>(lhs:Op<S>, rhs:Op<S>) -> Bool {
     return lhs.id == rhs.id
 }
 
-protocol Gradient {
+public protocol Gradient {
     associatedtype StorageType:Storage
     func reset()
     func update(alpha:StorageType.ElementType)
 }
 
-protocol Loss {
+public protocol Loss {
     associatedtype StorageType:Storage
     
     var value:StorageType.ElementType { get }
@@ -94,6 +74,26 @@ public class Sigmoid<S:Storage where S.ElementType:FloatNumericType>: Op<S> {
     }
 }
 
+public class SigmoidGrad<S:Storage where S.ElementType:FloatNumericType>: Op<S>, Gradient {
+    public typealias StorageType = S
+    
+    public var sigmoid:Sigmoid<S> { return inputs[0] as! Sigmoid<S> }
+    
+    public init(op:Sigmoid<S>, input:Op<S>, gradInput:Op<S>) {
+        super.init(inputs: [op, input, gradInput], output: Tensor<S>(input.output.shape))
+    }
+    
+    public override func apply() {
+        mul(sigmoid.output, (1-sigmoid.output), result: output)
+    }
+    
+    public func reset() {
+        fill(output, value: 0)
+    }
+    
+    public func update(alpha:S.ElementType) {}
+}
+
 public class Linear<S:Storage where S.ElementType:FloatNumericType>: Op<S> {
     public var weight:Tensor<S>
     public var bias:Tensor<S>
@@ -118,14 +118,13 @@ public class Linear<S:Storage where S.ElementType:FloatNumericType>: Op<S> {
     }
     
     public override func apply() {
-        //        fill(output, value: 0)
         dot(weight, inputs[0].output, result: output)
         add(output, bias, result: output)
     }
 }
 
 public class LinearGrad<S:Storage where S.ElementType:FloatNumericType>: Op<S>, Gradient {
-    typealias StorageType = S
+    public typealias StorageType = S
     public var weight:Tensor<S>
     public var bias:Tensor<S>
     
@@ -168,7 +167,7 @@ public class LinearGrad<S:Storage where S.ElementType:FloatNumericType>: Op<S>, 
 }
 
 public class L2Loss<S:Storage where S.ElementType:FloatNumericType>: Op<S>, Loss {
-    typealias StorageType = S
+    public typealias StorageType = S
     
     public var value:S.ElementType = 0
     
@@ -187,7 +186,7 @@ public class L2Loss<S:Storage where S.ElementType:FloatNumericType>: Op<S>, Loss
 }
 
 public class L2LossGrad<S:Storage where S.ElementType:FloatNumericType>: Op<S>, Gradient {
-    typealias StorageType = S
+    public typealias StorageType = S
     
     public var inputValue:Tensor<S> { return inputs[1].output }
     public var targetValue:Tensor<S> { return inputs[2].output }
