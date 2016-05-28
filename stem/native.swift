@@ -28,9 +28,7 @@ public class NativeStorage<T:NumericType>: Storage {
     }
     
     public required init(storage:NativeStorage, offset:Int=0) {
-//        array = SharedArray<ElementType>(storage.array.memory, offset: offset)
         array = storage.array
-//        array.offset = offset
         self.offset = offset
     }
 
