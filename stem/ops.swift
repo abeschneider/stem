@@ -80,28 +80,8 @@ public protocol Gradient: GradientType {
 }
 
 public protocol Differentiable {
-//    associatedtype GradientType:Gradient
-//    associatedtype StorageType:Storage
-    func gradient() -> OpType //<StorageType>
+    func gradient() -> OpType
 }
-
-//struct class AnyDifferentiable<S:Storage>: OpType, Differentiable {
-//    private let _gradient:() -> Op<S>
-//    private let _apply:() -> ()
-//    public init<D:Differentiable where D.StorageType == S, D:OpType>(_ diff:D) {
-//        _gradient = diff.gradient
-//        _apply = diff.apply
-//    }
-//
-//    public func apply() {
-//        _apply()
-//    }
-//    
-//    public func gradient() -> Op<S> {
-//        return _gradient()
-//    }
-//}
-//
 
 public protocol Loss {
     associatedtype StorageType:Storage

@@ -209,7 +209,7 @@ public class GradientDescentOptimizer<S:Storage where S.ElementType:FloatNumeric
     // NB: Need to wait for newer version of swift to allow constraints to be placed on
     // Op s.t. its differentiable. Until then, this code can fail at runtime if a
     // non-differentiable op is used
-    public init(op:Op<S>, alpha:Symbol<S>) {
+    public init(_ op:Op<S>, alpha:Symbol<S>) {
         self.alpha = alpha
         forward = op
         backward = (op as! Differentiable).gradient() as! Op<S>

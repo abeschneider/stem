@@ -15,7 +15,7 @@ let loss = L2Loss<D>(target: target)
 
 let f = Sequence<D>(input, linear, sigmoid, loss)
 
-let optimizer = GradientDescentOptimizer<D>(op: f, alpha: Symbol<D>(0.1))
+let optimizer = GradientDescentOptimizer<D>(f, alpha: Symbol<D>(0.1))
 
 for i in 0..<100 {
     optimizer.apply()
