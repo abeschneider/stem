@@ -29,74 +29,18 @@
       <div class="inner clearfix">
         <section id="main-content">
           <h1>
-<a id="swift-tensor-engine-for-machine-learning-stem" class="anchor" href="#swift-tensor-engine-for-machine-learning-stem" aria-hidden="true"><span class="octicon octicon-link"></span></a>Swift Tensor Engine for Machine-learning STEM</h1>
+<a id="swift-tensor-engine-for-machine-learning-stem" class="anchor" href="#swift-tensor-engine-for-machine-learning-stem" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Swift Tensor Engine for Machine-learning (STEM)</h1>
 
 <h2>
-<a id="overview" class="anchor" href="#overview" aria-hidden="true"><span class="octicon octicon-link"></span></a>Overview</h2>
+<a id="overview" class="anchor" href="#overview" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Overview</h2>
 
 <p>STEM provides an extensible Tensor library for Swift with a primary focus on the development of Machine Learning algorithms.</p>
 
-<h3>
-<a id="why-swift" class="anchor" href="#why-swift" aria-hidden="true"><span class="octicon octicon-link"></span></a>Why Swift?</h3>
+<p>For more information, please visit the documentation: </p>
 
-<p>There are several reasons Swift is a good candidate for writing Machine Learning algorithms:</p>
+<p><a href="http://stem.readthedocs.org/en/latest/">http://stem.readthedocs.org/en/latest/</a></p>
 
-<ol>
-<li>
-<p>It's compiled:</p>
-
-<p>a. None of the overhead normally associated with interpreted languages
-b. It's easy to call compiled libraries</p>
-</li>
-<li>
-<p>It's simple to use, but has powerful syntax:</p>
-
-<p>a. Operator overloading
-b. Generics have much of the same power that templates have, but without having to resort to messy template hacking</p>
-</li>
-<li>
-<p>It's strongly typed:</p>
-
-<p>a. Mistakes can be discovered quickly
-b. Can dispatch based on argument type</p>
-</li>
-<li>
-<p>It supports good design</p>
-
-<p>a. Important for writing machine-learning algorithms for real-world problems</p>
-</li>
-<li><p>Playground provides a very nice method to document algorithms</p></li>
-</ol>
-
-<h2>
-<a id="design" class="anchor" href="#design" aria-hidden="true"><span class="octicon octicon-link"></span></a>Design</h2>
-
-<p>The design of <em>STEM</em> is to provide a fast and flexible library. Rather than focus on a creating large framework with a million features, the goal is to provide the tools necessary to create those frameworks. Much of the code was inspired by Numpy, Theano, and Torch.</p>
-
-<h3>
-<a id="tensors" class="anchor" href="#tensors" aria-hidden="true"><span class="octicon octicon-link"></span></a>Tensors</h3>
-
-<p>A <code>Tensor</code> is defined as a <code>Storage</code> that is tied together with a <code>StorageView</code>.The flexibility in STEM comes from the fact that <code>Storage</code> is a generic parameter to the <code>Tensor</code> class. This allows new types of <code>Storage</code> to be defined (e.g. BLAS, GPU, etc.) while still maintaining the same interface by allowing how the data is stored as well as providing a mechanism for dispatching to different methods based on each <code>Storage</code> type (e.g. <code>CBlasStorage</code> will cause CBlas methods to be called on the <code>Tensor</code> operations).</p>
-
-<h3>
-<a id="vectors-and-matrices" class="anchor" href="#vectors-and-matrices" aria-hidden="true"><span class="octicon octicon-link"></span></a>Vectors and Matrices</h3>
-
-<p>STEM defines the following types:</p>
-
-<ul>
-<li>Vector</li>
-<li>RowVector</li>
-<li>ColumnVector</li>
-<li>Matrix</li>
-</ul>
-
-<p>Each type is a subclass of <code>Tensor</code>, and provide:</p>
-
-<ol>
-<li>Constraints on the <code>Tensor</code>s</li>
-<li>Initializers that use those constraints to simplify construction</li>
-<li>The correct methods will be called based on the type (e.g. vector*vector could mean dot product or outer product depending on whether they are <code>RowVectors</code> or <code>ColumnVectors</code>)</li>
-</ol>
+<p><em>Please note, this project is still very new, and is still very much in the proof-of-concept phase. There are still many functions waiting to be written. While I believe the majority of the core design is in place, more work is required. Thus, use at your own risk, and contributors welcomed!</em></p>
         </section>
 
         <aside id="sidebar">
