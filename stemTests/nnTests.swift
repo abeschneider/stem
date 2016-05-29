@@ -52,7 +52,7 @@ class nnTests: XCTestCase {
         linear.apply()
 
         let expected = Tensor<D>([1, 2, 3, 0])
-        XCTAssert(isClose(linear.output, expected, eps: 10e-4), "Not close")
+        XCTAssert(isClose(linear.output!, expected, eps: 10e-4), "Not close")
 
 //        let w2 = Matrix<CBlasStorage<Double>>([[1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 0, 0]], copyTransposed: true)
 //        let linear2 = LinearModule<CBlasStorage<Double>>(weight: w2)

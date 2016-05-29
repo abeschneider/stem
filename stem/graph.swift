@@ -36,21 +36,41 @@ public class SequenceTraversal<S:Storage>: Traversal {
     }
 }
 
+protocol Collection: OpType {
+    associatedtype StorageType:Storage
+    var ops:[Op<StorageType>] { get }
+    
+    func add(op:Op<StorageType>)
+}
+
 public class Graph<T:Traversal>: Op<T.StorageType>, SequenceType {
     typealias S = T.StorageType
     // contains: traversal, nodes
     public var ops:[Op<S>] = []
     
     public init() {
-        super.init(inputs: [], output: nil, labels: ["input"])
+        super.init(inputs: [],
+                   output: nil,
+                   labels: ["input"])
     }
     
     public init(output:Tensor<S>) {
-        super.init(inputs: [], output: output, labels: ["input"])
+        super.init(inputs: [],
+                   output: output,
+                   labels: ["input"])
     }
     
     public init(_ ops:[Op<S>], output:Tensor<S>) {
-        super.init(inputs: [], output: output, labels: ["input"])
+        super.init(inputs: [],
+                   output: output,
+                   labels: ["input"])
+        self.ops = ops
+    }
+    
+    public init(_ ops:[Op<S>], output:Tensor<S>, labels:[String]) {
+        super.init(inputs: [],
+                   output: output,
+                   labels: labels)
         self.ops = ops
     }
     
@@ -59,7 +79,6 @@ public class Graph<T:Traversal>: Op<T.StorageType>, SequenceType {
     public override func apply() {
         let traversal = T(ops: ops).generate()
         for op in traversal {
-            print("applying: \(op)")
             op.apply()
         }
     }
@@ -69,20 +88,33 @@ public class Graph<T:Traversal>: Op<T.StorageType>, SequenceType {
     }
 }
 
-public class Sequence<S:Storage>: Graph<SequenceTraversal<S>> {
+public class Sequence<S:Storage>: Op<S>, Collection {
+    typealias StorageType = S
+    
+    var ops:[Op<StorageType>] = []
+    
     public convenience init(_ ops:Op<S>...) {
         self.init(ops)
     }
     
-    public init(_ ops:[Op<S>], key:String="input") {
+    public init(_ ops:[Op<S>]) {
         let last = ops.last!
-        super.init(ops, output: last.output!)
+        super.init(inputs: [NoOp<S>()], output: last.output, labels: ["input"])
+        
+        self.ops = ops
+        
         for i in 1..<ops.count {
-            ops[i].setInput(key, to: ops[i-1])
+            ops[i].setInput("input", to: ops[i-1])
         }
     }
     
-    public override func add(op:Op<S>) {
+    public override func apply() {
+        for op in ops {
+            op.apply()
+        }
+    }
+    
+    public func add(op:Op<S>) {
         if ops.count > 0 {
             op.setInput("input", to: ops.last!)
         }
@@ -90,42 +122,123 @@ public class Sequence<S:Storage>: Graph<SequenceTraversal<S>> {
         ops.append(op)
         output = op.output
     }
+    
+    public override func params() -> [Tensor<S>] {
+        var flattened:[Tensor<S>] = []
+        for op in ops {
+            flattened += op.params()
+        }
+        
+        return flattened
+    }
 }
 
-//public protocol Traversal {
-//    associatedtype StorageType:Storage
-////    var ops:[AnyOp<StorageType>] { get }
-//    var ops:[Op<StorageType>] { get }
-//    func apply(fn:(Op<StorageType>) -> ())
-//}
-//
-//public class SequentialTraversal<StorageType:Storage where StorageType.ElementType:FloatNumericType>: Traversal {
-//    public var ops:[Op<StorageType>] = []
-//    
-//    public init() {}
-//    
-//    public init(_ ops:Op<StorageType>...) {
-//        self.ops = ops
-//    }
-//    
-//    public func add(op:Op<StorageType>)
-//    {
-//        ops.append(op)
-//    }
-//    
-//    public func apply(fn:(Op<StorageType>) -> ()) {
-//        for op in ops {
-//            fn(op)
-//        }
-//    }
-//}
+public class SequenceGradient<S:Storage>: Op<S>, Collection, Gradient {
+    public typealias StorageType = S
+    var ops:[Op<StorageType>] = []
 
-// deps:
-// input: tonode[0], tonode[1], ..., tonode[N]
-//
-// bdeps
-// fromnode[0]: input
-// fromnode[1]: input
+    public required init(op:Sequence<S>) {
+        let last = op.ops.first!
+        super.init(inputs: [NoOp<S>(), NoOp<S>(), NoOp<S>()],
+                   output: last.output,
+                   labels: ["op", "input", "gradOutput"])
+        
+        for op in op.ops {
+            if let dop = op as? Differentiable {
+                let grad = dop.gradient()
+                ops.insert(grad as! Op<S>, atIndex: 0)
+            }
+        }
+        
+        for i in 1..<ops.count {
+            ops[i].setInput("gradOutput", to: ops[i-1])
+        }
+    }
+    
+    public override func apply() {
+        for op in ops {
+            op.apply()
+        }
+    }
+    
+    public func add(op:Op<S>) {
+        if ops.count > 0 {
+            op.setInput("input", to: ops.last!)
+        }
+        
+        ops.append(op)
+        output = op.output
+    }
+    
+    public func reset() {
+        for op in ops {
+            (op as! GradientType).reset()
+        }
+        
+        fill(output!, value: 0)
+    }
+    
+    public override func params() -> [Tensor<S>] {
+        var flattened:[Tensor<S>] = []
+        for op in ops {
+            flattened += op.params()
+        }
+        
+        return flattened
+    }
+}
+
+extension Sequence:Differentiable {
+    public func gradient() -> OpType {
+        return SequenceGradient<S>(op: self)
+    }
+}
+
+protocol Optimizer {
+    associatedtype StorageType:Storage
+    func optimize() -> Op<StorageType>
+}
+
+public class GradientDescentOptimizer<S:Storage where S.ElementType:FloatNumericType>: Op<S> {
+    var alpha:Symbol<S>
+    var forward:Op<S>
+    var backward:Op<S>
+    var params:[Tensor<S>]
+    var gradParams:[Tensor<S>]
+    
+    // NB: Need to wait for newer version of swift to allow constraints to be placed on
+    // Op s.t. its differentiable. Until then, this code can fail at runtime if a
+    // non-differentiable op is used
+    public init(op:Op<S>, alpha:Symbol<S>) {
+        self.alpha = alpha
+        forward = op
+        backward = (op as! Differentiable).gradient() as! Op<S>
+        
+        params = []
+        gradParams = []
+        
+        super.init(inputs: [alpha],
+                   output: forward.output,
+                   labels: ["alpha"])
+        
+        params = forward.params()
+        gradParams = backward.params()
+    }
+    
+    public override func apply() {
+        (backward as! GradientType).reset()
+        
+        forward.apply()
+        backward.apply()
+
+        // this is a place where having a TensorScalar class might be nice
+        let a:S.ElementType = alpha.output![0]
+        for (param, gradParam) in Zip2Sequence(params, gradParams) {
+            param -= a*gradParam
+        }
+    }
+}
+
 public func calcDependencies<S:Storage>(ops:[Op<S>]) -> ([Op<S>:[Op<S>]], [Op<S>:[Op<S>]], [Op<S>], [Op<S>]) {
     var fdeps:[Op<S>:[Op<S>]] = [:]
     var bdeps:[Op<S>:[Op<S>]] = [:]
@@ -150,80 +263,3 @@ public func calcDependencies<S:Storage>(ops:[Op<S>]) -> ([Op<S>:[Op<S>]], [Op<S>
     
     return (fdeps, bdeps, terminals, roots)
 }
-
-// TODO: if using extensions, need to allow function to be call to be
-// parameterized (apply or applyGradient)
-//public class Graph<S:Storage>: Traversal {
-//    public var ops:[Op<S>] = []
-//    public var deps:[Op<S>:[Op<S>]] = [:]
-//    public var inputs:[Op<S>] = []
-//    
-//    public init() {}
-//    
-//    public init(_ ops:[Op<S>], inputs:[Op<S>], deps:[Op<S>:[Op<S>]]) {
-//        self.ops = ops
-//        self.inputs = inputs
-//        self.deps = deps
-//    }
-//    
-//    public func apply(fn:(Op<S>) -> ()) {
-//        traverse(inputs, fn: fn)
-//    }
-//    
-//    func traverse(sub:[Op<S>], fn:(Op<S>) -> ()) {
-//        var next:[Op<S>] = []
-//        for op in sub {
-//            op.apply()
-//            
-//            if let nextOps = deps[op] {
-//                next.appendContentsOf(nextOps)
-//            }
-//        }
-//            
-//        if next.count > 0 {
-//            traverse(next, fn: fn)
-//        }
-//    }
-//}
-
-
-// [A] -> [B] -> [C]
-// C: inputs: [], output
-//public class GradNetwork<S:Storage> {
-//    public var forwardGraph:Graph<S>
-////    public var backwardGraph:Graph<S>
-//    public var fdeps:[Op<S>:[Op<S>]]
-//    public var bdeps:[Op<S>:[Op<S>]]
-//    public var inputs:[Op<S>]
-//    public var binputs:[Op<S>]
-//    
-//    public init(_ ops:[Op<S>]) {
-//        (fdeps, bdeps, inputs, binputs) = calcDependencies(ops)
-//        forwardGraph = Graph<S>(ops, inputs: inputs, deps: fdeps)
-//        
-//        
-//        //backwardGraph = Graph<S>(ops, inputs: inputs, deps: bdeps)
-//        // use bdeps to construct backwardGraph
-////        var bops = [Op<S>]()
-////        for (to, from) in bdeps {
-////            let opType = to.meta!["grad"]!
-////            let bop = opType(inputs: from)
-////        }
-//        
-////        backwardGraph = Graph<S>(bops, inputs: binputs, deps: bdeps)
-//    }
-//    
-//    public convenience init(_ ops:Op<S>...) {
-//        self.init(ops)
-//    }
-//    
-//    public func forward() {
-//        forwardGraph.apply { $0.apply() }
-//    }
-//    
-//    // This won't work because we'd have to redefine AnyOp to include applyGradient
-//    public func backward() {
-////        backwardGraph.apply { $0.apply() }
-//    }
-//}
-//

@@ -57,6 +57,10 @@ public class Op<S:Storage>: OpType, Hashable {
         assertionFailure()
     }
     
+    public func params() -> [Tensor<StorageType>] {
+        return []
+    }
+    
     public var hashValue: Int { return id }
 }
 
@@ -64,14 +68,15 @@ public func ==<S:Storage>(lhs:Op<S>, rhs:Op<S>) -> Bool {
     return lhs.id == rhs.id
 }
 
-public protocol Gradient {
+public protocol GradientType: OpType {
+    func reset()
+}
+
+public protocol Gradient: GradientType {
     associatedtype StorageType:Storage
     associatedtype OpType
     
-    init(op:OpType)
-    
-    func reset()
-    func update(alpha:StorageType.ElementType)
+    init(op:OpType)    
 }
 
 public protocol Differentiable {
@@ -113,6 +118,12 @@ public class NoOp<S:Storage>: Op<S> {
 }
 
 public class Symbol<S:Storage>: Op<S> {
+    public init(_ value:S.ElementType) {
+        super.init(inputs: [],
+                   output: Tensor<S>([value]),
+                   labels: [])
+    }
+    
     public init(_ input:Tensor<S>) {
         super.init(inputs: [],
                    output: input,
@@ -177,8 +188,6 @@ public class SigmoidGrad<S:Storage where S.ElementType:FloatNumericType>: Op<S>,
     public func reset() {
         fill(output!, value: 0)
     }
-    
-    public func update(alpha:S.ElementType) {}
 }
 
 extension Sigmoid:Differentiable {
@@ -223,18 +232,21 @@ public class Linear<S:Storage where S.ElementType:FloatNumericType>: Op<S> {
         dot(weight, inputs[0].output!, result: output!)
         add(output!, bias, result: output!)
     }
+    
+    public override func params() -> [Tensor<S>] {
+        return [weight, bias]
+    }
 }
 
 public class LinearGrad<S:Storage where S.ElementType:FloatNumericType>: Op<S>, Gradient {
     public typealias StorageType = S
-//    public typealias OpType = Linear<S>
 
     public var weight:Tensor<S>
     public var bias:Tensor<S>
     
     public var linear:Linear<S> { return inputs[0] as! Linear<S> }
     public var input:Tensor<S> { return inputs[1].output! }
-    public var gradInput:Tensor<S> { return inputs[2].output! }
+    public var gradOutput:Tensor<S> { return inputs[2].output! }
     
     public required init(op:Linear<S>) {
         weight = zeros(op.weight.shape)
@@ -242,8 +254,6 @@ public class LinearGrad<S:Storage where S.ElementType:FloatNumericType>: Op<S>, 
         super.init(inputs: [op, op.inputs[0], NoOp<S>()],
                    output: zeros(Extent(op.weight.shape[1])),
                    labels: ["op", "input", "gradOutput"])
-        
-        print("?? \(weight.shape.dims), \(bias.shape.dims), \(output!.shape.dims)")
     }
 
     public init(inputSize:Int, outputSize:Int) {
@@ -273,20 +283,19 @@ public class LinearGrad<S:Storage where S.ElementType:FloatNumericType>: Op<S>, 
     }
     
     public override func apply() {
-        outer(gradInput, input, result: weight)
-        bias += gradInput
-        dot(linear.weight.transpose(), gradInput, result: output!)
+        outer(gradOutput, input, result: weight)
+        bias += gradOutput
+        dot(linear.weight.transpose(), gradOutput, result: output!)
+    }
+    
+    public override func params() -> [Tensor<S>] {
+        return [weight, bias]
     }
     
     public func reset() {
         fill(weight, value: 0)
         fill(bias, value: 0)
         fill(output!, value: 0)
-    }
-    
-    public func update(alpha:S.ElementType) {
-        linear.weight -= (alpha*weight)
-        linear.bias -= (alpha*bias)
     }
 }
 
@@ -320,7 +329,6 @@ public class L2Loss<S:Storage where S.ElementType:FloatNumericType>: Op<S>, Loss
         super.init(inputs: [NoOp<S>(), target],
                    output: zeros(target.output!.shape),
                    labels: ["input", "target"])
-//        setInput("target", to: target)
     }
     
     public init(value:Op<S>, target:Op<S>) {
@@ -344,7 +352,6 @@ public class L2LossGrad<S:Storage where S.ElementType:FloatNumericType>: Op<S>, 
     public var targetValue:Tensor<S> { return inputs[2].output! }
     
     public required init(op:L2Loss<S>) {
-//        print("op.inputs = \(op.inputs)")
         super.init(inputs: [op, op.inputs[0], op.inputs[1]],
                    output: Tensor<S>(Extent(op.targetValue.shape)),
                    labels: ["op", "input", "target"])
@@ -370,8 +377,6 @@ public class L2LossGrad<S:Storage where S.ElementType:FloatNumericType>: Op<S>, 
     public func reset() {
         fill(output!, value: 0)
     }
-    
-    public func update(alpha:S.ElementType) {}
 }
 
 extension L2Loss:Differentiable {
