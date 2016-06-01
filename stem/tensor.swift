@@ -322,7 +322,7 @@ public class Tensor<StorageType:Storage> {
         if copy {
 //            storage = tensor.storage
             storage = StorageType(size: tensor.shape.elements, value: 0)
-            for i in 0..<tensor.storage.size {
+            for i in 0..<tensor.shape.elements {
                 storage[i] = tensor.storage[i]
             }
         } else {

@@ -448,6 +448,23 @@ public func dot<S:Storage where S.ElementType:FloatNumericType>
     }
 }
 
+public func dot<S:Storage where S.ElementType:FloatNumericType>
+    (lhs:Tensor<S>, _ rhs:Tensor<S>, addTo result:Tensor<S>)
+{
+    precondition(lhs.shape.span < 3)
+    precondition(rhs.shape.span < 3)
+    precondition(lhs.shape[1] == rhs.shape[0], "Number of rows in vector must match number of rows of matrix")
+    precondition(lhs.shape[0] == result.shape[0], "Number of rows of result must match rows in matrix")
+    
+    for n in 0..<lhs.shape[0] {
+        for m in 0..<rhs.shape[0] {
+            for k in 0..<rhs.shape[1] {
+                result[n, k] = result[n, k] + lhs[n, m]*rhs[m, k]
+            }
+        }
+    }
+}
+
 // TODO: make version of `dot` that returns a result vector
 public func dot<S:Storage where S.ElementType:NumericType>
     (lhs:Tensor<S>, _ rhs:Tensor<S>) -> S.ElementType
@@ -714,11 +731,25 @@ func norm<StorageType:Storage where StorageType.ElementType:FloatNumericType>
     return sqrt(s)
 }
 
-func sigmoid<StorageType:Storage where StorageType.ElementType:FloatNumericType>
-    (input:Tensor<StorageType>, output:Tensor<StorageType>)
+func sigmoid<S:Storage where S.ElementType:FloatNumericType>
+    (input:Tensor<S>, output:Tensor<S>)
 {
     precondition(input.shape == output.shape)
     for index in input.indices() {
-        output[index] = StorageType.ElementType(1.0) / (StorageType.ElementType(1.0) + StorageType.ElementType.exp(-input[index]))
+        output[index] = S.ElementType(1.0) / (S.ElementType(1.0) + S.ElementType.exp(-input[index]))
+//        print("s: \(input[index]), \(output[index])")
     }
 }
+
+func sigmoid<S:Storage where S.ElementType:FloatNumericType>
+    (input:Tensor<S>) -> Tensor<S>
+{
+//    precondition(input.shape == output.shape)
+    let output:Tensor<S> = zeros(input.shape)
+    for index in input.indices() {
+        output[index] = S.ElementType(1.0) / (S.ElementType(1.0) + S.ElementType.exp(-input[index]))
+    }
+    
+    return output
+}
+

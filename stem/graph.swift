@@ -89,9 +89,9 @@ public class Graph<T:Traversal>: Op<T.StorageType>, SequenceType {
 }
 
 public class Sequence<S:Storage>: Op<S>, Collection {
-    typealias StorageType = S
+    public typealias StorageType = S
     
-    var ops:[Op<StorageType>] = []
+    public var ops:[Op<StorageType>] = []
     
     public convenience init(_ ops:Op<S>...) {
         self.init(ops)
@@ -135,12 +135,11 @@ public class Sequence<S:Storage>: Op<S>, Collection {
 
 public class SequenceGradient<S:Storage>: Op<S>, Collection, Gradient {
     public typealias StorageType = S
-    var ops:[Op<StorageType>] = []
-
+    public var ops:[Op<StorageType>] = []
+    
     public required init(op:Sequence<S>) {
-        let last = op.ops.first!
         super.init(inputs: [NoOp<S>(), NoOp<S>(), NoOp<S>()],
-                   output: last.output,
+                   output: nil,
                    labels: ["op", "input", "gradOutput"])
         
         for op in op.ops {
@@ -150,10 +149,31 @@ public class SequenceGradient<S:Storage>: Op<S>, Collection, Gradient {
             }
         }
         
+        output = ops.last!.output
+        
         for i in 1..<ops.count {
             ops[i].setInput("gradOutput", to: ops[i-1])
         }
     }
+    
+    public init() {
+        self.ops = []
+        super.init(inputs: [NoOp<S>(), NoOp<S>(), NoOp<S>()],
+                   output: nil,
+                   labels: ["op", "input", "gradOutput"])
+    }
+    
+//    public init(ops:Op<S>...) {
+//        self.ops = ops
+//        
+//        super.init(inputs: [NoOp<S>(), NoOp<S>(), NoOp<S>()],
+//                   output: ops.last!.output,
+//                   labels: ["op", "input", "gradOutput"])
+//        
+//        for i in 1..<ops.count {
+//            ops[i].setInput("gradOutput", to: ops[i-1])
+//        }
+//    }
     
     public override func apply() {
         for op in ops {
@@ -189,7 +209,7 @@ public class SequenceGradient<S:Storage>: Op<S>, Collection, Gradient {
 }
 
 extension Sequence:Differentiable {
-    public func gradient() -> OpType {
+    public func gradient() -> GradientType {
         return SequenceGradient<S>(op: self)
     }
 }

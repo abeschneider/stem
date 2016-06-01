@@ -23,153 +23,106 @@ class opTests: XCTestCase {
         super.tearDown()
     }
 
+    
     func testLinearOp() {
-        let num_inputs = 10
-        let num_outputs = 10
-
-        // provides a flat view of all parameters to make gradient testing simple
-        let storage = S(size: num_inputs*num_outputs + num_outputs)
-        let gradStorage = S(size: num_inputs*num_outputs + num_outputs)
-
-        let w = Tensor<S>(Extent(num_outputs, num_inputs), storage: storage)
-        let b = Tensor<S>(Extent(num_outputs), storage: storage, offset: num_inputs*num_outputs)
-
-        let gw = Tensor<S>(Extent(num_outputs, num_inputs), storage: gradStorage)
-        let gb = Tensor<S>(Extent(num_outputs), storage: gradStorage, offset: num_inputs*num_outputs)
-
-        let params = Tensor<S>(Extent(num_inputs*num_outputs + num_outputs), storage: storage)
-        let gradParams = Tensor<S>(Extent(num_inputs*num_outputs + num_outputs), storage: gradStorage)
+        let input = Symbol<S>(uniform(Extent(10)))
+        let target = Symbol<S>(uniform(Extent(5)))
         
-        let input = Symbol<S>(uniform(Extent(num_inputs)))
-        let target = Symbol<S>(uniform(Extent(num_outputs)))
+        let linear = Linear<S>(inputSize: 10, outputSize: 5)
+        linear.setInput("input", to: input)
         
-        let linear = Linear<S>(input: input, weight: w, bias: b)
-        let loss = L2Loss<S>(value: linear,  target: target)
-        let lossgrad = L2LossGrad<S>(op: loss, input: linear, target: target)
-        let lineargrad = LinearGrad<S>(op: linear, input: input, gradInput: loss, weight: gw, bias: gb)
         
-//        _testOp(linear, opgrad: lineargrad, params: params, gradParams: gradParams, loss: loss, lossgrad: lossgrad, eps: 10e-6)
-        params.uniform()
+        let loss = L2Loss(target: target)
+        loss.setInput("input", to: linear)
+        
+        let lossGrad = loss.gradient()
+        let linearGrad = linear.gradient()
+        linearGrad.setInput("gradOutput", to: lossGrad)
+        
         
         let eps = 10e-6
-        let opgrad = lineargrad
-        let op = linear
-        let result = checkGradient(params: params, gradParams: gradParams, eps: eps)
+        let result = checkGradient(params: input.output!,
+                                   gradParams: (linearGrad as! Op<S>).output!,
+                                   eps: eps)
         {
-            lossgrad.reset()
-            opgrad.reset()
+            linearGrad.reset()
+            lossGrad.reset()
             
-            // forward
-            op.apply()
+            linear.apply()
             loss.apply()
             
-            // backward
-            lossgrad.apply()
-            opgrad.apply()
+            lossGrad.apply()
+            linearGrad.apply()
             
-            // return error
             return loss.value
         }
         
-        for i in result.indices() {
-            XCTAssertLessThanOrEqual(result[i], eps)
-        }
+        XCTAssert(isClose(result, zeros(Extent(result.shape)), eps: eps))
     }
     
     func testSigmoidOp() {
-        let num_inputs = 10
-        let num_outputs = 10
+        let input = Symbol<S>(uniform(Extent(5)))
+        let target = Symbol<S>(uniform(Extent(5)))
         
-        // provides a flat view of all parameters to make gradient testing simple
-        let storage = S(size: num_inputs*num_outputs + num_outputs)
-        let gradStorage = S(size: num_inputs*num_outputs + num_outputs)
-        
-        let w = Tensor<S>(Extent(num_outputs, num_inputs), storage: storage)
-        let b = Tensor<S>(Extent(num_outputs), storage: storage, offset: num_inputs*num_outputs)
-        
-        let gw = Tensor<S>(Extent(num_outputs, num_inputs), storage: gradStorage)
-        let gb = Tensor<S>(Extent(num_outputs), storage: gradStorage, offset: num_inputs*num_outputs)
-        
-        let params = Tensor<S>(Extent(num_inputs*num_outputs + num_outputs), storage: storage)
-        let gradParams = Tensor<S>(Extent(num_inputs*num_outputs + num_outputs), storage: gradStorage)
-        
-        let input = Symbol<S>(uniform(Extent(num_inputs)))
-        let target = Symbol<S>(uniform(Extent(num_outputs)))
-        
-        let linear = Linear<S>(input: input, weight: w, bias: b)
+        let sigmoid = Sigmoid<S>(size: 5)
+        sigmoid.setInput("input", to: input)
         
         
-        let sigmoid = Sigmoid<S>(input: linear)
-        let lineargrad = LinearGrad<S>(op: linear, input: input, gradInput: sigmoid, weight: gw, bias: gb)
+        let loss = L2Loss(target: target)
+        loss.setInput("input", to: sigmoid)
+
+        let lossGrad = loss.gradient()
+        let sigmoidGrad = sigmoid.gradient()
+        sigmoidGrad.setInput("gradOutput", to: lossGrad)
         
-        let loss = L2Loss<S>(value: sigmoid,  target: target)
-        let sigmoidgrad = SigmoidGrad<S>(op: sigmoid, input: linear, gradInput: loss)
-        let lossgrad = L2LossGrad<S>(op: loss, input: sigmoid, target: target)
-        
-        
-        //        _testOp(linear, opgrad: lineargrad, params: params, gradParams: gradParams, loss: loss, lossgrad: lossgrad, eps: 10e-6)
-        params.uniform()
         
         let eps = 10e-6
-        let opgrad = lineargrad
-        let op = linear
-        let result = checkGradient(params: params, gradParams: gradParams, eps: eps)
+        let result = checkGradient(params: input.output!,
+                                   gradParams: (sigmoidGrad as! Op<S>).output!,
+                                   eps: eps)
         {
-            lossgrad.reset()
-            opgrad.reset()
-            sigmoidgrad.reset()
+            sigmoidGrad.reset()
+            lossGrad.reset()
             
-            // forward
-            op.apply()
             sigmoid.apply()
             loss.apply()
             
-            // backward
-            lossgrad.apply()
-            sigmoid.apply()
-            opgrad.apply()
+            lossGrad.apply()
+            sigmoidGrad.apply()
             
-            // return error
             return loss.value
         }
         
-        for i in result.indices() {
-            XCTAssertLessThanOrEqual(result[i], eps)
-        }
+        XCTAssert(isClose(result, zeros(Extent(result.shape)), eps: eps))
     }
 
 
-//    func _testOp<B:Op<D>, L:Op<D>, LG:Op<D>, D:Storage where B:Gradient, L:Loss, LG:protocol<Gradient, Loss>>
-//        (op:Op<D>,
-//         opgrad:B,
-//         params:Tensor<D>,
-//         gradParams:Tensor<D>,
-//         loss:L,
-//         lossgrad:LG,
-//         eps:Double)
-//    {
-//        params.uniform()
-//        
-//        let result = checkGradient(params: params, gradParams: gradParams, eps: eps)
-//        {
-//            lossgrad.reset()
-//            opgrad.reset()
-//            
-//            // forward
-//            op.apply()
-//            loss.apply()
-//            
-//            // backward
-//            lossgrad.apply()
-//            opgrad.apply()
-//            
-//            // return error
-//            return loss.value
-//        }
-//        
-//        for i in result.indices() {
-//            XCTAssertLessThanOrEqual(result[i], eps)
-//        }
-//    }
-
+    func testSequenceOp() {
+        let input = Symbol<S>(uniform(Extent(10)))
+        let target = Symbol<S>(uniform(Extent(5)))
+        
+        let seq = Sequence<S>(
+            input,
+            Linear<S>(inputSize: 10, outputSize: 5),
+            Sigmoid<S>(size: 5),
+            L2Loss<S>(target: target)
+        )
+        
+        let seqGrad = seq.gradient() as! SequenceGradient<S>
+        
+        let eps = 10e-6
+        let result = checkGradient(params: input.output!,
+                                   gradParams: seqGrad.output!,
+                                   eps: eps)
+        {
+            seqGrad.reset()
+            seq.apply()
+            seqGrad.apply()
+            
+            let loss = seq.ops.last! as! L2Loss<S>
+            return loss.value
+        }
+        
+        XCTAssert(isClose(result, zeros(Extent(result.shape)), eps: eps))
+    }    
 }

@@ -20,6 +20,7 @@ func += <K, V> (inout left: [K:V], right: [K:V]) {
 
 public protocol OpType {
     func apply()
+    func setInput(label:String, to:OpType)
 }
 
 public class Op<S:Storage>: OpType, Hashable {
@@ -39,9 +40,9 @@ public class Op<S:Storage>: OpType, Hashable {
         }
     }
     
-    public func setInput(label:String, to:Op<StorageType>) {
+    public func setInput(label:String, to:OpType) {
         let index = inputLabels[label]!
-        inputs[index] = to
+        inputs[index] = to as! Op<S>
     }
     
     public func getInput(label:String) -> Op<StorageType> {
@@ -80,10 +81,10 @@ public protocol Gradient: GradientType {
 }
 
 public protocol Differentiable {
-    func gradient() -> OpType
+    func gradient() -> GradientType
 }
 
-public protocol Loss {
+public protocol Loss: Differentiable {
     associatedtype StorageType:Storage
     
     var value:StorageType.ElementType { get }
@@ -142,6 +143,8 @@ public class SigmoidGrad<S:Storage where S.ElementType:FloatNumericType>: Op<S>,
     public typealias OpType = Sigmoid<S>
     
     public var sigmoid:Sigmoid<S> { return inputs[0] as! Sigmoid<S> }
+    public var input:Tensor<S> { return inputs[1].output! }
+    public var gradOutput:Tensor<S> { return inputs[2].output! }
     
     public required init(op:Sigmoid<S>) {
         super.init(inputs: [op, op.inputs[0], NoOp<S>()],
@@ -162,7 +165,10 @@ public class SigmoidGrad<S:Storage where S.ElementType:FloatNumericType>: Op<S>,
     }
     
     public override func apply() {
-        mul(sigmoid.output!, (1-sigmoid.output!), result: output!)
+        // sigmoid(x)*(1 - sigmoid(x))
+        sub(S.ElementType(1.0), sigmoid.output!, result: output!)
+        output! *= sigmoid.output!
+        output! *= gradOutput
     }
     
     public func reset() {
@@ -171,7 +177,7 @@ public class SigmoidGrad<S:Storage where S.ElementType:FloatNumericType>: Op<S>,
 }
 
 extension Sigmoid:Differentiable {
-    public func gradient() -> OpType {
+    public func gradient() -> GradientType {
         return SigmoidGrad<S>(op: self)
     }
 }
@@ -191,19 +197,18 @@ public class Linear<S:Storage where S.ElementType:FloatNumericType>: Op<S> {
                    labels: ["input"])
     }
     
-    public init(input:Op<S>, outputSize:Int) {
-        let inputSize = input.output!.shape[0]
-        weight = uniform(Extent(outputSize, inputSize))
-        bias = zeros(Extent(outputSize))
+    public init(input:Op<S>, weight:Tensor<S>, bias:Tensor<S>) {
+        self.weight = weight
+        self.bias = bias
         super.init(inputs: [input],
                    output: zeros(bias.shape),
                    labels: ["input"])
     }
     
-    public init(input:Op<S>, weight:Tensor<S>, bias:Tensor<S>) {
+    public init(weight:Tensor<S>, bias:Tensor<S>) {
         self.weight = weight
         self.bias = bias
-        super.init(inputs: [input],
+        super.init(inputs: [NoOp<S>()],
                    output: zeros(bias.shape),
                    labels: ["input"])
     }
@@ -265,7 +270,7 @@ public class LinearGrad<S:Storage where S.ElementType:FloatNumericType>: Op<S>, 
     public override func apply() {
         outer(gradOutput, input, result: weight)
         bias += gradOutput
-        dot(linear.weight.transpose(), gradOutput, result: output!)
+        dot(linear.weight.transpose(), gradOutput, addTo: output!)
     }
     
     public override func params() -> [Tensor<S>] {
@@ -280,7 +285,7 @@ public class LinearGrad<S:Storage where S.ElementType:FloatNumericType>: Op<S>, 
 }
 
 extension Linear:Differentiable {
-    public func gradient() -> OpType {
+    public func gradient() -> GradientType {
         return LinearGrad<S>(op: self)
     }
 }
@@ -360,7 +365,7 @@ public class L2LossGrad<S:Storage where S.ElementType:FloatNumericType>: Op<S>, 
 }
 
 extension L2Loss:Differentiable {
-    public func gradient() -> OpType {
+    public func gradient() -> GradientType {
         return L2LossGrad<S>(op: self)
     }
 }
