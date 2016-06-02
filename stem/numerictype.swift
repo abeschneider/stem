@@ -26,6 +26,8 @@ public protocol FloatNumericType: NumericType, FloatingPointType {
     static func exp(value:Self) -> Self
     static func sqrt(value:Self) -> Self
     static func pow(value: Self, _ power: Self) -> Self
+    static func log(value: Self) -> Self
+
 
     init(_ v:Float)
     init(_ v:Double)
@@ -63,6 +65,10 @@ extension Int: NumericType {
         self.init(value)
     }
     
+    init<T:FloatNumericType>(value:T) {
+        self.init(value: value)
+    }
+    
     static public func max(lhs:Int, _ rhs:Int) -> Int {
         return lhs > rhs ? lhs : rhs
     }
@@ -91,6 +97,9 @@ extension Float: FloatNumericType {
     
     static public func pow(value:Float, _ power:Float) -> Float {
         return powf(value, power)
+    }
+    static public func log(value:Float) -> Float {
+        return Foundation.log(value)
     }
     
     static public func max(lhs:Float, _ rhs:Float) -> Float {
@@ -121,6 +130,10 @@ extension Double: FloatNumericType {
     
     static public func pow(value:Double, _ power:Double) -> Double {
         return Foundation.pow(value, power)
+    }
+    
+    static public func log(value:Double) -> Double {
+        return Foundation.log(value)
     }
     
     static public func max(lhs:Double, _ rhs:Double) -> Double {

@@ -67,7 +67,6 @@ class opTests: XCTestCase {
         let sigmoid = Sigmoid<S>(size: 5)
         sigmoid.setInput("input", to: input)
         
-        
         let loss = L2Loss(target: target)
         loss.setInput("input", to: sigmoid)
 
@@ -96,6 +95,39 @@ class opTests: XCTestCase {
         XCTAssert(isClose(result, zeros(Extent(result.shape)), eps: eps))
     }
 
+    func testLogOp() {
+        let input = Symbol<S>(uniform(Extent(5)))
+        let target = Symbol<S>(uniform(Extent(5)))
+        
+        let log = Log<S>(size: 5)
+        log.setInput("input", to: input)
+        
+        let loss = L2Loss(target: target)
+        loss.setInput("input", to: log)
+
+        let lossGrad = loss.gradient()
+        let logGrad = log.gradient()
+        logGrad.setInput("gradOutput", to: lossGrad)
+        
+        let eps = 10e-6
+        let result = checkGradient(params: input.output!,
+                                   gradParams: (logGrad as! Op<S>).output!,
+                                   eps: eps)
+        {
+            logGrad.reset()
+            lossGrad.reset()
+            
+            log.apply()
+            loss.apply()
+            
+            lossGrad.apply()
+            logGrad.apply()
+            
+            return loss.value
+        }
+        
+        XCTAssert(isClose(result, zeros(Extent(result.shape)), eps: eps))
+    }
 
     func testSequenceOp() {
         let input = Symbol<S>(uniform(Extent(10)))

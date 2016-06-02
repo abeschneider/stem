@@ -584,23 +584,19 @@ public func hist<StorageType:Storage where StorageType.ElementType == Double>
     return h
 }
 
-func reduce<StorageType:Storage>(tensor:Tensor<StorageType>,
-            axis:Int,
-            op:(StorageType.ElementType, StorageType.ElementType) -> StorageType.ElementType)
-    -> Tensor<StorageType>
+func reduce<S:Storage>(
+    tensor:Tensor<S>,
+    axis:Int,
+    result:Tensor<S>,
+    op:(S.ElementType, S.ElementType) -> S.ElementType)
 {
     precondition(axis < tensor.shape.count)
     
-    // calculate new shape
     let reduced:[(index:Int, element:Int)] = tensor.shape
         .enumerate()
         .filter { $0.index != axis }
     
     let indices = reduced.map { $0.index }
-    let newShape = reduced.map { $0.element }
-    
-    // create tensor to hold results
-    let result = Tensor<StorageType>(Extent(newShape))
     
     // index `i` is the axis we are summing along
     for i in 0..<tensor.shape[axis] {
@@ -616,8 +612,26 @@ func reduce<StorageType:Storage>(tensor:Tensor<StorageType>,
         }
     }
     
+//    return result
+}
+
+func reduce<S:Storage>(tensor:Tensor<S>,
+            axis:Int,
+            op:(S.ElementType, S.ElementType) -> S.ElementType)
+    -> Tensor<S>
+{
+    // calculate new shape
+    let reduced:[(index:Int, element:Int)] = tensor.shape
+        .enumerate()
+        .filter { $0.index != axis }
+    
+    let newShape = reduced.map { $0.element }
+    let result = Tensor<S>(Extent(newShape))
+
+    reduce(tensor, axis: axis, result: result, op: op)
     return result
 }
+
 
 func reduce<StorageType:Storage>(tensor:Tensor<StorageType>,
             op:(StorageType.ElementType, StorageType.ElementType) -> StorageType.ElementType)
@@ -637,6 +651,12 @@ public func sum<StorageType:Storage>
     (tensor:Tensor<StorageType>, axis:Int) -> Tensor<StorageType>
 {
     return reduce(tensor, axis: axis, op: +)
+}
+
+public func sum<S:Storage>
+    (tensor:Tensor<S>, axis:Int, result:Tensor<S>)
+{
+    reduce(tensor, axis: axis, result: result, op: +)
 }
 
 public func sum<StorageType:Storage>(tensor:Tensor<StorageType>) -> StorageType.ElementType {
@@ -751,5 +771,13 @@ func sigmoid<S:Storage where S.ElementType:FloatNumericType>
     }
     
     return output
+}
+
+func log<S:Storage where S.ElementType:FloatNumericType>
+    (input:Tensor<S>, result:Tensor<S>)
+{
+    for (i1, i2) in Zip2Sequence(input.indices(), result.indices()) {
+        result[i2] = S.ElementType.log(input[i1])
+    }
 }
 

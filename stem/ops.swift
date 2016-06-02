@@ -370,4 +370,69 @@ extension L2Loss:Differentiable {
     }
 }
 
+// need to extend to provide a multi-dimensional version
+public class SumOp<S:Storage where S.ElementType:FloatNumericType>: Op<S> {
+    public init() {
+        super.init(inputs: [NoOp<S>(), NoOp<S>()],
+                   output: Tensor<S>(Extent(1)),
+                   labels: ["input", "axis"])
+    }
+    
+    public override func apply() {
+        let input:Tensor<S> = inputs[0].output!
+        let axis:S.ElementType = inputs[1].output![0]
+        let iaxis = Int(value: axis)
+        sum(input, axis: iaxis, result: output!)
+    }
+}
+
+public class Log<S:Storage where S.ElementType:FloatNumericType>: Op<S> {
+    public init(size:Int) {
+        super.init(inputs: [NoOp<S>()],
+                   output: Tensor<S>(Extent(size)),
+                   labels: ["input"])
+    }
+    
+    public init() {
+        super.init(inputs: [NoOp<S>()],
+                   output: nil,
+                   labels: ["input"])
+    }
+    
+    public override func apply() {
+        if output == nil || output!.shape != inputs[0].output!.shape {
+            output = Tensor<S>(Extent(inputs[0].output!.shape))
+        }
+        
+        log(inputs[0].output!, result: output!)
+    }
+}
+
+extension Log:Differentiable {
+    public func gradient() -> GradientType {
+        return LogGrad<S>(op: self)
+    }
+}
+
+public class LogGrad<S:Storage where S.ElementType:FloatNumericType>: Op<S>, Gradient {
+    public required init(op:Log<S>) {
+        super.init(inputs: [op, op.inputs[0], NoOp<S>()],
+                   output: Tensor<S>(op.output!.shape),
+                   labels: ["op", "input", "gradOutput"])
+    }
+    
+    public override func apply() {
+        if output == nil || output!.shape != inputs[2].output!.shape {
+            output = Tensor<S>(Extent(inputs[2].output!.shape))
+        }
+
+        fill(output!, value: 1)
+        output! /= inputs[1].output!
+        output! *= inputs[2].output!
+    }
+    
+    public func reset() {
+        fill(output!, value: 0)
+    }
+}
 

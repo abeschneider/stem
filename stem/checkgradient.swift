@@ -41,7 +41,6 @@ public func checkGradient<S:Storage where S.ElementType:FloatNumericType>
         
         // TODO: Look into alternate formulations (e.g. either norm of both, or max of denom.)
         result[i] = abs((numerical_diff - analytical_diff[i])/analytical_diff[i])
-        let adiff:S.ElementType = analytical_diff[i]
     }
     
     return result
