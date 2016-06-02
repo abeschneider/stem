@@ -103,3 +103,122 @@ Op library
 .. function:: L2Loss
 
   Takes two inputs: ``value`` and ``target``. Calculates the square distance between the two.
+
+-----------------
+Creating a new Op
+-----------------
+Suppose you wanted to create an ``Op`` that takes the log of the input. The ``Log`` op can be defined as:
+
+.. code:: swift
+
+  public class Log<S:Storage where S.ElementType:FloatNumericType>: Op<S> {
+    public init(size:Int) {
+      super.init( inputs: [NoOp<S>()],
+                  output: Tensor<S>(Extent(size)),
+                  labels: ["input"])
+    }
+
+    public override func apply() {
+      if output == nil || output!.shape != inputs[0].output!.shape {
+        output = Tensor<S>(Extent(inputs[0].output!.shape))
+      }
+
+      log(inputs[0].output!, result: output!)
+    }
+  }
+
+where the initialization defines a single input (``input``) that is currently not defined (the ``NoOp``) and the output is allocated as the size specified by the parameter. The ``apply`` function finds the maximum value in the input, divides each element of the input by that value, and stores in the result in ``output``.
+
+The gradient of ``Log`` can be defined as:
+
+.. code::Swift
+
+  public class LogGrad<S:Storage where S.ElementType:FloatNumericType>: Op<S>, Gradient {
+    public required init(op:Log<S>) {
+      super.init( inputs: [op, op.inputs[0], NoOp<S>()],
+                  output: Tensor<S>(op.output!.shape),
+                  labels: ["op", "input", "gradOutput"])
+    }
+
+    public override func apply() {
+      fill(output!, value: 1)
+      output! /= inputs[1].output!
+      output! *= inputs[2].output!
+    }
+
+    public func reset() {
+      fill(output!, value: 0)
+    }
+  }
+
+The ``Log`` gradient takes two additional inputs: the instance of the ``Log`` op its the gradient of, and ``gradOutput``, which is the gradient of the op's output.
+
+Finally, to allow the gradient to be taken of ``Log``, the class must be extended to ``Differentiable``:
+
+.. code:: swift
+
+  extension Log:Differentiable {
+    public func gradient() -> GradientType {
+      return LogGrad<S>(op: self)
+    }
+  }
+
+We can change the construction of our network by adding ``Log`` into the sequence:
+
+.. code:: swift
+
+  let net = Sequence<D>(
+    Symbol<D>(zeros(Extent(5))),
+    Log<D>(size: 5)
+    Linear<D>(inputSize: 5, outputSize: 3),
+    Sigmoid<D>(size: 3),
+    L2Loss<D>(size: 3))
+
+and have the optimization correctly calculate the derivative as before:
+
+.. code:: swift
+
+  let opt = GradientDescentOptimizer(net, alpha: alpha)
+
+because ``GradientDescentOptimizer`` will automatically call ``gradient`` on each ``Op``, an instance of ``LogGradient`` will be created for each instance of ``Log``.
+
+-----------------
+Testing your Op
+-----------------
+It is always a good idea to do a gradient check on a newly created ``Op``. You can create a new unit test to do so:
+
+.. code:: swift
+
+  func testLogOp() {
+    let input = Symbol<S>(uniform(Extent(5)))
+    let target = Symbol<S>(uniform(Extent(5)))
+
+    let log = Log<S>(size: 5)
+    log.setInput("input", to: input)
+
+    let loss = L2Loss(target: target)
+    loss.setInput("input", to: log)
+
+    let lossGrad = loss.gradient()
+    let logGrad = log.gradient()
+    logGrad.setInput("gradOutput", to: lossGrad)
+
+    let eps = 10e-6
+    let result = checkGradient(params: input.output!,
+                               gradParams: (logGrad as! Op<S>).output!,
+                               eps: eps)
+    {
+        logGrad.reset()
+        lossGrad.reset()
+
+        log.apply()
+        loss.apply()
+
+        lossGrad.apply()
+        logGrad.apply()
+
+        return loss.value
+    }
+
+    XCTAssert(isClose(result, zeros(Extent(result.shape)), eps: eps))
+  }
