@@ -287,6 +287,7 @@ public class LinearGrad<S:Storage where S.ElementType:FloatNumericType>: Op<S>, 
             outer(gradOutput, input, addTo: weight)
             bias += gradOutput
         } else if input.dims == 2 {
+            output!.resize(Extent(linear.weight.shape[1], gradOutput.shape[1]))
             if bias.dims == 1 {
                 bias.shape = Extent(bias.shape[0], 1)
             }

@@ -420,9 +420,6 @@ func matmul<S:Storage where S.ElementType:NumericType>
 {
     precondition(lhs.shape.dims.count == 2)
     precondition(rhs.shape.dims.count == 2)
-    print("lhs.shape: \(lhs.shape.dims)")
-    print("rhs.shape: \(rhs.shape.dims)")
-    print("result.shape: \(result.shape.dims)")
     precondition(result.shape == Extent(lhs.shape[0], rhs.shape[1]))
     
     // nxp * pxm (lhs.shape[1] == rhs.shape[0])
