@@ -71,6 +71,8 @@ public func ==<S:Storage>(lhs:Op<S>, rhs:Op<S>) -> Bool {
 
 public protocol GradientType: OpType {
     func reset()
+//    func update()
+//    func accumulate()
 }
 
 public protocol Gradient: GradientType {
@@ -84,7 +86,7 @@ public protocol Differentiable {
     func gradient() -> GradientType
 }
 
-public protocol Loss: Differentiable {
+public protocol Loss: Differentiable, OpType {
     associatedtype StorageType:Storage
     
     var value:StorageType.ElementType { get }
@@ -189,11 +191,13 @@ public class Linear<S:Storage where S.ElementType:FloatNumericType>: Op<S> {
     public var weight:Tensor<S>
     public var bias:Tensor<S>
     
+    public var input:Tensor<S> { return inputs[0].output! }
+    
     public init(inputSize:Int, outputSize:Int) {
         weight = uniform(Extent(outputSize, inputSize))
         bias = zeros(Extent(outputSize))
         super.init(inputs: [NoOp<S>()],
-                   output: zeros(Extent(outputSize)),
+                   output: zeros(Extent(1)), //zeros(Extent(outputSize)),
                    labels: ["input"])
     }
     
@@ -214,8 +218,18 @@ public class Linear<S:Storage where S.ElementType:FloatNumericType>: Op<S> {
     }
     
     public override func apply() {
-        dot(weight, inputs[0].output!, result: output!)
-        add(output!, bias, result: output!)
+        // TODO: review, not sure this is the best way to do this
+        if input.dims == 1 {
+            output!.resize(Extent(weight.shape[0]))
+            dot(weight, inputs[0].output!, result: output!)
+            add(output!, bias, result: output!)
+        } else if input.dims == 2 {
+            output!.resize(Extent(weight.shape[0], input.shape[1]))
+            dot(weight, inputs[0].output!, result: output!)
+            add(output!, bias.reshape(Extent(bias.shape[0], 1)), result: output!)
+        } else {
+            assertionFailure()
+        }
     }
     
     public override func params() -> [Tensor<S>] {
@@ -267,9 +281,23 @@ public class LinearGrad<S:Storage where S.ElementType:FloatNumericType>: Op<S>, 
                    labels: ["op", "input", "gradOutput"])
     }
     
+    // need to separate apply into accumulate and apply
     public override func apply() {
-        outer(gradOutput, input, result: weight)
-        bias += gradOutput
+        if input.dims == 1 {
+            outer(gradOutput, input, addTo: weight)
+            bias += gradOutput
+        } else if input.dims == 2 {
+            if bias.dims == 1 {
+                bias.shape = Extent(bias.shape[0], 1)
+            }
+            matmul(gradOutput, input.transpose(), addTo: weight)
+//            bias.reshape(Extent(bias.shape[0], 1)) += gradOutput
+//            isub(bias.reshape(Extent(bias.shape[0], 1)), gradOutput)
+//            sub(gradOutput, bias.reshape(Extent(bias.shape[0], 1)), result: bias)
+        } else {
+            assertionFailure()
+        }
+        
         dot(linear.weight.transpose(), gradOutput, addTo: output!)
     }
     
@@ -295,8 +323,8 @@ public class L2Loss<S:Storage where S.ElementType:FloatNumericType>: Op<S>, Loss
     
     public var value:S.ElementType = 0
     
-    public var inputValue:Tensor<S> { return inputs[0].output! }
-    public var targetValue:Tensor<S> { return inputs[1].output! }
+    public var input:Tensor<S> { return inputs[0].output! }
+    public var target:Tensor<S> { return inputs[1].output! }
     
     public init() {
         super.init(inputs: [NoOp<S>(), NoOp<S>()],
@@ -310,20 +338,25 @@ public class L2Loss<S:Storage where S.ElementType:FloatNumericType>: Op<S>, Loss
                    labels: ["input", "target"])
     }
     
-    public init(target:Op<S>) {
-        super.init(inputs: [NoOp<S>(), target],
-                   output: zeros(target.output!.shape),
+    public init(target t:Op<S>) {
+        super.init(inputs: [NoOp<S>(), t],
+                   output: zeros(t.output!.shape),
                    labels: ["input", "target"])
     }
     
-    public init(value:Op<S>, target:Op<S>) {
-        super.init(inputs: [value, target],
+    public init(value:Op<S>, target t:Op<S>) {
+        super.init(inputs: [value, t],
                    output: Tensor<S>(value.output!.shape),
                    labels: ["input", "target"])
     }
     
     public override func apply() {
-        sub(inputValue, targetValue, result: output!)
+        if input.dims == 1 {
+            sub(input, target, result: output!)
+        } else if input.dims == 2 {
+            sub(input, target, result: output!)
+        }
+        
         pow(output!, 2, result: output!)
         value = sum(output!)
     }
@@ -333,12 +366,12 @@ public class L2LossGrad<S:Storage where S.ElementType:FloatNumericType>: Op<S>, 
     public typealias StorageType = S
     public typealias OpType = L2Loss<S>
     
-    public var inputValue:Tensor<S> { return inputs[1].output! }
-    public var targetValue:Tensor<S> { return inputs[2].output! }
+    public var input:Tensor<S> { return inputs[1].output! }
+    public var target:Tensor<S> { return inputs[2].output! }
     
     public required init(op:L2Loss<S>) {
         super.init(inputs: [op, op.inputs[0], op.inputs[1]],
-                   output: Tensor<S>(Extent(op.targetValue.shape)),
+                   output: Tensor<S>(Extent(op.target.shape)),
                    labels: ["op", "input", "target"])
     }
 
@@ -348,14 +381,14 @@ public class L2LossGrad<S:Storage where S.ElementType:FloatNumericType>: Op<S>, 
                    labels: ["op", "input", "target"])
     }
     
-    public init(op:L2Loss<S>, input:Op<S>, target:Op<S>) {
-        super.init(inputs: [op, input, target],
-                   output: Tensor<S>(op.output!.shape),
-                   labels: ["op", "input", "target"])
-    }
+//    public init(op:L2Loss<S>, input:Op<S>, target:Op<S>) {
+//        super.init(inputs: [op, input, target],
+//                   output: Tensor<S>(op.output!.shape),
+//                   labels: ["op", "input", "target"])
+//    }
     
     public override func apply() {
-        sub(inputValue, targetValue, result: output!)
+        sub(input, target, result: output!)
         output! *= 2
     }
     

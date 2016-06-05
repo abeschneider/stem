@@ -410,6 +410,49 @@ public func *=<StorageType:Storage where StorageType.ElementType:NumericType>
     imul(lhs, rhs)
 }
 
+
+//
+// matrix multiplication
+//
+
+func matmul<S:Storage where S.ElementType:NumericType>
+    (lhs:Tensor<S>, _ rhs:Tensor<S>, addTo result:Tensor<S>)
+{
+    precondition(lhs.shape.dims.count == 2)
+    precondition(rhs.shape.dims.count == 2)
+    print("lhs.shape: \(lhs.shape.dims)")
+    print("rhs.shape: \(rhs.shape.dims)")
+    print("result.shape: \(result.shape.dims)")
+    precondition(result.shape == Extent(lhs.shape[0], rhs.shape[1]))
+    
+    // nxp * pxm (lhs.shape[1] == rhs.shape[0])
+    for i in 0..<lhs.shape[0] {
+        for j in 0..<rhs.shape[1] {
+            for k in 0..<lhs.shape[1] {
+                result[i, j] += lhs[i, k]*rhs[k, j]
+            }
+        }
+    }
+}
+
+func matmul<S:Storage where S.ElementType:NumericType>
+    (lhs:Tensor<S>, _ rhs:Tensor<S>, result:Tensor<S>)
+{
+    precondition(lhs.shape.dims.count == 2)
+    precondition(rhs.shape.dims.count == 2)
+    precondition(result.shape == Extent(lhs.shape[0], rhs.shape[1]))
+    
+    // nxp * pxm (lhs.shape[1] == rhs.shape[0])
+    fill(result, value: 0)
+    for i in 0..<lhs.shape[0] {
+        for j in 0..<rhs.shape[1] {
+            for k in 0..<lhs.shape[1] {
+                result[i, j] += lhs[i, k]*rhs[k, j]
+            }
+        }
+    }
+}
+
 //
 // dot product
 //

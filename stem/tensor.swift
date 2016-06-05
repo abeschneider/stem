@@ -165,6 +165,11 @@ public class Tensor<StorageType:Storage> {
         }
     }
     
+    // convienence function
+    public var dims:Int {
+        get { return view.shape.dims.count }
+    }
+    
     // view into storage
     public var view:ViewType
     
@@ -408,7 +413,8 @@ public class Tensor<StorageType:Storage> {
         }
         set {
             let view = Tensor(self, window: ranges.map { $0.TensorRange })
-            copy(from: newValue, to: view)
+            let bvalue = broadcast(newValue, shape: view.shape)
+            copy(from: bvalue, to: view)
         }
     }
     
@@ -418,7 +424,8 @@ public class Tensor<StorageType:Storage> {
         }
         set {
             let view = Tensor(self, window: ranges.map { $0.TensorRange })
-            copy(from: newValue, to: view)
+            let bvalue = broadcast(newValue, shape: view.shape)
+            copy(from: bvalue, to: view)
         }
     }
     
@@ -434,6 +441,18 @@ public class Tensor<StorageType:Storage> {
         precondition(newShape.elements == internalShape.elements, "Cannot change number of elements in Tensor.")
         
         return Tensor(storage: storage, shape: newShape)
+    }
+    
+    public func resize(newShape:Extent) {
+        if shape != newShape {
+            storage = StorageType(size: newShape.elements, value: 0)
+            internalShape = newShape
+            offset = 0
+            self.stride = calculateStride(Extent(storage.calculateOrder(newShape.dims)))
+            dimIndex = storage.calculateOrder(newShape.count)
+            
+            view = ViewType(shape: newShape, offset: Array<Int>(count: newShape.count, repeatedValue: 0))
+        }
     }
     
     // Defaults to given indices in native layout (to allow for better performance). However,
@@ -534,7 +553,7 @@ public func calculateBroadcastStride<S>(tensor:Tensor<S>, shape:Extent) -> [Int]
         if shape[i+start] == tensor.shape[i] {
             stride[i+start] = tensorStride[i]
         } else if tensor.shape[i] != 1 {
-            assertionFailure("Cannot broadcast on dimension \(i)")
+            assertionFailure("Cannot broadcast from \(tensor.shape.dims) to \(shape.dims)")
         }
     }
     
@@ -622,7 +641,7 @@ public func ⊕<StorageType:Storage>(tensor1:Tensor<StorageType>, tensor2:Tensor
     return concat(tensor1, tensor2)
 }
 
-func concat<StorageType:Storage>(tensor1:Tensor<StorageType>, _ tensor2:Tensor<StorageType>, _ tensor3:Tensor<StorageType>, _ rest:Tensor<StorageType>..., axis:Int=0) -> Tensor<StorageType> {
+public func concat<StorageType:Storage>(tensor1:Tensor<StorageType>, _ tensor2:Tensor<StorageType>, _ tensor3:Tensor<StorageType>, _ rest:Tensor<StorageType>..., axis:Int=0) -> Tensor<StorageType> {
     var result = concat(tensor1, tensor2, axis: axis)
     result = concat(result, tensor3, axis:axis)
     for i in 0..<rest.count {
@@ -632,7 +651,7 @@ func concat<StorageType:Storage>(tensor1:Tensor<StorageType>, _ tensor2:Tensor<S
     return result
 }
 
-func concat<StorageType:Storage>(tensors:[Tensor<StorageType>], axis:Int=0)
+public func concat<StorageType:Storage>(tensors:[Tensor<StorageType>], axis:Int=0)
     -> Tensor<StorageType>
 {
     var result = concat(tensors[0], tensors[1], axis: axis)
@@ -643,19 +662,19 @@ func concat<StorageType:Storage>(tensors:[Tensor<StorageType>], axis:Int=0)
     return result
 }
 
-func vstack<StorageType:Storage>(tensor1:Tensor<StorageType>, _ tensor2:Tensor<StorageType>)
+public func vstack<StorageType:Storage>(tensor1:Tensor<StorageType>, _ tensor2:Tensor<StorageType>)
     -> Tensor<StorageType>
 {
     return concat(tensor1, tensor2, axis: 0)
 }
 
-func hstack<StorageType:Storage>(tensor1:Tensor<StorageType>, _ tensor2:Tensor<StorageType>)
+public func hstack<StorageType:Storage>(tensor1:Tensor<StorageType>, _ tensor2:Tensor<StorageType>)
     -> Tensor<StorageType>
 {
     return concat(tensor1, tensor2, axis: 1)
 }
 
-func map<StorageType:Storage>(
+public func map<StorageType:Storage>(
     tensor:Tensor<StorageType>,
     fn:(StorageType.ElementType) -> StorageType.ElementType) -> Tensor<StorageType>
 {
@@ -665,4 +684,8 @@ func map<StorageType:Storage>(
     }
     
     return result
+}
+
+public func ravel<StorageType:Storage>(tensor:Tensor<StorageType>) -> Tensor<StorageType> {
+    return tensor.reshape(Extent(tensor.shape.elements))
 }
