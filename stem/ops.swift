@@ -292,9 +292,7 @@ public class LinearGrad<S:Storage where S.ElementType:FloatNumericType>: Op<S>, 
                 bias.shape = Extent(bias.shape[0], 1)
             }
             matmul(gradOutput, input.transpose(), addTo: weight)
-//            bias.reshape(Extent(bias.shape[0], 1)) += gradOutput
-//            isub(bias.reshape(Extent(bias.shape[0], 1)), gradOutput)
-//            sub(gradOutput, bias.reshape(Extent(bias.shape[0], 1)), result: bias)
+            bias += sum(gradOutput, axis: 1)
         } else {
             assertionFailure()
         }

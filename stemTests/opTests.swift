@@ -61,12 +61,16 @@ class opTests: XCTestCase {
         let linearGrad = linear.gradient() as! LinearGrad<S>
         linearGrad.setInput("gradOutput", to: gradOutput)
         
-        // TODO: figure out why this is required needed (hint: causes resize)
-        linearGrad.apply()
-        
         // test gradient wrt the input
         let inputError = checkGradient(linear, grad: linearGrad, params: input.output!, gradParams: linearGrad.output!, eps: eps)
         XCTAssertLessThan(inputError, eps)
+        
+        // test gradient wrt to the parameters
+        let weightError = checkGradient(linear, grad: linearGrad, params: linear.weight, gradParams: linearGrad.weight, eps: eps)
+        XCTAssertLessThan(weightError, eps)
+        
+        let biasError = checkGradient(linear, grad: linearGrad, params: linear.bias, gradParams: linearGrad.bias, eps: eps)
+        XCTAssertLessThan(biasError, eps)
     }
     
     func testSigmoid() {

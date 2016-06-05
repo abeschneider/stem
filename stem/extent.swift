@@ -114,6 +114,13 @@ public func >(left:Extent, right:Extent) -> Bool {
     return left.elements > right.elements
 }
 
+// TODO: not sure this is the best way to implement this..
+// probably should compare from right to left the number of
+// elements per dimension
+public func <(left:Extent, right:Extent) -> Bool {
+    return left.elements < right.elements
+}
+
 public func max(left:Extent, _ right:Extent) -> Extent {
     return left > right ? left : right
 }

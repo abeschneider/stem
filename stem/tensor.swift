@@ -566,7 +566,7 @@ public func broadcast<S>(tensor:Tensor<S>, shape:Extent) -> Tensor<S> {
 }
 
 public func broadcast<S>(left:Tensor<S>, _ right:Tensor<S>) -> (Tensor<S>, Tensor<S>) {
-    if left.shape.count < right.shape.count {
+    if left.shape < right.shape {
         return (broadcast(left, shape: right.shape), right)
     } else {
         return (left, broadcast(right, shape: left.shape))
