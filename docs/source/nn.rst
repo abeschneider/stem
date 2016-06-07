@@ -189,36 +189,18 @@ It is always a good idea to do a gradient check on a newly created ``Op``. You c
 
 .. code:: swift
 
-  func testLogOp() {
-    let input = Symbol<S>(uniform(Extent(5)))
-    let target = Symbol<S>(uniform(Extent(5)))
+  func testLogOpGradient() {
+    let eps = 10e-6
+    let input = Symbol<S>(uniform(Extent(10)))
+    let gradOutput = Symbol<S>(zeros(Extent(10)))
 
-    let log = Log<S>(size: 5)
+    let log = Log<S>(size: 10)
     log.setInput("input", to: input)
 
-    let loss = L2Loss(target: target)
-    loss.setInput("input", to: log)
+    let logGrad = log.gradient() as! LogGrad<S>
+    logGrad.setInput("gradOutput", to: gradOutput)
 
-    let lossGrad = loss.gradient()
-    let logGrad = log.gradient()
-    logGrad.setInput("gradOutput", to: lossGrad)
-
-    let eps = 10e-6
-    let result = checkGradient(params: input.output!,
-                               gradParams: (logGrad as! Op<S>).output!,
-                               eps: eps)
-    {
-        logGrad.reset()
-        lossGrad.reset()
-
-        log.apply()
-        loss.apply()
-
-        lossGrad.apply()
-        logGrad.apply()
-
-        return loss.value
-    }
-
-    XCTAssert(isClose(result, zeros(Extent(result.shape)), eps: eps))
+    // test gradient wrt to the input
+    let inputError = checkGradient(log, grad: logGrad, params: input.output, gradParams: logGrad.output, eps: eps)
+    XCTAssertLessThan(inputError, eps)
   }
