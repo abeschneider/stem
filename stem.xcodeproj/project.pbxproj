@@ -27,6 +27,9 @@
 		2DC0CF871C19E0C1003CB088 /* random.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DC0CF861C19E0C1003CB088 /* random.swift */; };
 		2DC0CF891C19F25B003CB088 /* randomTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DC0CF881C19F25B003CB088 /* randomTests.swift */; };
 		2DC0CF8C1C1B067D003CB088 /* numerictype.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DC0CF8A1C1B055A003CB088 /* numerictype.swift */; };
+		38A410431D04A4FB007B2B11 /* sequence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38A410421D04A4FB007B2B11 /* sequence.swift */; };
+		38A410451D04A564007B2B11 /* optimize.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38A410441D04A564007B2B11 /* optimize.swift */; };
+		38A410471D04A5A1007B2B11 /* tree.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38A410461D04A5A1007B2B11 /* tree.swift */; };
 		38BA50231CF5E03200A550EB /* ops.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38BA50221CF5E03200A550EB /* ops.swift */; };
 		38BA50251CF67C3200A550EB /* opTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38BA50241CF67C3200A550EB /* opTests.swift */; };
 		38C235201CBB444F00330A06 /* graph.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38C2351F1CBB444F00330A06 /* graph.swift */; };
@@ -71,6 +74,9 @@
 		2DC0CF861C19E0C1003CB088 /* random.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = random.swift; sourceTree = "<group>"; };
 		2DC0CF881C19F25B003CB088 /* randomTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = randomTests.swift; sourceTree = "<group>"; };
 		2DC0CF8A1C1B055A003CB088 /* numerictype.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = numerictype.swift; sourceTree = "<group>"; };
+		38A410421D04A4FB007B2B11 /* sequence.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = sequence.swift; path = stem/sequence.swift; sourceTree = "<group>"; };
+		38A410441D04A564007B2B11 /* optimize.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = optimize.swift; path = stem/optimize.swift; sourceTree = "<group>"; };
+		38A410461D04A5A1007B2B11 /* tree.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = tree.swift; path = stem/tree.swift; sourceTree = "<group>"; };
 		38BA50221CF5E03200A550EB /* ops.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = ops.swift; path = stem/ops.swift; sourceTree = "<group>"; };
 		38BA50241CF67C3200A550EB /* opTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = opTests.swift; sourceTree = "<group>"; };
 		38C2351F1CBB444F00330A06 /* graph.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = graph.swift; path = stem/graph.swift; sourceTree = "<group>"; };
@@ -165,6 +171,9 @@
 				2D6A5F411C0BE6E4001838D4 /* nn.swift */,
 				38C2351F1CBB444F00330A06 /* graph.swift */,
 				38BA50221CF5E03200A550EB /* ops.swift */,
+				38A410421D04A4FB007B2B11 /* sequence.swift */,
+				38A410441D04A564007B2B11 /* optimize.swift */,
+				38A410461D04A5A1007B2B11 /* tree.swift */,
 			);
 			name = nn;
 			sourceTree = "<group>";
@@ -277,6 +286,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				38A410431D04A4FB007B2B11 /* sequence.swift in Sources */,
 				2DC0CF851C19A6F9003CB088 /* matrix.swift in Sources */,
 				2DC0CF831C19A6D3003CB088 /* vector.swift in Sources */,
 				2DC0CF871C19E0C1003CB088 /* random.swift in Sources */,
@@ -288,6 +298,8 @@
 				2D1756591BF9869A009C397D /* storage.swift in Sources */,
 				2D50D0A61C19269000C5A107 /* tensorops.swift in Sources */,
 				2D1756561BF9869A009C397D /* tensor.swift in Sources */,
+				38A410451D04A564007B2B11 /* optimize.swift in Sources */,
+				38A410471D04A5A1007B2B11 /* tree.swift in Sources */,
 				38C235201CBB444F00330A06 /* graph.swift in Sources */,
 				2D17565A1BF9869A009C397D /* view.swift in Sources */,
 				2D1756581BF9869A009C397D /* extent.swift in Sources */,

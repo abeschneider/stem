@@ -11,7 +11,7 @@ import Foundation
 func calcForwardGrad<S:Storage where S.ElementType:FloatNumericType>
     (op:Op<S>, params:Tensor<S>, eps:Double) -> Tensor<S>
 {
-    let jacobian:Tensor<S> = zeros(Extent(params.shape.elements, op.output!.shape.elements))
+    let jacobian:Tensor<S> = zeros(Extent(params.shape.elements, op.output.shape.elements))
 
     for i in 0..<params.shape.elements {
         let old_value:S.ElementType = params[i]
@@ -19,12 +19,12 @@ func calcForwardGrad<S:Storage where S.ElementType:FloatNumericType>
         // positive direction
         params[i] = old_value + S.ElementType(eps)
         op.apply()
-        let pvalue = copy(op.output!)
+        let pvalue = copy(op.output)
         
         // negative direction
         params[i] = old_value - S.ElementType(eps)
         op.apply()
-        let nvalue = copy(op.output!)
+        let nvalue = copy(op.output)
         
         // return to original value
         params[i] = old_value
@@ -42,7 +42,7 @@ func calcBackwardGrad<S:Storage where S.ElementType:FloatNumericType>
 //    forward.apply()
 //    backward.apply()
     
-    let gradOutput = ravel(backward.inputs[2].output!)
+    let gradOutput = ravel(backward.inputs[2].output)
     let jacobian:Tensor<S> = zeros(Extent(gradParams.shape.elements, gradOutput.shape.elements))
 
     for i in 0..<gradOutput.shape.elements {
@@ -67,7 +67,7 @@ public func checkGradient<S:Storage where S.ElementType:FloatNumericType>
     
     let fgrad = calcForwardGrad(op, params: ravel(params), eps: eps)
     let bgrad = calcBackwardGrad(op, grad, gradParams: ravel(gradParams))
-
+    
     let error = fgrad - bgrad
     return max(abs(error))
 }
@@ -79,10 +79,10 @@ public func checkGradient<S:Storage, OpT:Op<S> where S.ElementType:FloatNumericT
     grad.apply()
     
     //    let result = Tensor<S>(Extent(gradParams.map { $0.shape.elements }.reduce(0, combine: +)))
-    let result:Tensor<S> = zeros(grad.output!.shape)
+    let result:Tensor<S> = zeros(grad.output.shape)
 
     // copy gradients, they will be overwritten from subsequent calls to `fn`
-    let analytical_diff = copy(grad.output!)
+    let analytical_diff = copy(grad.output)
     
     for i in 0..<input.shape.elements {
         let old_value:S.ElementType = input[i]

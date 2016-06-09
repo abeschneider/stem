@@ -91,7 +91,7 @@ class LinearOp<S:Storage>: Op, Shapeable {
         }
         
         // verify that output is the correct shape
-        if output == nil || output!.shape[0] != weight.shape[1] {
+        if output == nil || output.shape[0] != weight.shape[1] {
             // if not, allocate new output storage
             output = RowVector<StorageType>(cols: weight.shape[1])
         }
@@ -105,12 +105,12 @@ class LinearOp<S:Storage>: Op, Shapeable {
             iadd(left: out as! RowVector, right: bias)
         }
         
-        return output! as! Vector
+        return output as! Vector
     }
 
     func apply(input:Matrix<StorageType>) throws -> Matrix<StorageType> {
         // verify that output is the correct shape
-        if output == nil || output!.shape[0] != weight.shape[0]{
+        if output == nil || output.shape[0] != weight.shape[0]{
             // if not, allocate new output storage
             output = Matrix<StorageType>(rows: weight.shape[1], cols: weight.shape[0])
         }
@@ -124,7 +124,7 @@ class LinearOp<S:Storage>: Op, Shapeable {
             iadd(left: out as! Matrix, right: bias)
         }
         
-        return output! as! Matrix
+        return output as! Matrix
     }
 }
 
@@ -199,7 +199,7 @@ class SigmoidModule<S:Storage where S.ElementType:FloatNumericType>: Op {
     
     func apply(input:ColumnVector<StorageType>) -> Vector<StorageType> {
         // verify that output is the correct shape
-        if output == nil || output!.shape[0] != input.shape[0] {
+        if output == nil || output.shape[0] != input.shape[0] {
             // if not, allocate new output storage
             output = ColumnVector<StorageType>(rows: input.shape[0])
         }
@@ -210,7 +210,7 @@ class SigmoidModule<S:Storage where S.ElementType:FloatNumericType>: Op {
             }
         }
         
-        return output! as! Vector<StorageType>
+        return output as! Vector<StorageType>
     }
 }
 

@@ -145,6 +145,8 @@ public struct IndexGenerator: GeneratorType {
 //    }
 //}
 
+// TODO: it seems unlikely all the initializers are needed, look into
+// thinning down the herd
 public class Tensor<StorageType:Storage> {
     public typealias ViewType = StorageView<StorageType>
     
@@ -248,6 +250,10 @@ public class Tensor<StorageType:Storage> {
                 self[index.next()!] = array[i][j]
             }
         }
+    }
+    
+    public convenience init() {
+        self.init(Extent(0))
     }
     
     public init(_ shape:Extent, value:StorageType.ElementType=0) {

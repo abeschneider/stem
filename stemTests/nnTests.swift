@@ -48,11 +48,12 @@ class nnTests: XCTestCase {
         XCTAssertEqual(w.shape, Extent(4, 3))
         
         let input = Symbol<D>(Tensor<D>([1, 2, 3]))
-        let linear = Linear<D>(input: input, weight: w, bias: b)
+        let linear = Linear<D>(weight: w, bias: b)
+        linear.setInput("input", to: input)
         linear.apply()
 
         let expected = Tensor<D>([1, 2, 3, 0])
-        XCTAssert(isClose(linear.output!, expected, eps: 10e-4), "Not close")
+        XCTAssert(isClose(linear.output, expected, eps: 10e-4), "Not close")
 
 //        let w2 = Matrix<CBlasStorage<Double>>([[1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 0, 0]], copyTransposed: true)
 //        let linear2 = LinearModule<CBlasStorage<Double>>(weight: w2)
