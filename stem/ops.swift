@@ -37,6 +37,8 @@ public class Op<S:Storage>: OpType, Copyable, Hashable, CustomStringConvertible 
     public typealias InputAction = (String, Op<S>) -> ()
     
     public var id:Int = createUID()
+    
+    // TODO: consider allowing the Op to be Optional and get rid of NoOp.
     public var inputs:[Op<StorageType>] = []
     public var output:Tensor<StorageType>
     public var inputLabels:[String:Int] = [:]
@@ -104,8 +106,6 @@ public func ==<S:Storage>(lhs:Op<S>, rhs:Op<S>) -> Bool {
 
 public protocol GradientType: OpType {
     func reset()
-//    func updateGradOutput()
-//    func accumulateGradients()
 }
 
 public protocol Gradient: GradientType {
@@ -183,10 +183,6 @@ public class Sigmoid<S:Storage where S.ElementType:FloatNumericType>: Op<S> {
         setAction("input", action: self.inputSet)
     }
     
-//    public init(input:Op<S>) {
-//        super.init(inputs: [input], output: Tensor<S>(input.output.shape), labels: ["input"])
-//    }
-
     // required for Copyable
     public required init(op:Op<S>, shared:Bool) {
         super.init(inputs: [NoOp<S>()], output: Tensor<S>(op.output.shape), labels: ["input"])
@@ -298,8 +294,11 @@ public class Linear<S:Storage where S.ElementType:FloatNumericType>: Op<S> {
     }
     
     func inputSet(label:String, op:Op<S>) {
-        weight.resize(Extent(output.shape[0], op.output.shape[0]))
-        weight.uniform()
+        let newShape = Extent(output.shape[0], op.output.shape[0])
+        if weight.shape != newShape {
+            weight.resize(newShape)
+            weight.uniform()
+        }
     }
     
     public override func apply() {

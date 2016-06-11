@@ -121,7 +121,7 @@ public class SequenceGradient<S:Storage>: Op<S>, Collection, Gradient {
                    output: Tensor<S>(),
                    labels: ["op", "input", "gradOutput"])
         
-        setAction("gradOutput", action: self.gradOutputSet)        
+        setAction("gradOutput", action: self.gradOutputSet)
     }
     
     func gradOutputSet(key:String, value:Op<S>) {
@@ -152,6 +152,7 @@ public class SequenceGradient<S:Storage>: Op<S>, Collection, Gradient {
     }
     
     public override func params() -> [Tensor<S>] {
+        // TODO: move this to constructor and inputSet (no need to recompute every time)
         var flattened:[Tensor<S>] = []
         for op in ops {
             flattened += op.params()
@@ -166,3 +167,24 @@ extension Sequence:Differentiable {
         return SequenceGradient<S>(op: self)
     }
 }
+
+public func unroll<S:Storage>(ops:[Op<S>], count:Int) -> Sequence<S> {
+    var unrolled = [Op<S>?](count: count*ops.count, repeatedValue: nil)
+    
+    var c = 0
+    for _ in 0..<count {
+        for op in ops {
+            unrolled[c] = copy(op, shared: true)
+            c += 1
+        }
+    }
+    
+    return Sequence<S>(unrolled.map { $0! })
+}
+
+// causes segfault from compiler
+//public func unroll<S:Storage>(ops:Op<S>..., count:Int) -> Sequence<S> {
+//    let seq:Sequence<S> = unroll(ops, count: count)
+//    return seq
+//}
+

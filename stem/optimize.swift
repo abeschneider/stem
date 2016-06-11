@@ -20,23 +20,20 @@ public class GradientDescentOptimizer<S:Storage where S.ElementType:FloatNumeric
     var params:[Tensor<S>]
     var gradParams:[Tensor<S>]
     
-    // NB: Need to wait for newer version of swift to allow constraints to be placed on
-    // Op s.t. its differentiable. Until then, this code can fail at runtime if a
-    // non-differentiable op is used
+    // NB: With current version of swift, constraints cannot be placed on
+    // Op s.t. its differentiable. Until this is changed, this code can fail a
+    // at runtime if non-differentiable op is used
     public init(_ op:Op<S>, alpha:Symbol<S>) {
         self.alpha = alpha
         forward = op
         backward = (op as! Differentiable).gradient() as! Op<S>
         
-        params = []
-        gradParams = []
+        params = forward.params()
+        gradParams = backward.params()
         
         super.init(inputs: [alpha],
                    output: forward.output,
                    labels: ["alpha"])
-        
-        params = forward.params()
-        gradParams = backward.params()
     }
     
     public override func apply() {
@@ -48,6 +45,7 @@ public class GradientDescentOptimizer<S:Storage where S.ElementType:FloatNumeric
         // this is a place where having a TensorScalar class might be nice
         let a:S.ElementType = alpha.output[0]
         for (param, gradParam) in Zip2Sequence(params, gradParams) {
+//            print("\(param), \(gradParam), \(param - a*gradParam)")
             param -= a*gradParam
         }
     }

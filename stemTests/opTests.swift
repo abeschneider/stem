@@ -17,7 +17,7 @@ public func copyOp<T:protocol<OpType, Copyable>>(op:T, shared:Bool) -> T {
 }
 
 class opTests: XCTestCase {
-    typealias S = NativeStorage<Double>
+    typealias D = NativeStorage<Double>
 
     override func setUp() {
         super.setUp()
@@ -29,8 +29,34 @@ class opTests: XCTestCase {
         super.tearDown()
     }
     
+    func testLinearForwardVector() {
+        let w = Tensor<D>([[1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 0, 0]])
+        let b:Tensor<D> = zeros(Extent(4))
+        
+        let input = Symbol<D>(Tensor<D>([1, 2, 3]))
+        let linear = Linear<D>(weight: w, bias: b)
+        linear.setInput("input", to: input)
+        linear.apply()
+        
+        let expected = Tensor<D>([1, 2, 3, 0])
+        XCTAssert(isClose(linear.output, expected, eps: 10e-4), "Not close")
+    }
+    
+    func testLinearForwardMatrix() {
+        let w = Tensor<D>([[1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 0, 0]])
+        let b:Tensor<D> = zeros(Extent(4))
+        
+        let input = Symbol<D>(Tensor<D>([[1, 2, 3], [4, 5, 6], [7, 8, 9]]))
+        let linear = Linear<D>(weight: w, bias: b)
+        linear.setInput("input", to: input)
+        linear.apply()
+        
+        let expected = Tensor<D>([[1, 2, 3], [4, 5, 6], [7, 8, 9], [0, 0, 0]])
+        XCTAssert(isClose(linear.output, expected, eps: 10e-4), "Not close")
+    }
+    
     func testLinearOpCopy() {
-        let linear = Linear<S>(inputSize: 10, outputSize: 5)
+        let linear = Linear<D>(inputSize: 10, outputSize: 5)
         let linear2 = copyOp(linear, shared: true)
         let linear3 = copyOp(linear, shared: false)
 
@@ -55,15 +81,15 @@ class opTests: XCTestCase {
     
     func testLinearOpGradient() {
         let eps:Double = 10e-8
-        let input = Symbol<S>(uniform(Extent(10)))
+        let input = Symbol<D>(uniform(Extent(10)))
         
-        let gradOutput = Symbol<S>(zeros(Extent(5)))
+        let gradOutput = Symbol<D>(zeros(Extent(5)))
         
-        let linear = Linear<S>(outputSize: 5)
+        let linear = Linear<D>(outputSize: 5)
         linear.bias.uniform()
         linear.setInput("input", to: input)
 
-        let linearGrad = linear.gradient() as! LinearGrad<S>
+        let linearGrad = linear.gradient() as! LinearGrad<D>
         linearGrad.setInput("gradOutput", to: gradOutput)
         
         // test gradient wrt the input
@@ -80,15 +106,15 @@ class opTests: XCTestCase {
     
     func testLinearOpGradient2() {
         let eps:Double = 10e-6
-        let input = Symbol<S>(uniform(Extent(10, 3)))
+        let input = Symbol<D>(uniform(Extent(10, 3)))
         
-        let gradOutput = Symbol<S>(zeros(Extent(5, 3)))
+        let gradOutput = Symbol<D>(zeros(Extent(5, 3)))
         
-        let linear = Linear<S>(outputSize: 5)
+        let linear = Linear<D>(outputSize: 5)
         linear.bias.uniform()
         linear.setInput("input", to: input)
 
-        let linearGrad = linear.gradient() as! LinearGrad<S>
+        let linearGrad = linear.gradient() as! LinearGrad<D>
         linearGrad.setInput("gradOutput", to: gradOutput)
         
         // test gradient wrt the input
@@ -105,13 +131,13 @@ class opTests: XCTestCase {
     
     func testSigmoidGradient() {
         let eps:Double = 10e-6
-        let input = Symbol<S>(uniform(Extent(10)))
-        let gradOutput = Symbol<S>(zeros(Extent(10)))
+        let input = Symbol<D>(uniform(Extent(10)))
+        let gradOutput = Symbol<D>(zeros(Extent(10)))
         
-        let sigmoid = Sigmoid<S>()
+        let sigmoid = Sigmoid<D>()
         sigmoid.setInput("input", to: input)
         
-        let sigmoidGrad = sigmoid.gradient() as! SigmoidGrad<S>
+        let sigmoidGrad = sigmoid.gradient() as! SigmoidGrad<D>
         sigmoidGrad.setInput("gradOutput", to: gradOutput)
         
         // test gradient wrt the input
@@ -121,13 +147,13 @@ class opTests: XCTestCase {
     
     func testLossGradient() {
         let eps:Double = 10e-6
-        let input = Symbol<S>(uniform(Extent(10)))
-        let target = Symbol<S>(uniform(Extent(10)))
+        let input = Symbol<D>(uniform(Extent(10)))
+        let target = Symbol<D>(uniform(Extent(10)))
         
-        let loss = L2Loss<S>(target: target)
+        let loss = L2Loss<D>(target: target)
         loss.setInput("input", to: input)
         
-        let lossGrad = loss.gradient() as! L2LossGrad<S>
+        let lossGrad = loss.gradient() as! L2LossGrad<D>
 
         // test gradient wrt to the input
         let inputError = checkGradient(loss, grad: lossGrad, input: input.output, eps: eps)
@@ -137,25 +163,25 @@ class opTests: XCTestCase {
     func testSequenceConnected() {
         let eps = 10e-6
         
-        let input = Symbol<S>(uniform(Extent(5)))
-        let gradOutput = Symbol<S>(uniform(Extent(5)))
-        let seq = Sequence<S>(
+        let input = Symbol<D>(uniform(Extent(5)))
+        let gradOutput = Symbol<D>(uniform(Extent(5)))
+        let seq = Sequence<D>(
             input,
-            Linear<S>(outputSize: 5),
-            Sigmoid<S>()
+            Linear<D>(outputSize: 5),
+            Sigmoid<D>()
         )
         
-        let seq2 = Sequence<S>(
-            Linear<S>(outputSize: 5),
-            Sigmoid<S>()
+        let seq2 = Sequence<D>(
+            Linear<D>(outputSize: 5),
+            Sigmoid<D>()
         )
         
-        let seq3 = Sequence<S>(
+        let seq3 = Sequence<D>(
             seq,
             seq2
         )
         
-        let seqGrad3 = seq3.gradient() as! SequenceGradient<S>
+        let seqGrad3 = seq3.gradient() as! SequenceGradient<D>
         seqGrad3.setInput("gradOutput", to: gradOutput)
         
         let inputError = checkGradient(seq3, grad: seqGrad3, params: input.output, gradParams: seqGrad3.output, eps: eps)
@@ -163,10 +189,10 @@ class opTests: XCTestCase {
     }
     
     func testSequenceOpCopy() {
-        let seq = Sequence<S>(
-            Symbol<S>(Extent(10)),
-            Linear<S>(outputSize: 5),
-            Sigmoid<S>()
+        let seq = Sequence<D>(
+            Symbol<D>(Extent(10)),
+            Linear<D>(outputSize: 5),
+            Sigmoid<D>()
         )
   
         let seq2 = copyOp(seq, shared: false)
@@ -175,17 +201,17 @@ class opTests: XCTestCase {
     
     func testSequenceGradient() {
         let eps:Double = 10e-6
-        let input = Symbol<S>(uniform(Extent(10)))
-        let gradOutput = Symbol<S>(zeros(Extent(5)))
+        let input = Symbol<D>(uniform(Extent(10)))
+        let gradOutput = Symbol<D>(zeros(Extent(5)))
 
 
-        let seq = Sequence<S>(
+        let seq = Sequence<D>(
             input,
-            Linear<S>(outputSize: 5),
-            Sigmoid<S>()
+            Linear<D>(outputSize: 5),
+            Sigmoid<D>()
         )
 
-        let seqGrad = seq.gradient() as! SequenceGradient<S>
+        let seqGrad = seq.gradient() as! SequenceGradient<D>
         seqGrad.setInput("gradOutput", to: gradOutput)
         
         // test gradient wrt to the input
@@ -195,18 +221,36 @@ class opTests: XCTestCase {
     
     func testLogOpGradient() {
         let eps = 10e-6
-        let input = Symbol<S>(uniform(Extent(10)))
-        let gradOutput = Symbol<S>(zeros(Extent(10)))
+        let input = Symbol<D>(uniform(Extent(10)))
+        let gradOutput = Symbol<D>(zeros(Extent(10)))
         
-        let log = Log<S>()
+        let log = Log<D>()
         log.setInput("input", to: input)
         
 
-        let logGrad = log.gradient() as! LogGrad<S>
+        let logGrad = log.gradient() as! LogGrad<D>
         logGrad.setInput("gradOutput", to: gradOutput)
         
         // test gradient wrt to the input
         let inputError = checkGradient(log, grad: logGrad, params: input.output, gradParams: logGrad.output, eps: eps)
+        XCTAssertLessThan(inputError, eps)
+    }
+    
+    func testUnrollGradient() {
+        let eps = 10e-6
+        let layer = Sequence<D>(Linear<D>(outputSize: 5), Sigmoid<D>())
+        
+        let input = Symbol<D>(uniform(Extent(5)))
+        let gradOutput = Symbol<D>(zeros(Extent(5)))
+        
+        let seq = unroll([layer.ops[0], layer.ops[1]], count: 3)
+        seq.setInput("input", to: input)
+        
+        let seqGrad = seq.gradient() as! SequenceGradient<D>
+        seqGrad.setInput("gradOutput", to: gradOutput)
+
+        // test gradient wrt to the input
+        let inputError = checkGradient(seq, grad: seqGrad, params: input.output, gradParams: seqGrad.output, eps: eps)
         XCTAssertLessThan(inputError, eps)
     }
 }
