@@ -703,34 +703,6 @@ public func sum<StorageType:Storage>(tensor:Tensor<StorageType>) -> StorageType.
     return reduce(tensor, op: +)
 }
 
-/*
- kCenterX = kCols / 2;
- kCenterY = kRows / 2;
- 
- for(i=0; i < rows; ++i)              // rows
- {
-    for(j=0; j < cols; ++j)          // columns
-    {
-        for(m=0; m < kRows; ++m)     // kernel rows
-        {
-            mm = kRows - 1 - m;      // row index of flipped kernel
- 
-            for(n=0; n < kCols; ++n) // kernel columns
-            {
-                 nn = kCols - 1 - n;  // column index of flipped kernel
-                 
-                 // index of input signal, used for checking boundary
-                 ii = i + (m - kCenterY);
-                 jj = j + (n - kCenterX);
-                 
-                 // ignore input samples which are out of bound
-                 if( ii >= 0 && ii < rows && jj >= 0 && jj < cols )
-                 out[i][j] += in[ii][jj] * kernel[mm][nn];
-            }
-        }
-    }
- }
- */
 public func conv2d<S:Storage>(input:Tensor<S>, kernel:Tensor<S>) -> Tensor<S> {
     let centerX = kernel.shape[1] / 2
     let centerY = kernel.shape[0] / 2
