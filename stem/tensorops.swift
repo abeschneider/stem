@@ -735,7 +735,6 @@ public func conv2d<S:Storage>(input:Tensor<S>, kernel:Tensor<S>) -> Tensor<S> {
     let centerX = kernel.shape[1] / 2
     let centerY = kernel.shape[0] / 2
     
-//    let out = Tensor<S>(Extent(input.shape[0] - centerY, input.shape[1] - centerX))
     let out = Tensor<S>(Extent(input.shape[0], input.shape[1]))
     
     for i in 0..<input.shape[0] {
