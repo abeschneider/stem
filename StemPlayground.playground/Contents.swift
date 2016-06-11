@@ -84,7 +84,7 @@ String(v13)
 let m1 = Tensor<F>([[1, 2, 3], [4, 5, 6]])
 String(m1)
 
-let m2 = Tensor<F>(shape: Extent(3, 3))
+let m2 = Tensor<F>(Extent(3, 3))
 String(m2)
 
 //: Matrix indexing
