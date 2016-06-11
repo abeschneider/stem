@@ -905,6 +905,14 @@ class stemTests: XCTestCase {
 ////        let v3:Double = b[1, 0]
 //    }
     
+    func testConv2D() {
+        let image = Tensor<F>([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+        let kernel = Tensor<F>([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
+        let result = conv2d(image, kernel: kernel)
+        let expected = Tensor<F>([[-13, -20, -17], [-18, -24, -18], [13, 20, 17]])
+        XCTAssert(isClose(result, expected, eps: 10e-4))
+    }
+    
     /*
     
     func testBenchmarkCBlas() {
