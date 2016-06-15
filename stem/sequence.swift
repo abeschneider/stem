@@ -8,13 +8,107 @@
 
 import Foundation
 
+public class Parallel<S:Storage>: Op<S>, Collection {
+    public typealias StorageType = S
+    
+    public var ops:[Op<StorageType>] = []
+    
+    public init() {
+//        super.init(inputs: [NoOp<S>()], output: Tensor<S>(), labels: ["input"])
+        super.init(inputs: [("input", NoOp<S>())],
+                   outputs: [Tensor<S>()])
+        ops = []
+    }
+
+    public convenience init(_ ops:Op<S>...) {
+        self.init(ops)
+    }
+    
+    public init(_ ops:[Op<S>]) {
+        let last = ops.last!
+//        super.init(inputs: [NoOp<S>()],
+//                   output: last.output,
+//                   labels: ["input"])
+        super.init(inputs: [("input", NoOp<S>())],
+                   outputs: last.outputs)
+        
+        self.ops = ops
+        
+        setAction("input", action: self.inputSet)
+    }
+    
+    public required init(op:Op<S>, shared:Bool) {
+        let seq = op as! Sequence<S>
+        for op in seq.ops {
+            ops.append(copy(op, shared: shared))
+        }
+        
+//        super.init(inputs: [NoOp<S>()],
+//                   output: Tensor<S>(op.output.shape),
+//                   labels: ["input"])
+        super.init(inputs: [("input", NoOp<S>())],
+                   outputs: [Tensor<S>(op.output.shape)])
+        
+        setAction("input", action: self.inputSet)
+    }
+    
+    func inputSet(key:String, value:Op<S>) {
+        for op in ops {
+            op.setInput("input", to: value)
+        }
+        
+        // need to allow multiple outputs or concat? 
+    }
+    
+    public override func apply() {
+        for op in ops {
+            op.apply()
+        }
+    }
+    
+    public func add(op:Op<S>) {
+        if ops.count > 0 {
+            op.setInput("input", to: ops.last!)
+        }
+        
+        ops.append(op)
+        output = op.output
+    }
+    
+    public override func params() -> [Tensor<S>] {
+        var flattened:[Tensor<S>] = []
+        for op in ops {
+            flattened += op.params()
+        }
+        
+        return flattened
+    }
+    
+    public override var description: String {
+        let className = String(Mirror(reflecting: self).subjectType)
+        let inputShapes = inputs.map {
+            switch $0 {
+            case .OpInput(let op):
+                op.output.shape.dims
+            case .ArrayInput:
+                assertionFailure()
+            }
+        }
+        
+        let value = ops.map { String($0) }.joinWithSeparator("\n")
+        return "<\(className): inputs=\(inputShapes), outputs=\(output.shape.dims)> {\n\(value)\n}"
+    }
+}
+
 public class Sequence<S:Storage>: Op<S>, Collection {
     public typealias StorageType = S
     
     public var ops:[Op<StorageType>] = []
     
     public init() {
-        super.init(inputs: [NoOp<S>()], output: Tensor<S>(), labels: ["input"])
+//        super.init(inputs: [NoOp<S>()], output: Tensor<S>(), labels: ["input"])
+        super.init(inputs: [("input", NoOp<S>())],
+                   outputs: [Tensor<S>()])
         ops = []
     }
     
@@ -24,9 +118,11 @@ public class Sequence<S:Storage>: Op<S>, Collection {
     
     public init(_ ops:[Op<S>]) {
         let last = ops.last!
-        super.init(inputs: [NoOp<S>()],
-                   output: last.output,
-                   labels: ["input"])
+//        super.init(inputs: [NoOp<S>()],
+//                   output: last.output,
+//                   labels: ["input"])
+        super.init(inputs: [("input", NoOp<S>())],
+                   outputs: last.outputs)
         
         self.ops = ops
         
@@ -43,13 +139,17 @@ public class Sequence<S:Storage>: Op<S>, Collection {
             ops.append(copy(op, shared: shared))
         }
         
-        super.init(inputs: [NoOp<S>()],
-                   output: Tensor<S>(op.output.shape),
-                   labels: ["input"])
+//        super.init(inputs: [NoOp<S>()],
+//                   output: Tensor<S>(op.output.shape),
+//                   labels: ["input"])
+        super.init(inputs: [("input", NoOp<S>())],
+                   outputs: [Tensor<S>(op.output.shape)])
         
         for i in 1..<ops.count {
             ops[i].setInput("input", to: ops[i-1])
         }
+        
+        setAction("input", action: self.inputSet)
     }
     
     func inputSet(key:String, value:Op<S>) {
@@ -83,7 +183,14 @@ public class Sequence<S:Storage>: Op<S>, Collection {
     
     public override var description: String {
         let className = String(Mirror(reflecting: self).subjectType)
-        let inputShapes = inputs.map { $0.output.shape.dims }
+        let inputShapes = inputs.map {
+            switch $0 {
+            case .OpInput(let op):
+                op.output.shape.dims
+            case .ArrayInput:
+                assertionFailure()
+            }
+        }
         
         let value = ops.map { String($0) }.joinWithSeparator("\n")
         return "<\(className): inputs=\(inputShapes), outputs=\(output.shape.dims)> {\n\(value)\n}"
@@ -95,9 +202,13 @@ public class SequenceGradient<S:Storage>: Op<S>, Collection, Gradient {
     public var ops:[Op<StorageType>] = []
     
     public required init(op:Sequence<S>) {
-        super.init(inputs: [NoOp<S>(), NoOp<S>(), NoOp<S>()],
-                   output: Tensor<S>(),
-                   labels: ["op", "input", "gradOutput"])
+//        super.init(inputs: [NoOp<S>(), NoOp<S>(), NoOp<S>()],
+//                   output: Tensor<S>(),
+//                   labels: ["op", "input", "gradOutput"])
+        super.init(inputs: [("op", NoOp<S>()),
+                            ("input", NoOp<S>()),
+                            ("gradOutput", NoOp<S>())],
+                   outputs: [Tensor<S>()])
         
         for op in op.ops {
             if let dop = op as? Differentiable {
@@ -117,9 +228,13 @@ public class SequenceGradient<S:Storage>: Op<S>, Collection, Gradient {
     
     public init() {
         self.ops = []
-        super.init(inputs: [NoOp<S>(), NoOp<S>(), NoOp<S>()],
-                   output: Tensor<S>(),
-                   labels: ["op", "input", "gradOutput"])
+//        super.init(inputs: [NoOp<S>(), NoOp<S>(), NoOp<S>()],
+//                   output: Tensor<S>(),
+//                   labels: ["op", "input", "gradOutput"])
+        super.init(inputs: [("op", NoOp<S>()),
+                            ("input", NoOp<S>()),
+                            ("gradOutput", NoOp<S>())],
+                   outputs: [Tensor<S>()])
         
         setAction("gradOutput", action: self.gradOutputSet)
     }

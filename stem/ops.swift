@@ -39,30 +39,53 @@ public class Op<S:Storage>: OpType, Copyable, Hashable, CustomStringConvertible 
     public var id:Int = createUID()
     
     // TODO: consider allowing the Op to be Optional and get rid of NoOp.
-    public var inputs:[Op<StorageType>] = []
-    public var output:Tensor<StorageType>
-    public var inputLabels:[String:Int] = [:]
-    public var inputActions:[String:InputAction] = [:]
+    public var inputs:OrderedDictionary<S>
     
-    required public init(inputs:[Op<StorageType>], output:Tensor<StorageType>, labels:[String], actions:[String:InputAction]=[:]) {
-        self.inputs = inputs
-        self.output = output
-        inputActions = actions
-        
-        for (i, label) in labels.enumerate() {
-            inputLabels[label] = i
-        }
+    // Next: Make this OrderedDictionary<S>
+//    public var output:Tensor<StorageType>
+    public var outputs:[Tensor<S>]
+    
+    // convenience variable for case when there is only a single output
+    public var output:Tensor<S> {
+        get { return outputs[0] }
+        set { outputs[0] = newValue }
     }
     
+    public var inputActions:[String:InputAction] = [:]
+    
+    required public init(outputs:[Tensor<S>], actions:[String:InputAction]=[:]) {
+        self.inputs = OrderedDictionary<S>()
+        self.outputs = outputs
+        inputActions = actions
+    }
+    
+    required public init(inputs:[(String, Op<S>)], outputs:[Tensor<S>], actions:[String:InputAction]=[:]) {
+        self.inputs = OrderedDictionary<S>(inputs)
+        self.outputs = outputs
+        inputActions = actions
+    }
+    
+    required public init(inputs:[(String, [Op<S>])], outputs:[Tensor<S>], actions:[String:InputAction]=[:]) {
+        self.inputs = OrderedDictionary<S>(inputs)
+        self.outputs = outputs
+        inputActions = actions
+    }
+    
+    required public init(inputs:OrderedDictionary<S>, outputs:[Tensor<S>], actions:[String:InputAction]=[:]) {
+        self.inputs = inputs
+        self.outputs = outputs
+        inputActions = actions
+    }
+
+    
     required public init(op:Op<S>, shared:Bool) {
-        inputs = []
-        output = Tensor<S>(op.output.shape)
-        inputLabels = op.inputLabels
+        self.inputs = OrderedDictionary<S>()
+//        output = Tensor<S>(op.output.shape)
+        outputs = op.outputs.map { Tensor<S>($0.shape) }
     }
     
     public func setInput(label:String, to:OpType) {
-        let index = inputLabels[label]!
-        inputs[index] = to as! Op<S>
+        inputs[label] = to as? Op<S>
         
         if let action = inputActions[label] {
             action(label, to as! Op<S>)
@@ -73,14 +96,13 @@ public class Op<S:Storage>: OpType, Copyable, Hashable, CustomStringConvertible 
         inputActions[key] = action
     }
     
-    public func getInput(label:String) -> Op<StorageType> {
-        let index = inputLabels[label]!
-        return inputs[index]
+    public func getInput(label:String) -> Op<S> {
+        return inputs[label]!
     }
     
-    public func setOutput(output:Tensor<StorageType>) {
-        self.output = output
-    }
+//    public func setOutput(output:Tensor<S>) {
+//        self.output = output
+//    }
     
     public func apply() {
         assertionFailure()
@@ -94,9 +116,17 @@ public class Op<S:Storage>: OpType, Copyable, Hashable, CustomStringConvertible 
     
     public var description: String {
         let className = String(Mirror(reflecting: self).subjectType)
-        let inputShapes = inputs.map { $0.output.shape.dims }
-        
-        return "<\(className): inputs=\(inputShapes), outputs=\(output.shape.dims)>"
+//        let inputShapes:[String] = inputs.map {
+//            switch $0 {
+//            case .OpInput(let op):
+//                return String(op.output.shape.dims)
+//            case .ArrayInput(let ops):
+//                return (ops.map { String($0.output.shape.dims) }).joinWithSeparator(", ")
+//            }
+//        }
+//        
+//        return "<\(className): inputs=\(inputShapes), outputs=\(output.shape.dims)>"
+        return "<\(className)>"
     }
 }
 
@@ -127,36 +157,26 @@ public protocol Loss: Differentiable, OpType {
 
 public class NoOp<S:Storage>: Op<S> {
     public init() {
-        super.init(inputs: [],
-                   output: Tensor<S>(),
-                   labels: [])
+        super.init(outputs: [])
     }
 }
 
 public class Symbol<S:Storage>: Op<S> {
     public init(_ value:S.ElementType) {
-        super.init(inputs: [],
-                   output: Tensor<S>([value]),
-                   labels: [])
+        super.init(outputs: [Tensor<S>([value])])
     }
     
     public init(_ input:Tensor<S>) {
-        super.init(inputs: [],
-                   output: input,
-                   labels: [])
+        super.init(outputs: [input])
     }
     
     public init(_ shape:Extent) {
-        super.init(inputs: [],
-                   output: Tensor<S>(shape),
-                   labels: [])
+        super.init(outputs: [Tensor<S>(shape)])
     }
     
     // required for Copyable
     public required init(op:Op<S>, shared:Bool) {
-        super.init(inputs: [],
-                   output: Tensor<S>(op.output.shape),
-                   labels: [])
+        super.init(outputs: [Tensor<S>(op.output.shape)])
     }
     
     public func set(input:Tensor<S>) {
@@ -167,25 +187,26 @@ public class Symbol<S:Storage>: Op<S> {
 }
 
 public class Sigmoid<S:Storage where S.ElementType:FloatNumericType>: Op<S> {
+    var input:Op<S> { return inputs[0]! }
+    
     public init() {
-        super.init(inputs: [NoOp<S>()],
-                   output: Tensor<S>(),
-                   labels: ["input"])
+        super.init(inputs: [("input", NoOp<S>())],
+                   outputs: [Tensor<S>()])
         
         setAction("input", action: self.inputSet)
     }
     
     public init(size:Int) {
-        super.init(inputs: [NoOp<S>()],
-                   output: Tensor<S>(Extent(size)),
-                   labels: ["input"])
+        super.init(inputs: [("input", NoOp<S>())],
+                   outputs: [Tensor<S>(Extent(size))])
         
         setAction("input", action: self.inputSet)
     }
     
     // required for Copyable
     public required init(op:Op<S>, shared:Bool) {
-        super.init(inputs: [NoOp<S>()], output: Tensor<S>(op.output.shape), labels: ["input"])
+        super.init(inputs: [("input", NoOp<S>())],
+                   outputs: [Tensor<S>(op.output.shape)])
     }
     
     func inputSet(label:String, op:Op<S>) {
@@ -193,7 +214,7 @@ public class Sigmoid<S:Storage where S.ElementType:FloatNumericType>: Op<S> {
     }
     
     public override func apply() {
-        sigmoid(inputs[0].output, output: output)
+        sigmoid(input.output, output: output)
     }
 }
 
@@ -201,26 +222,28 @@ public class SigmoidGrad<S:Storage where S.ElementType:FloatNumericType>: Op<S>,
     public typealias StorageType = S
     public typealias OpType = Sigmoid<S>
     
-    public var sigmoid:Sigmoid<S> { return inputs[0] as! Sigmoid<S> }
-    public var input:Tensor<S> { return inputs[1].output }
-    public var gradOutput:Tensor<S> { return inputs[2].output }
+    public var sigmoid:Sigmoid<S> {
+        let op:Op<S> = inputs[0]!
+        return op as! Sigmoid<S>
+    }
+    
+    public var input:Tensor<S> { return inputs[1]!.output }
+    public var gradOutput:Tensor<S> { return inputs[2]!.output }
     
     public required init(op:Sigmoid<S>) {
-        super.init(inputs: [op, op.inputs[0], NoOp<S>()],
-                   output: Tensor<S>(Extent(op.output.shape)),
-                   labels: ["op", "input", "gradOutput"])
+        let s:Op<S> = op.inputs[0]!
+        super.init(inputs: [("op", op), ("input", s), ("gradOutput", NoOp<S>())],
+                   outputs: [Tensor<S>(Extent(op.output.shape))])
     }
 
     public init(size:Int) {
-        super.init(inputs: [NoOp<S>(), NoOp<S>(), NoOp<S>()],
-                   output: Tensor<S>(Extent(size)),
-                   labels: ["op", "input", "gradOutput"])
+        super.init(inputs: [("op", NoOp<S>()), ("input", NoOp<S>()), ("gradOutput", NoOp<S>())],
+                   outputs: [Tensor<S>(Extent(size))])
     }
     
     public init(op:Sigmoid<S>, input:Op<S>, gradInput:Op<S>) {
-        super.init(inputs: [op, input, gradInput],
-                   output: Tensor<S>(input.output.shape),
-                   labels: ["op", "input", "gradOutput"])
+        super.init(inputs: [("op", op), ("input", input), ("gradOutput", gradInput)],
+                   outputs: [Tensor<S>(input.output.shape)])
     }
     
     public override func apply() {
@@ -249,25 +272,33 @@ public class Linear<S:Storage where S.ElementType:FloatNumericType>: Op<S> {
     public var weight:Tensor<S>
     public var bias:Tensor<S>
     
-    public var input:Tensor<S> { return inputs[0].output }
-    
+    public var input:Op<S> { return inputs[0]! }
     
     public init(outputSize:Int) {
         weight = Tensor<S>()
         bias = zeros(Extent(outputSize))
-        super.init(inputs: [NoOp<S>()],
-                   output: zeros(Extent(outputSize)),
-                   labels: ["input"])
+        super.init(inputs: [("input", NoOp<S>())],
+                   outputs: [zeros(Extent(outputSize))])
         
         setAction("input", action: self.inputSet)
     }
     
+    public init(_ input:Op<S>, outputSize:Int) {
+        let inputSize = input.output.shape[0]
+        weight = uniform(Extent(outputSize, inputSize))
+        bias = zeros(Extent(outputSize))
+        super.init(inputs: [("input", input)],
+                   outputs: [zeros(Extent(outputSize))])
+        
+        setAction("input", action: self.inputSet)
+    }
+
+    
     public init(inputSize:Int, outputSize:Int) {
         weight = uniform(Extent(outputSize, inputSize))
         bias = zeros(Extent(outputSize))
-        super.init(inputs: [NoOp<S>()],
-                   output: zeros(Extent(outputSize)),
-                   labels: ["input"])
+        super.init(inputs: [("input", NoOp<S>())],
+                   outputs: [zeros(Extent(outputSize))])
         
         setAction("input", action: self.inputSet)
     }
@@ -275,9 +306,8 @@ public class Linear<S:Storage where S.ElementType:FloatNumericType>: Op<S> {
     public init(weight:Tensor<S>, bias:Tensor<S>) {
         self.weight = weight
         self.bias = bias
-        super.init(inputs: [NoOp<S>()],
-                   output: zeros(bias.shape),
-                   labels: ["input"])
+        super.init(inputs: [("input", NoOp<S>())],
+                   outputs: [zeros(bias.shape)])
         
         setAction("input", action: self.inputSet)
     }
@@ -286,9 +316,8 @@ public class Linear<S:Storage where S.ElementType:FloatNumericType>: Op<S> {
         let linear = op as! Linear<S>
         weight = shared ? linear.weight : copy(linear.weight)
         bias = shared ? linear.bias : copy(linear.bias)
-        super.init(inputs: [NoOp<S>()],
-                   output: zeros(bias.shape),
-                   labels: ["input"])
+        super.init(inputs: [("input", NoOp<S>())],
+                   outputs: [zeros(bias.shape)])
         
         setAction("input", action: self.inputSet)
     }
@@ -303,13 +332,13 @@ public class Linear<S:Storage where S.ElementType:FloatNumericType>: Op<S> {
     
     public override func apply() {
         // TODO: review, not sure this is the best way to do this
-        if input.dims == 1 {
+        if input.output.dims == 1 {
             output.resize(Extent(weight.shape[0]))
-            dot(weight, inputs[0].output, result: output)
+            dot(weight, input.output, result: output)
             add(output, bias, result: output)
-        } else if input.dims == 2 {
-            output.resize(Extent(weight.shape[0], input.shape[1]))
-            dot(weight, inputs[0].output, result: output)
+        } else if input.output.dims == 2 {
+            output.resize(Extent(weight.shape[0], input.output.shape[1]))
+            dot(weight, inputs[0]!.output, result: output)
             add(output, bias.reshape(Extent(bias.shape[0], 1)), result: output)
         } else {
             assertionFailure()
@@ -327,24 +356,25 @@ public class LinearGrad<S:Storage where S.ElementType:FloatNumericType>: Op<S>, 
     public var weight:Tensor<S>
     public var bias:Tensor<S>
     
-    public var linear:Linear<S> { return inputs[0] as! Linear<S> }
-    public var input:Tensor<S> { return inputs[1].output }
-    public var gradOutput:Tensor<S> { return inputs[2].output }
+    public var op:Op<S> { return inputs[0]! }
+    public var linear:Linear<S> { return op as! Linear<S> }
+    public var input:Tensor<S> { return inputs[1]!.output }
+    public var gradOutput:Tensor<S> { return inputs[2]!.output }
     
     public required init(op:Linear<S>) {
         weight = zeros(op.weight.shape)
         bias = zeros(op.bias.shape)
-        super.init(inputs: [op, op.inputs[0], NoOp<S>()],
-                   output: zeros(Extent(op.weight.shape[1])),
-                   labels: ["op", "input", "gradOutput"])
+        super.init(inputs: [("op", op),
+                            ("input", op.inputs["input"]!),
+                            ("gradOutput", NoOp<S>())],
+                   outputs: [zeros(Extent(op.weight.shape[1]))])
     }
 
     public init(inputSize:Int, outputSize:Int) {
         weight = zeros(Extent(outputSize, inputSize))
         bias = zeros(Extent(outputSize))
-        super.init(inputs: [NoOp<S>(), NoOp<S>(), NoOp<S>()],
-                   output: zeros(Extent(outputSize)),
-                   labels: ["op", "input", "gradOutput"])
+        super.init(inputs: [("op", NoOp<S>()), ("input", NoOp<S>()), ("gradOutput", NoOp<S>())],
+                   outputs: [zeros(Extent(outputSize))])
     }
     
     public required init(op:Linear<S>, input:Op<S>, gradInput:Op<S>, weight:Tensor<S>?=nil, bias:Tensor<S>?=nil) {
@@ -360,9 +390,8 @@ public class LinearGrad<S:Storage where S.ElementType:FloatNumericType>: Op<S>, 
             self.bias = zeros(Extent(op.weight.shape[0]))
         }
         
-        super.init(inputs: [op, input, gradInput],
-                   output: zeros(Extent(op.weight.shape[1])),
-                   labels: ["op", "input", "gradOutput"])
+        super.init(inputs: [("op", op), ("input", input), ("gradOutput", gradInput)],
+                   outputs: [zeros(Extent(op.weight.shape[1]))])
     }
     
     // need to separate apply into accumulate and apply
@@ -406,44 +435,39 @@ public class L2Loss<S:Storage where S.ElementType:FloatNumericType>: Op<S>, Loss
     
     public var value:S.ElementType = 0
     
-    public var input:Tensor<S> { return inputs[0].output }
-    public var target:Tensor<S> { return inputs[1].output }
+    public var input:Op<S> { return inputs[0]! }
+    public var target:Op<S> { return inputs[1]! }
     
     public init() {
-        super.init(inputs: [NoOp<S>(), NoOp<S>()],
-                   output: Tensor<S>(),
-                   labels: ["input", "target"])
+        super.init(inputs: [("input", NoOp<S>()), ("target", NoOp<S>())],
+                   outputs: [Tensor<S>()])
     }
     
     public init(size:Int) {
-        super.init(inputs: [NoOp<S>(), NoOp<S>()],
-                   output: zeros(Extent(size)),
-                   labels: ["input", "target"])
+        super.init(inputs: [("input", NoOp<S>()), ("target", NoOp<S>())],
+                   outputs: [zeros(Extent(size))])
     }
     
     public init(target t:Op<S>) {
-        super.init(inputs: [NoOp<S>(), t],
-                   output: zeros(t.output.shape),
-                   labels: ["input", "target"])
+        super.init(inputs: [("input", NoOp<S>()), ("target", t)],
+                   outputs: [zeros(t.output.shape)])
     }
     
     public init(value:Op<S>, target t:Op<S>) {
-        super.init(inputs: [value, t],
-                   output: Tensor<S>(value.output.shape),
-                   labels: ["input", "target"])
+        super.init(inputs: [("input", value), ("target", t)],
+                   outputs: [Tensor<S>(value.output.shape)])
     }
     
     public required init(op:Op<S>, shared:Bool) {
-        super.init(inputs: [NoOp<S>(), NoOp<S>()],
-                   output: Tensor<S>(op.output.shape),
-                   labels: ["input", "target"])
+        super.init(inputs: [("input", NoOp<S>()), ("target", NoOp<S>())],
+                   outputs: [Tensor<S>(op.output.shape)])
     }
     
     public override func apply() {
-        if input.dims == 1 {
-            sub(input, target, result: output)
-        } else if input.dims == 2 {
-            sub(input, target, result: output)
+        if input.output.dims == 1 {
+            sub(input.output, target.output, result: output)
+        } else if input.output.dims == 2 {
+            sub(input.output, target.output, result: output)
         }
         
         pow(output, 2, result: output)
@@ -455,29 +479,24 @@ public class L2LossGrad<S:Storage where S.ElementType:FloatNumericType>: Op<S>, 
     public typealias StorageType = S
     public typealias OpType = L2Loss<S>
     
-    public var input:Tensor<S> { return inputs[1].output }
-    public var target:Tensor<S> { return inputs[2].output }
+    public var linear:Op<S> { return inputs[0]! }
+    public var input:Op<S> { return inputs[1]! }
+    public var target:Op<S> { return inputs[2]! }
     
     public required init(op:L2Loss<S>) {
-        super.init(inputs: [op, op.inputs[0], op.inputs[1]],
-                   output: Tensor<S>(Extent(op.target.shape)),
-                   labels: ["op", "input", "target"])
+        let l:Op<S> = op.inputs[0]!
+        let t:Op<S> = op.inputs[1]!
+        super.init(inputs: [("op", op), ("input", l), ("target", t)],
+                   outputs: [Tensor<S>(Extent(op.target.output.shape))])
     }
 
     public init(size:Int) {
-        super.init(inputs: [NoOp<S>(), NoOp<S>(), NoOp<S>()],
-                   output: Tensor<S>(Extent(size)),
-                   labels: ["op", "input", "target"])
+        super.init(inputs: [("op", NoOp<S>()), ("input", NoOp<S>()), ("target", NoOp<S>())],
+                   outputs: [Tensor<S>(Extent(size))])
     }
     
-//    public init(op:L2Loss<S>, input:Op<S>, target:Op<S>) {
-//        super.init(inputs: [op, input, target],
-//                   output: Tensor<S>(op.output.shape),
-//                   labels: ["op", "input", "target"])
-//    }
-    
     public override func apply() {
-        sub(input, target, result: output)
+        sub(input.output, target.output, result: output)
         output *= 2
     }
     
@@ -495,14 +514,13 @@ extension L2Loss:Differentiable {
 // need to extend to provide a multi-dimensional version
 public class SumOp<S:Storage where S.ElementType:FloatNumericType>: Op<S> {
     public init() {
-        super.init(inputs: [NoOp<S>(), NoOp<S>()],
-                   output: Tensor<S>(Extent(1)),
-                   labels: ["input", "axis"])
+        super.init(inputs: [("input", NoOp<S>()), ("axis", NoOp<S>())],
+                   outputs: [Tensor<S>(Extent(1))])
     }
     
     public override func apply() {
-        let input:Tensor<S> = inputs[0].output
-        let axis:S.ElementType = inputs[1].output[0]
+        let input:Tensor<S> = inputs[0]!.output
+        let axis:S.ElementType = inputs[1]!.output[0]
         let iaxis = Int(value: axis)
         sum(input, axis: iaxis, result: output)
     }
@@ -510,17 +528,15 @@ public class SumOp<S:Storage where S.ElementType:FloatNumericType>: Op<S> {
 
 public class Log<S:Storage where S.ElementType:FloatNumericType>: Op<S> {
     public init(size:Int) {
-        super.init(inputs: [NoOp<S>()],
-                   output: Tensor<S>(Extent(size)),
-                   labels: ["input"])
+        super.init(inputs: [("input", NoOp<S>())],
+                   outputs: [Tensor<S>(Extent(size))])
         
         setAction("input", action: self.inputSet)
     }
     
     public init() {
-        super.init(inputs: [NoOp<S>()],
-                   output: Tensor<S>(),
-                   labels: ["input"])
+        super.init(inputs: [("input", NoOp<S>())],
+                   outputs: [Tensor<S>()])
         
         setAction("input", action: self.inputSet)
     }
@@ -530,11 +546,11 @@ public class Log<S:Storage where S.ElementType:FloatNumericType>: Op<S> {
     }
     
     public override func apply() {
-        if output.shape != inputs[0].output.shape {
-            output = Tensor<S>(Extent(inputs[0].output.shape))
+        if output.shape != inputs[0]!.output.shape {
+            output = Tensor<S>(Extent(inputs[0]!.output.shape))
         }
         
-        log(inputs[0].output, result: output)
+        log(inputs[0]!.output, result: output)
     }
 }
 
@@ -545,20 +561,22 @@ extension Log:Differentiable {
 }
 
 public class LogGrad<S:Storage where S.ElementType:FloatNumericType>: Op<S>, Gradient {
+    public var input:Op<S> { return inputs[1]! }
+    
     public required init(op:Log<S>) {
-        super.init(inputs: [op, op.inputs[0], NoOp<S>()],
-                   output: Tensor<S>(op.output.shape),
-                   labels: ["op", "input", "gradOutput"])
+        let opInput:Op<S> = op.inputs[0]!
+        super.init(inputs: [("op", op), ("input", opInput), ("gradOutput", NoOp<S>())],
+                   outputs: [Tensor<S>(op.output.shape)])
     }
     
     public override func apply() {
-        if output.shape != inputs[2].output.shape {
-            output = Tensor<S>(Extent(inputs[2].output.shape))
+        if output.shape != inputs[2]!.output.shape {
+            output = Tensor<S>(Extent(inputs[2]!.output.shape))
         }
 
         fill(output, value: 1)
-        output /= inputs[1].output
-        output *= inputs[2].output
+        output /= inputs[1]!.output
+        output *= inputs[2]!.output
     }
     
     public func reset() {
@@ -566,3 +584,35 @@ public class LogGrad<S:Storage where S.ElementType:FloatNumericType>: Op<S>, Gra
     }
 }
 
+public class Concat<S:Storage where S.ElementType:FloatNumericType>: Op<S> {
+    var input:[Op<S>] { return inputs[0]! }
+    
+    public init(_ ops:[Op<S>]) {
+        super.init(inputs: [("input", ops)],
+                   outputs: [Tensor<S>()])
+        
+        setAction("input", action: self.inputSet)
+    }
+    
+    public convenience init(_ ops:Op<S>...) {
+        self.init(ops)
+    }
+    
+    func inputSet(label:String, op:Op<S>) {}
+    
+    public override func apply() {
+        output = concat(input.map { $0.output })
+    }
+}
+
+public class ConcatGrad<S:Storage where S.ElementType:FloatNumericType>: Op<S> {
+    public required init(op:Concat<S>) {
+        let opInput:Op<S> = op.inputs[0]!
+        super.init(inputs: [("op", op), ("input", opInput), ("gradOutput", NoOp<S>())],
+                   outputs: [Tensor<S>(op.output.shape)])
+    }
+    
+    public override func apply() {
+        // returns multiple outputs
+    }
+}

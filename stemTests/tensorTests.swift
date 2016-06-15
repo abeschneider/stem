@@ -905,14 +905,39 @@ class stemTests: XCTestCase {
 ////        let v3:Double = b[1, 0]
 //    }
     
-    func testConv2D() {
-        let image = Tensor<F>([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
-        let kernel = Tensor<F>([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
-        let result = conv2d(image, kernel: kernel)
-        let expected = Tensor<F>([[-13, -20, -17], [-18, -24, -18], [13, 20, 17]])
-        XCTAssert(isClose(result, expected, eps: 10e-4))
-    }
-    
+//    func testConv2D() {
+//        let image = Tensor<F>([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+//        let kernel = Tensor<F>([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
+//        let result = conv2d(image, kernel: kernel)
+//        print(result)
+//        let expected = Tensor<F>([[-13, -20, -17], [-18, -24, -18], [13, 20, 17]])
+//        XCTAssert(isClose(result, expected, eps: 10e-4))
+//    }
+//    
+//    func testConv2DWithPadding() {
+//        let image = Tensor<F>([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+//        let kernel = Tensor<F>([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
+//        let result = conv2d(image, kernel: kernel, padding: [2, 2])
+//        let expected = Tensor<F>([  [0.0,	0.0,	0.0,	0.0,	0.0],
+//                                    [0.0,	-1.0,	-4.0,	-8.0,	0.0],
+//                                    [0.0,	-4.0,	-13.0,	-20.0,	0.0],
+//                                    [0.0,	-6.0,	-18.0,	-24.0,	0.0],
+//                                    [0.0,	0.0,	0.0,	0.0,	0.0]])
+//
+//        print(result)
+////        XCTAssert(isClose(result, expected, eps: 10e-4))
+//    }
+
+
+//    func testConv2DWithStride() {
+//        let image = Tensor<F>([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+//        let kernel = Tensor<F>([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
+//        let result = conv2d(image, kernel: kernel, padding: [3, 3], stride: [2, 2])
+//        print(result)
+////        let expected = Tensor<F>([[-13, -20, -17], [-18, -24, -18], [13, 20, 17]])
+////        XCTAssert(isClose(result, expected, eps: 10e-4))
+//    }
+
     /*
     
     func testBenchmarkCBlas() {

@@ -49,28 +49,24 @@ public class Graph<T:Traversal>: Op<T.StorageType>, SequenceType {
     public var ops:[Op<S>] = []
     
     public init() {
-        super.init(inputs: [],
-                   output: Tensor<S>(),
-                   labels: ["input"])
+        super.init(inputs: [("input", NoOp<S>())],
+                   outputs: [Tensor<S>()])
     }
     
     public init(output:Tensor<S>) {
-        super.init(inputs: [],
-                   output: output,
-                   labels: ["input"])
+        super.init(inputs: [("input", NoOp<S>())],
+                   outputs: [output])
     }
     
     public init(_ ops:[Op<S>], output:Tensor<S>) {
-        super.init(inputs: [],
-                   output: output,
-                   labels: ["input"])
+        super.init(inputs: [("input", NoOp<S>())],
+                   outputs: [output])
         self.ops = ops
     }
     
     public init(_ ops:[Op<S>], output:Tensor<S>, labels:[String]) {
-        super.init(inputs: [],
-                   output: output,
-                   labels: labels)
+        super.init(inputs: [("input", NoOp<S>())],
+                   outputs: [output])
         self.ops = ops
     }
     
@@ -88,27 +84,27 @@ public class Graph<T:Traversal>: Op<T.StorageType>, SequenceType {
     }    
 }
 
-public func calcDependencies<S:Storage>(ops:[Op<S>]) -> ([Op<S>:[Op<S>]], [Op<S>:[Op<S>]], [Op<S>], [Op<S>]) {
-    var fdeps:[Op<S>:[Op<S>]] = [:]
-    var bdeps:[Op<S>:[Op<S>]] = [:]
-    var roots = [Op<S>]()
-    
-    for op in ops {
-        if op.inputs.count == 0 {
-            roots.append(op)
-        } else {
-            for input in op.inputs {
-                if var dep = fdeps[input] {
-                    dep.append(op)
-                } else {
-                    fdeps[input] = [op]
-                    bdeps[op] = [input]
-                }
-            }
-        }
-    }
-    
-    let terminals:[Op<S>] = fdeps.filter { $1.count == 0 }.map { $0.0 }
-    
-    return (fdeps, bdeps, terminals, roots)
-}
+//public func calcDependencies<S:Storage>(ops:[Op<S>]) -> ([Op<S>:[Op<S>]], [Op<S>:[Op<S>]], [Op<S>], [Op<S>]) {
+//    var fdeps:[Op<S>:[Op<S>]] = [:]
+//    var bdeps:[Op<S>:[Op<S>]] = [:]
+//    var roots = [Op<S>]()
+//    
+//    for op in ops {
+//        if op.inputs.count == 0 {
+//            roots.append(op)
+//        } else {
+//            for input in op.inputs {
+//                if var dep = fdeps[input] {
+//                    dep.append(op)
+//                } else {
+//                    fdeps[input] = [op]
+//                    bdeps[op] = [input]
+//                }
+//            }
+//        }
+//    }
+//    
+//    let terminals:[Op<S>] = fdeps.filter { $1.count == 0 }.map { $0.0 }
+//    
+//    return (fdeps, bdeps, terminals, roots)
+//}

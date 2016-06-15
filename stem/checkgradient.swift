@@ -39,10 +39,10 @@ func calcForwardGrad<S:Storage where S.ElementType:FloatNumericType>
 func calcBackwardGrad<S:Storage where S.ElementType:FloatNumericType>
     (forward:Op<S>, _ backward:Op<S>, gradParams:Tensor<S>) -> Tensor<S>
 {
-//    forward.apply()
-//    backward.apply()
+    forward.apply()
+    backward.apply()
     
-    let gradOutput = ravel(backward.inputs[2].output)
+    let gradOutput = ravel(backward.inputs["gradOutput"]!.output)
     let jacobian:Tensor<S> = zeros(Extent(gradParams.shape.elements, gradOutput.shape.elements))
 
     for i in 0..<gradOutput.shape.elements {

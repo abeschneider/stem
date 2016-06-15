@@ -31,9 +31,8 @@ public class GradientDescentOptimizer<S:Storage where S.ElementType:FloatNumeric
         params = forward.params()
         gradParams = backward.params()
         
-        super.init(inputs: [alpha],
-                   output: forward.output,
-                   labels: ["alpha"])
+        super.init(inputs: [("alpha", alpha)],
+                   outputs: forward.outputs)
     }
     
     public override func apply() {
@@ -45,7 +44,6 @@ public class GradientDescentOptimizer<S:Storage where S.ElementType:FloatNumeric
         // this is a place where having a TensorScalar class might be nice
         let a:S.ElementType = alpha.output[0]
         for (param, gradParam) in Zip2Sequence(params, gradParams) {
-//            print("\(param), \(gradParam), \(param - a*gradParam)")
             param -= a*gradParam
         }
     }

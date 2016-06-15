@@ -91,6 +91,7 @@ class opTests: XCTestCase {
 
         let linearGrad = linear.gradient() as! LinearGrad<D>
         linearGrad.setInput("gradOutput", to: gradOutput)
+//        print(linearGrad.inputs)
         
         // test gradient wrt the input
         let inputError = checkGradient(linear, grad: linearGrad, params: input.output, gradParams: linearGrad.output, eps: eps)
@@ -233,6 +234,7 @@ class opTests: XCTestCase {
         
         // test gradient wrt to the input
         let inputError = checkGradient(log, grad: logGrad, params: input.output, gradParams: logGrad.output, eps: eps)
+        print(inputError)
         XCTAssertLessThan(inputError, eps)
     }
     

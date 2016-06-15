@@ -703,25 +703,40 @@ public func sum<StorageType:Storage>(tensor:Tensor<StorageType>) -> StorageType.
     return reduce(tensor, op: +)
 }
 
-public func conv2d<S:Storage>(input:Tensor<S>, kernel:Tensor<S>) -> Tensor<S> {
+/*
+ hO=(h+2pH−kH)/sY+1
+ w0=(w+2pW−kW)/sX+1
+ */
+public func conv2d<S:Storage>(input:Tensor<S>, kernel:Tensor<S>, stride:[Int]=[1, 1], padding:[Int]=[0, 0], paddingValue:S.ElementType=0) -> Tensor<S> {
     let centerX = kernel.shape[1] / 2
     let centerY = kernel.shape[0] / 2
     
-    let out = Tensor<S>(Extent(input.shape[0], input.shape[1]))
+    let rows = (input.shape[0]+2*padding[0]-kernel.shape[0])/stride[0]
+    let cols = (input.shape[1]+2*padding[1]-kernel.shape[1])/stride[1]
+    let outputShape = Extent(rows, cols)
     
-    for i in 0..<input.shape[0] {
-        for j in 0..<input.shape[1] {
+    let out = Tensor<S>(outputShape)
+    
+    print("outputShape = \(outputShape)")
+    
+    for i in 0..<(outputShape[0]) {
+        for j in 0..<(outputShape[1]) {
             for k in 0..<kernel.shape[0] {
                 
                 let kflipped = kernel.shape[0] - k - 1
                 for l in 0..<kernel.shape[1] {
                     let lflipped = kernel.shape[1] - l - 1
                     
-                    let m = i + (k - centerY)
-                    let n = j + (l - centerX)
+                    let m = (i + (k - centerY) - padding[0])*stride[0] + centerY
+                    let n = (j + (l - centerX) - padding[1])*stride[1] + centerX
+                    
+                    let o = i+padding[0]/2
+                    let p = j+padding[1]/2
                     
                     if (m >= 0 && m < input.shape[0] && n >= 0 && n < input.shape[1]) {
-                        out[i, j] += input[m, n] * kernel[kflipped, lflipped]
+                        out[o, p] += input[m, n] * kernel[kflipped, lflipped]
+                    } else {
+                        out[o, p] += paddingValue * kernel[kflipped, lflipped]
                     }
                 }
             }
