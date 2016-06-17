@@ -660,6 +660,32 @@ class stemTests: XCTestCase {
         XCTAssertEqual(s, 45.0)
     }
     
+    func testVectorSum2() {
+        let v = Tensor<D>(rowvector: [1, 2, 3, 4, 5, 6, 7, 8, 9])
+        
+        // summing across the rows should give a vector
+        let s = sum(v, axis: 0)
+        let expected = Tensor<D>([1, 2, 3, 4, 5, 6, 7, 8, 9])
+        XCTAssert(isClose(s, expected, eps: 10e-4))
+        
+        // summing across the columns should give a scalar
+        let s2 = Double(sum(v, axis: 1))
+        XCTAssertEqual(s2, 45.0)
+    }
+    
+    func testVectorSum3() {
+        let v = Tensor<D>(colvector: [1, 2, 3, 4, 5, 6, 7, 8, 9])
+        
+        // summing across the columns should give a vector
+        let s = sum(v, axis: 1)
+        let expected = Tensor<D>([1, 2, 3, 4, 5, 6, 7, 8, 9])
+        XCTAssert(isClose(s, expected, eps: 10e-4))
+        
+        // summing across the rows should give a scalar
+        let s2 = Double(sum(v, axis: 0))
+        XCTAssertEqual(s2, 45.0)
+    }
+    
     func testVectorMax() {
         let v = Tensor<D>([5, 1, 3, 2, 6, 10, 0, 42, 5, 2, 1])
         let s = max(v)
