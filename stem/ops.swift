@@ -619,6 +619,8 @@ public class ConcatGrad<S:Storage where S.ElementType:FloatNumericType>: Op<S>, 
         self.setInput("op", to: op)
         self.setInput("input", to: opInputs)
         self.setInput("gradOutput", to: NoOp<S>())
+        
+        // currently init doesn't support mixed single Ops and array ops
 //        super.init(inputs: [("op", op), ("input", opInput), ("gradOutput", NoOp<S>())],
 //                   outputs: outputs)
     }
