@@ -41,7 +41,6 @@ public class Op<S:Storage>: OpType, Copyable, Hashable, CustomStringConvertible 
     // TODO: consider allowing the Op to be Optional and get rid of NoOp.
     public var inputs:OrderedDictionary<S>
     
-    // Next: Make this OrderedDictionary<S>
 //    public var output:Tensor<StorageType>
     public var outputs:[Tensor<S>]
     
@@ -92,6 +91,14 @@ public class Op<S:Storage>: OpType, Copyable, Hashable, CustomStringConvertible 
         }
     }
     
+    public func setInput(label:String, to:[Op<S>]) {
+        inputs[label] = to //to as? [Op<S>]
+        
+//        if let action = inputActions[label] {
+//            action(label, to as! Op<S>)
+//        }
+    }
+    
     public func setAction(key:String, action:InputAction) {
         inputActions[key] = action
     }
@@ -99,10 +106,6 @@ public class Op<S:Storage>: OpType, Copyable, Hashable, CustomStringConvertible 
     public func getInput(label:String) -> Op<S> {
         return inputs[label]!
     }
-    
-//    public func setOutput(output:Tensor<S>) {
-//        self.output = output
-//    }
     
     public func apply() {
         assertionFailure()
@@ -605,14 +608,39 @@ public class Concat<S:Storage where S.ElementType:FloatNumericType>: Op<S> {
     }
 }
 
-public class ConcatGrad<S:Storage where S.ElementType:FloatNumericType>: Op<S> {
+public class ConcatGrad<S:Storage where S.ElementType:FloatNumericType>: Op<S>, Gradient {
+    var gradOutput:Op<S> { return inputs[2]! }
+    
     public required init(op:Concat<S>) {
-        let opInput:Op<S> = op.inputs[0]!
-        super.init(inputs: [("op", op), ("input", opInput), ("gradOutput", NoOp<S>())],
-                   outputs: [Tensor<S>(op.output.shape)])
+        let opInputs:[Op<S>] = op.inputs[0]!
+        let outputs:[Tensor<S>] = opInputs.map { Tensor<S>($0.output.shape) }
+
+        super.init(outputs: outputs)
+        self.setInput("op", to: op)
+        self.setInput("input", to: opInputs)
+        self.setInput("gradOutput", to: NoOp<S>())
+//        super.init(inputs: [("op", op), ("input", opInput), ("gradOutput", NoOp<S>())],
+//                   outputs: outputs)
     }
     
     public override func apply() {
-        // returns multiple outputs
+        var index:Int = 0
+        for output in outputs {
+            let first = index
+            let last = output.shape[0]+index
+            copy(from: gradOutput.output[first..<last], to: output)
+            index = last
+        }
+    }
+    
+    public func reset() {
+        fill(output, value: 0)
     }
 }
+
+extension Concat:Differentiable {
+    public func gradient() -> GradientType {
+        return ConcatGrad<S>(op: self)
+    }
+}
+

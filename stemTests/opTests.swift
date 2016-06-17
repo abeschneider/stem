@@ -238,6 +238,45 @@ class opTests: XCTestCase {
         XCTAssertLessThan(inputError, eps)
     }
     
+    func testConcatOp() {
+        let concatOp = Concat<D>()
+        let inputValues:[Tensor<D>] = [uniform(Extent(5)), uniform(Extent(5)), uniform(Extent(5))]
+        let inputs = inputValues.map { Symbol<D>($0) }
+        concatOp.setInput("input", to: inputs)
+        
+        concatOp.apply()
+        let expected = concat(inputValues)
+
+        XCTAssert(isClose(concatOp.output, expected, eps: 10e-3))
+    }
+    
+    func testConcatGradient() {
+        let eps = 10e-6
+        
+        // make checking gradient easier by storing all inputs
+        // as a single parameter
+        let input:Tensor<D> = uniform(Extent(15))
+        let inputs = [Symbol<D>(input[0..<5]), Symbol<D>(input[5..<10]), Symbol<D>(input[10..<15])]
+        let gradOutput = Symbol<D>(zeros(Extent(15)))
+        
+        let concat = Concat<D>()
+        concat.setInput("input", to: inputs)
+        
+        let concatGrad = concat.gradient() as! ConcatGrad<D>
+        concatGrad.setInput("gradOutput", to: gradOutput)
+        
+        // make checking gradient easier by storing all gradient output
+        // as a single parameter
+        let output:Tensor<D> = zeros(Extent(15))
+        concatGrad.outputs[0] = output[0..<5]
+        concatGrad.outputs[1] = output[5..<10]
+        concatGrad.outputs[2] = output[10..<15]
+
+        // test gradient wrt to the input
+        let inputError = checkGradient(concat, grad: concatGrad, params: input, gradParams: output, eps: eps)
+        XCTAssertLessThan(inputError, eps)
+    }
+    
     func testUnrollGradient() {
         let eps = 10e-6
         let layer = Sequence<D>(Linear<D>(outputSize: 5), Sigmoid<D>())
