@@ -444,7 +444,7 @@ public class Tensor<StorageType:Storage> {
     }
     
     public func reshape(newShape:Extent) -> Tensor {
-        precondition(newShape.elements == internalShape.elements, "Cannot change number of elements in Tensor.")
+        precondition(newShape.elements == shape.elements, "Cannot change number of elements in Tensor.")
         
         return Tensor(storage: storage, shape: newShape)
     }
