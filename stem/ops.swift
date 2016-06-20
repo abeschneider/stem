@@ -550,7 +550,7 @@ public class AddOpGrad<S:Storage where S.ElementType:FloatNumericType>: Op<S>, G
     
     public required init(op:AddOp<S>) {
         let opInputs:[Op<S>] = op.inputs[0]!
-        super.init(outputs: []) // Tensor<S>(op.output.shape)] //("op", op), ("input", opInputs), ("gradOutput", NoOp<S>())],
+        super.init(outputs: [Tensor<S>](count: opInputs.count, repeatedValue: Tensor<S>(opInputs[0].output.shape)))
         setInput("op", to: op)
         setInput("input", to: opInputs)
         setInput("gradOutput", to: NoOp<S>())        
@@ -569,7 +569,6 @@ public class AddOpGrad<S:Storage where S.ElementType:FloatNumericType>: Op<S>, G
     public func reset() {
         fill(output, value: 0)
     }
-    
 }
 
 extension AddOp:Differentiable {
