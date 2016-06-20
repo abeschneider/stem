@@ -716,9 +716,7 @@ public func conv2d<S:Storage>(input:Tensor<S>, kernel:Tensor<S>, stride:[Int]=[1
     let outputShape = Extent(rows, cols)
     
     let out = Tensor<S>(outputShape)
-    
-    print("outputShape = \(outputShape)")
-    
+        
     for i in 0..<(outputShape[0]) {
         for j in 0..<(outputShape[1]) {
             for k in 0..<kernel.shape[0] {

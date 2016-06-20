@@ -18,6 +18,7 @@ public func copyOp<T:protocol<OpType, Copyable>>(op:T, shared:Bool) -> T {
 
 class opTests: XCTestCase {
     typealias D = NativeStorage<Double>
+    typealias I = NativeStorage<Int>
 
     override func setUp() {
         super.setUp()
@@ -91,7 +92,6 @@ class opTests: XCTestCase {
 
         let linearGrad = linear.gradient() as! LinearGrad<D>
         linearGrad.setInput("gradOutput", to: gradOutput)
-//        print(linearGrad.inputs)
         
         // test gradient wrt the input
         let inputError = checkGradient(linear, grad: linearGrad, params: input.output, gradParams: linearGrad.output, eps: eps)
@@ -234,7 +234,6 @@ class opTests: XCTestCase {
         
         // test gradient wrt to the input
         let inputError = checkGradient(log, grad: logGrad, params: input.output, gradParams: logGrad.output, eps: eps)
-        print(inputError)
         XCTAssertLessThan(inputError, eps)
     }
     
@@ -274,6 +273,41 @@ class opTests: XCTestCase {
 
         // test gradient wrt to the input
         let inputError = checkGradient(concat, grad: concatGrad, params: input, gradParams: output, eps: eps)
+        XCTAssertLessThan(inputError, eps)
+    }
+    
+    func testAddOp() {
+        let v1 = Symbol<D>(2*ones(Extent(5)))
+        let v2 = Symbol<D>(3*ones(Extent(5)))
+        let v3 = Symbol<D>(5*ones(Extent(5)))
+
+        let addOp = AddOp<D>(v1, v2, v3)
+        addOp.apply()
+        
+        let expected = Tensor<D>([10, 10, 10, 10, 10])
+        XCTAssert(isClose(addOp.output, expected, eps:10e-4))
+    }
+    
+    func testAddOpGradient() {
+        let eps = 10e-6
+        let v:Tensor<D> = ones(Extent(10))
+        v[0..<5] *= 5
+        v[5..<10] += 2
+        
+        let v1 = Symbol<D>(v[0..<5])
+        let v2 = Symbol<D>(v[5..<10])
+        let gradOutput = Symbol<D>(zeros(Extent(5)))
+
+        let addOp = AddOp<D>(v1, v2)
+        
+        let addOpGrad = addOp.gradient() as! AddOpGrad<D>
+        addOpGrad.setInput("gradOutput", to: gradOutput)
+        
+        let output:Tensor<D> = zeros(Extent(10))
+        addOpGrad.outputs = [output[0..<5], output[5..<10]]
+
+        
+        let inputError = checkGradient(addOp, grad: addOpGrad, params: v, gradParams: output, eps: eps)
         XCTAssertLessThan(inputError, eps)
     }
     

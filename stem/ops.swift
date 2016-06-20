@@ -514,18 +514,67 @@ extension L2Loss:Differentiable {
     }
 }
 
-// need to extend to provide a multi-dimensional version
-public class SumOp<S:Storage where S.ElementType:FloatNumericType>: Op<S> {
-    public init() {
-        super.init(inputs: [("input", NoOp<S>()), ("axis", NoOp<S>())],
-                   outputs: [Tensor<S>(Extent(1))])
+// adds together inputs
+public class AddOp<S:Storage where S.ElementType:FloatNumericType>: Op<S> {
+    public var inOps:[Op<S>] { return inputs[0]! }
+    
+    public init(_ ops:Op<S>...) {
+        super.init(inputs: [("input", ops)],
+                   outputs: [Tensor<S>](count: ops.count, repeatedValue: zeros(ops[0].output.shape)))
+        
+//        setAction("input", action: self.inputSet)
+    }
+    
+    func inputSet(label:String, op:Op<S>) {
+        // calculate output size
+//        let input:Tensor<S> = op.output
+//        let tmp = sum(input, axis: axis)
+//        output.resize(tmp.shape)
     }
     
     public override func apply() {
-        let input:Tensor<S> = inputs[0]!.output
-        let axis:S.ElementType = inputs[1]!.output[0]
-        let iaxis = Int(value: axis)
-        sum(input, axis: iaxis, result: output)
+        if output.shape != inOps[0].output.shape {
+            output = zeros(inOps[0].output.shape)
+        }
+        
+        fill(output, value:0)
+        for op in inOps {
+            iadd(output, op.output)
+        }
+    }
+}
+
+public class AddOpGrad<S:Storage where S.ElementType:FloatNumericType>: Op<S>, Gradient {
+    public var inOps:[Op<S>] { return inputs[1]! }
+    public var gradOutput:Op<S> { return inputs[2]! }
+    
+    public required init(op:AddOp<S>) {
+        let opInputs:[Op<S>] = op.inputs[0]!
+        super.init(outputs: []) // Tensor<S>(op.output.shape)] //("op", op), ("input", opInputs), ("gradOutput", NoOp<S>())],
+        setInput("op", to: op)
+        setInput("input", to: opInputs)
+        setInput("gradOutput", to: NoOp<S>())        
+    }
+    
+    public override func apply() {
+        if outputs.count != inOps.count {
+            outputs = [Tensor<S>](count: inOps.count, repeatedValue: Tensor<S>(inOps[0].output.shape))
+        }
+        
+        for output in outputs {
+            copy(from: gradOutput.output, to: output)
+        }
+    }
+    
+    public func reset() {
+        fill(output, value: 0)
+    }
+    
+}
+
+extension AddOp:Differentiable {
+    public func gradient() -> GradientType {
+        return AddOpGrad<S>(op: self)
     }
 }
 

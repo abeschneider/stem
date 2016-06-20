@@ -65,9 +65,9 @@ extension Int: NumericType {
         self.init(value)
     }
     
-    init<T:FloatNumericType>(value:T) {
-        self.init(value: value)
-    }
+//    init<T:FloatNumericType>(value:T) {
+//        self.init(value: value)
+//    }
     
     static public func max(lhs:Int, _ rhs:Int) -> Int {
         return lhs > rhs ? lhs : rhs

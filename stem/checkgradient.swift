@@ -67,10 +67,9 @@ public func checkGradient<S:Storage where S.ElementType:FloatNumericType>
     
     let fgrad = calcForwardGrad(op, params: ravel(params), eps: eps)
     let bgrad = calcBackwardGrad(op, grad, gradParams: ravel(gradParams))
-    
-    print("fgrad = \(fgrad.shape.dims)")
-    print("bgrad = \(bgrad.shape.dims)")
-    let error = fgrad - bgrad
+        
+    let error = Tensor<S>(zeros(fgrad.shape))
+    sub(fgrad, bgrad, result: error)
     return max(abs(error))
 }
 
