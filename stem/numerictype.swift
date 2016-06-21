@@ -27,7 +27,7 @@ public protocol FloatNumericType: NumericType, FloatingPointType {
     static func sqrt(value:Self) -> Self
     static func pow(value: Self, _ power: Self) -> Self
     static func log(value: Self) -> Self
-
+    static func tanh(value: Self) -> Self
 
     init(_ v:Float)
     init(_ v:Double)
@@ -109,6 +109,10 @@ extension Float: FloatNumericType {
     static public func min(lhs:Float, _ rhs:Float) -> Float {
         return lhs < rhs ? lhs : rhs
     }
+    
+    static public func tanh(value:Float) -> Float {
+        return Darwin.tanhf(value)
+    }
 }
 
 extension Double: FloatNumericType {
@@ -142,6 +146,10 @@ extension Double: FloatNumericType {
     
     static public func min(lhs:Double, _ rhs:Double) -> Double {
         return lhs < rhs ? lhs : rhs
+    }
+    
+    static public func tanh(value:Double) -> Double {
+        return Darwin.tanh(value)
     }
 }
 

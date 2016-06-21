@@ -838,7 +838,6 @@ func sigmoid<S:Storage where S.ElementType:FloatNumericType>
     precondition(input.shape == output.shape)
     for index in input.indices() {
         output[index] = S.ElementType(1.0) / (S.ElementType(1.0) + S.ElementType.exp(-input[index]))
-//        print("s: \(input[index]), \(output[index])")
     }
 }
 
@@ -853,6 +852,16 @@ func sigmoid<S:Storage where S.ElementType:FloatNumericType>
     
     return output
 }
+
+func tanh<S:Storage where S.ElementType:FloatNumericType>
+    (input:Tensor<S>, output:Tensor<S>)
+{
+    precondition(input.shape == output.shape)
+    for index in input.indices() {
+        output[index] = S.ElementType.tanh(input[index])
+    }
+}
+
 
 func log<S:Storage where S.ElementType:FloatNumericType>
     (input:Tensor<S>, result:Tensor<S>)
