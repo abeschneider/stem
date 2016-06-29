@@ -50,23 +50,23 @@ public class Graph<T:Traversal>: Op<T.StorageType>, SequenceType {
     
     public init() {
         super.init(inputs: [("input", NoOp<S>())],
-                   outputs: [Tensor<S>()])
+                   outputs: [("output", Tensor<S>())])
     }
     
     public init(output:Tensor<S>) {
         super.init(inputs: [("input", NoOp<S>())],
-                   outputs: [output])
+                   outputs: [("output", output)])
     }
     
     public init(_ ops:[Op<S>], output:Tensor<S>) {
         super.init(inputs: [("input", NoOp<S>())],
-                   outputs: [output])
+                   outputs: [("output", output)])
         self.ops = ops
     }
     
     public init(_ ops:[Op<S>], output:Tensor<S>, labels:[String]) {
         super.init(inputs: [("input", NoOp<S>())],
-                   outputs: [output])
+                   outputs: [("output", output)])
         self.ops = ops
     }
     

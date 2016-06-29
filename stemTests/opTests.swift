@@ -146,6 +146,23 @@ class opTests: XCTestCase {
         XCTAssertLessThan(inputError, eps)
     }
     
+    func testTanhGradient() {
+        let eps:Double = 10e-6
+        let input = Symbol<D>(uniform(Extent(10)))
+        let gradOutput = Symbol<D>(zeros(Extent(10)))
+        
+        let tanh = Tanh<D>()
+        tanh.setInput("input", to: input)
+        
+        let tanhGrad = tanh.gradient() as! TanhGrad<D>
+        tanhGrad.setInput("gradOutput", to: gradOutput)
+        
+        // test gradient wrt the input
+        let inputError = checkGradient(tanh, grad: tanhGrad, params: input.output, gradParams: tanhGrad.output, eps: eps)
+        print(inputError)
+        XCTAssertLessThan(inputError, eps)
+    }
+    
     func testLossGradient() {
         let eps:Double = 10e-6
         let input = Symbol<D>(uniform(Extent(10)))
@@ -238,10 +255,11 @@ class opTests: XCTestCase {
     }
     
     func testConcatOp() {
-        let concatOp = Concat<D>()
         let inputValues:[Tensor<D>] = [uniform(Extent(5)), uniform(Extent(5)), uniform(Extent(5))]
         let inputs = inputValues.map { Symbol<D>($0) }
-        concatOp.setInput("input", to: inputs)
+        let concatOp = Concat<D>(inputs)
+        
+//        concatOp.setInput("input", to: inputs)
         
         concatOp.apply()
         let expected = concat(inputValues)
@@ -267,9 +285,7 @@ class opTests: XCTestCase {
         // make checking gradient easier by storing all gradient output
         // as a single parameter
         let output:Tensor<D> = zeros(Extent(15))
-        concatGrad.outputs[0] = output[0..<5]
-        concatGrad.outputs[1] = output[5..<10]
-        concatGrad.outputs[2] = output[10..<15]
+        concatGrad.outputs["output"] = [output[0..<5], output[5..<10], output[10..<15]]
 
         // test gradient wrt to the input
         let inputError = checkGradient(concat, grad: concatGrad, params: input, gradParams: output, eps: eps)
@@ -290,24 +306,22 @@ class opTests: XCTestCase {
     
     func testAddOpGradient() {
         let eps = 10e-6
-        let v:Tensor<D> = ones(Extent(10))
-        v[0..<5] *= 5
-        v[5..<10] += 2
+        let values:Tensor<D> = Tensor<D>([5, 5, 5, 5, 5, 2, 2, 2, 2, 2])
         
-        let v1 = Symbol<D>(v[0..<5])
-        let v2 = Symbol<D>(v[5..<10])
-        let gradOutput = Symbol<D>(zeros(Extent(5)))
+        let v1 = Symbol<D>(values[0..<5])
+        let v2 = Symbol<D>(values[5..<10])
 
         let addOp = AddOp<D>(v1, v2)
         
         let addOpGrad = addOp.gradient() as! AddOpGrad<D>
+        
+        let gradOutput = Symbol<D>(zeros(Extent(5)))
         addOpGrad.setInput("gradOutput", to: gradOutput)
         
-        let output:Tensor<D> = zeros(Extent(10))
-        addOpGrad.outputs = [output[0..<5], output[5..<10]]
+        let gradInput:Tensor<D> = zeros(Extent(10))
+        addOpGrad.outputs["output"] = [gradInput[0..<5], gradInput[5..<10]]
 
-        
-        let inputError = checkGradient(addOp, grad: addOpGrad, params: v, gradParams: output, eps: eps)
+        let inputError = checkGradient(addOp, grad: addOpGrad, params: values, gradParams: gradInput, eps: eps)
         XCTAssertLessThan(inputError, eps)
     }
     
@@ -327,5 +341,5 @@ class opTests: XCTestCase {
         // test gradient wrt to the input
         let inputError = checkGradient(seq, grad: seqGrad, params: input.output, gradParams: seqGrad.output, eps: eps)
         XCTAssertLessThan(inputError, eps)
-    }
+    }    
 }

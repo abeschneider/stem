@@ -8,173 +8,115 @@
 
 import Foundation
 
-public enum InputType<S:Storage> {
-    case OpInput(Op<S>)
-    case ArrayInput([Op<S>])
+public enum TensorParam<S:Storage> {
+    case TensorValue(Tensor<S>)
+    case TensorArray([Tensor<S>])
     
-    public init(_ op:Op<S>) {
-        self = .OpInput(op)
+    public init(_ value:Tensor<S>) {
+        self = .TensorValue(value)
     }
 
-    public init(_ ops:[Op<S>]) {
-        self = .ArrayInput(ops)
+    public init(_ values:[Tensor<S>]) {
+        self = .TensorArray(values)
     }
 }
 
-public struct OrderedDictionary<S:Storage>: CollectionType {
-    public typealias Index = Array<InputType<S>>.Index
-    public typealias _Element = InputType<S>
+public struct OrderedDictionary<T>: CollectionType {
+    public typealias Index = Array<T>.Index
+    public typealias _Element = [T]
     
     public var keys:[String] = []
-    public var values:[String:InputType<S>] = [:]
-    public var orderedValues:[InputType<S>] = []
+    public var values:[String:_Element] = [:]
+    public var orderedValues:[_Element] = []
     
     public var startIndex:Index { return orderedValues.startIndex }
     public var endIndex:Int { return orderedValues.endIndex }
     
     public init() {}
     
-    public init(_ values:[(String, InputType<S>)]) {
+    public init(_ values:[(String, T)]) {
         add(values)
     }
     
-    public init(_ values:[(String, Op<S>)]) {
+    public init(_ values:[(String, _Element)]) {
         add(values)
     }
     
-    public init(_ values:[(String, [Op<S>])]) {
-        add(values)
+    public mutating func add(values:[(String, T)]) {
+        for (key, value) in values {
+            self[key] = [value]
+        }
     }
     
-    public mutating func add(ops:[(String, InputType<S>)]) {
-        for (key, value) in ops {
+    public mutating func add(tensors:[(String, _Element)]) {
+        for (key, value) in tensors {
             self[key] = value
         }
     }
     
-    public mutating func add(ops:[(String, Op<S>)]) {
-        for (key, value) in ops {
-            self[key] = InputType<S>(value)
-        }
+    public mutating func add(key:String, values:[T]) {
+        self[key] = values
     }
     
-    public mutating func add(ops:[(String, [Op<S>])]) {
-        for (key, value) in ops {
-            self[key] = InputType<S>(value)
-        }
-    }
-    
-    public mutating func add(key:String, ops:[Op<S>]) {
-        self[key] = InputType<S>(ops)
-    }
-    
-    // unlabeled inputs
-//    public mutating func add(key:String, ops:[Op<S>]) -> [Int] {
-//        var indices = [Int]()
-//        for op in ops {
-//            indices.append(orderedValues.count)
-//            keys.append(key)
-//            orderedValues.append(op)
-//        }
-//        return indices
-//    }
-    
-    mutating func setValue(key:String, _ value:Op<S>) {
+    mutating func setValue(key:String, _ value:T) {
         if values[key] == nil {
             // if key is new, insert it into our indices
             keys.append(key)
-            orderedValues.append(InputType<S>(value))
+            orderedValues.append([value])
         } else {
             // otherwise, just update its current value
             let index = keys.indexOf(key)!
-            orderedValues[index] = InputType<S>(value)
+            orderedValues[index] = [value]
         }
         
-        values[key] = InputType<S>(value)
+        values[key] = [value]
     }
     
-    mutating func setValue(key:String, _ value:[Op<S>]) {
+    mutating func setValue(key:String, _ value:_Element) {
         if values[key] == nil {
             // if key is new, insert it into our indices
             keys.append(key)
-            orderedValues.append(InputType<S>(value))
+            orderedValues.append(value)
         } else {
             // otherwise, just update its current value
             let index = keys.indexOf(key)!
-            orderedValues[index] = InputType<S>(value)
+            orderedValues[index] = value
         }
         
-        values[key] = InputType<S>(value)
+        values[key] = value
     }
 
-    public subscript(key:String) -> InputType<S>? {
+    public subscript(key:String) -> _Element? {
         get { return values[key] }
-        set {
-            switch newValue! {
-            case .OpInput(let op):
-                setValue(key, op)
-            case .ArrayInput(let ops):
-                setValue(key, ops)
-            }
-        }
+        set { setValue(key, newValue!) }
     }
     
-    public subscript(key:String) -> Op<S>? {
+    public subscript(key:String) -> T? {
         get {
-            switch values[key]! {
-            case .OpInput(let op):
-                return op
-            case .ArrayInput:
-                return nil
+            if let value = values[key] {
+                return value[0]
             }
+            return nil
         }
-        
-        set {
-            setValue(key, newValue!)
-        }
+        set { setValue(key, newValue!) }
     }
     
-    public subscript(key:String) -> [Op<S>]? {
-        get {
-            switch values[key]! {
-            case .OpInput:
-                return nil
-            case .ArrayInput(let ops):
-                return ops
-            }
-        }
-        
-        set {
-            setValue(key, newValue!)
-        }
-    }
-
-    
-    public subscript(index:Int) -> InputType<S> {
+    public subscript(index:Int) -> _Element {
         get {
             return orderedValues[index]
         }
-    }
-    
-    public subscript(index:Int) -> Op<S>? {
-        get {
-            switch orderedValues[index] {
-            case .OpInput(let op):
-                return op
-            case .ArrayInput:
-                return nil
-            }
+        set {
+            orderedValues[index] = newValue
         }
     }
     
-    public subscript(index:Int) -> [Op<S>]? {
+    public subscript(index:Int) -> T {
         get {
-            switch orderedValues[index] {
-            case .OpInput:
-                return nil
-            case .ArrayInput(let ops):
-                return ops
-            }
+            precondition(orderedValues[index].count == 1)
+            return orderedValues[index][0]
+        }
+        set {
+            orderedValues[index] = [newValue]
         }
     }
 }

@@ -16,7 +16,7 @@ public class Parallel<S:Storage>: Op<S>, Collection {
     public init() {
 //        super.init(inputs: [NoOp<S>()], output: Tensor<S>(), labels: ["input"])
         super.init(inputs: [("input", NoOp<S>())],
-                   outputs: [Tensor<S>()])
+                   outputs: [("outputs", Tensor<S>())])
         ops = []
     }
 
@@ -47,12 +47,12 @@ public class Parallel<S:Storage>: Op<S>, Collection {
 //                   output: Tensor<S>(op.output.shape),
 //                   labels: ["input"])
         super.init(inputs: [("input", NoOp<S>())],
-                   outputs: [Tensor<S>(op.output.shape)])
+                   outputs: [("output", Tensor<S>(op.output.shape))])
         
         setAction("input", action: self.inputSet)
     }
     
-    func inputSet(key:String, value:Op<S>) {
+    func inputSet(key:String, value:[Op<S>]) {
         for op in ops {
             op.setInput("input", to: value)
         }
@@ -72,7 +72,14 @@ public class Parallel<S:Storage>: Op<S>, Collection {
         }
         
         ops.append(op)
-        output = op.output
+//        output = op.output
+        
+        // Q: This will cause a problem if the sequence changes after
+        // another Op points to the output. It wasn't an issue previously
+        // when holding the input Ops, but with the change of holding just
+        // the Tensors does. Is this acceptable, or does a fix like an
+        // observer needed?
+        outputs["output"] = op.output
     }
     
     public override func params() -> [Tensor<S>] {
@@ -84,16 +91,18 @@ public class Parallel<S:Storage>: Op<S>, Collection {
         return flattened
     }
     
+    // TODO: this needs to be rewritten to deal with multiple input/outputs
     public override var description: String {
         let className = String(Mirror(reflecting: self).subjectType)
-        let inputShapes = inputs.map {
-            switch $0 {
-            case .OpInput(let op):
-                op.output.shape.dims
-            case .ArrayInput:
-                assertionFailure()
-            }
-        }
+        let inputShapes = inputs["input"].map { $0.output.shape.dims }
+//        let inputShapes = inputs.map {
+//            switch $0 {
+//            case .TensorValue(let op):
+//                op.shape.dims
+//            case .TensorArray:
+//                assertionFailure()
+//            }
+//        }
         
         let value = ops.map { String($0) }.joinWithSeparator("\n")
         return "<\(className): inputs=\(inputShapes), outputs=\(output.shape.dims)> {\n\(value)\n}"
@@ -103,14 +112,14 @@ public class Parallel<S:Storage>: Op<S>, Collection {
 public class Sequence<S:Storage>: Op<S>, Collection {
     public typealias StorageType = S
     
-    public var ops:[Op<StorageType>] = []
+    public var ops:[Op<S>] = []
     
-    public init() {
-//        super.init(inputs: [NoOp<S>()], output: Tensor<S>(), labels: ["input"])
-        super.init(inputs: [("input", NoOp<S>())],
-                   outputs: [Tensor<S>()])
-        ops = []
-    }
+//    public init() {
+////        super.init(inputs: [NoOp<S>()], output: Tensor<S>(), labels: ["input"])
+//        super.init(inputs: [("input", NoOp<S>())],
+//                   outputs: [("output", Tensor<S>())])
+//        ops = []
+//    }
     
     public convenience init(_ ops:Op<S>...) {
         self.init(ops)
@@ -118,9 +127,6 @@ public class Sequence<S:Storage>: Op<S>, Collection {
     
     public init(_ ops:[Op<S>]) {
         let last = ops.last!
-//        super.init(inputs: [NoOp<S>()],
-//                   output: last.output,
-//                   labels: ["input"])
         super.init(inputs: [("input", NoOp<S>())],
                    outputs: last.outputs)
         
@@ -129,6 +135,8 @@ public class Sequence<S:Storage>: Op<S>, Collection {
         for i in 1..<ops.count {
             ops[i].setInput("input", to: ops[i-1])
         }
+        
+        output = ops.last!.output
         
         setAction("input", action: self.inputSet)
     }
@@ -139,20 +147,19 @@ public class Sequence<S:Storage>: Op<S>, Collection {
             ops.append(copy(op, shared: shared))
         }
         
-//        super.init(inputs: [NoOp<S>()],
-//                   output: Tensor<S>(op.output.shape),
-//                   labels: ["input"])
         super.init(inputs: [("input", NoOp<S>())],
-                   outputs: [Tensor<S>(op.output.shape)])
+                   outputs: [("output", Tensor<S>(op.output.shape))])
         
         for i in 1..<ops.count {
             ops[i].setInput("input", to: ops[i-1])
         }
         
+        output = ops.last!.output
+        
         setAction("input", action: self.inputSet)
     }
     
-    func inputSet(key:String, value:Op<S>) {
+    func inputSet(key:String, value:[Op<S>]) {
         // need to change first item in sequence
         ops[0].setInput("input", to: value)
     }
@@ -183,14 +190,15 @@ public class Sequence<S:Storage>: Op<S>, Collection {
     
     public override var description: String {
         let className = String(Mirror(reflecting: self).subjectType)
-        let inputShapes = inputs.map {
-            switch $0 {
-            case .OpInput(let op):
-                op.output.shape.dims
-            case .ArrayInput:
-                assertionFailure()
-            }
-        }
+        let inputShapes = inputs["input"].map { $0.output.shape.dims }
+//        let inputShapes = inputs.map {
+//            switch $0 {
+//            case .TensorValue(let op):
+//                op.shape.dims
+//            case .TensorArray:
+//                assertionFailure()
+//            }
+//        }
         
         let value = ops.map { String($0) }.joinWithSeparator("\n")
         return "<\(className): inputs=\(inputShapes), outputs=\(output.shape.dims)> {\n\(value)\n}"
@@ -208,7 +216,7 @@ public class SequenceGradient<S:Storage>: Op<S>, Collection, Gradient {
         super.init(inputs: [("op", NoOp<S>()),
                             ("input", NoOp<S>()),
                             ("gradOutput", NoOp<S>())],
-                   outputs: [Tensor<S>()])
+                   outputs: [("output", Tensor<S>())])
         
         for op in op.ops {
             if let dop = op as? Differentiable {
@@ -234,12 +242,12 @@ public class SequenceGradient<S:Storage>: Op<S>, Collection, Gradient {
         super.init(inputs: [("op", NoOp<S>()),
                             ("input", NoOp<S>()),
                             ("gradOutput", NoOp<S>())],
-                   outputs: [Tensor<S>()])
+                   outputs: [("output", Tensor<S>())])
         
         setAction("gradOutput", action: self.gradOutputSet)
     }
     
-    func gradOutputSet(key:String, value:Op<S>) {
+    func gradOutputSet(key:String, value:[Op<S>]) {
         ops.first!.setInput("gradOutput", to: value)
     }
     
