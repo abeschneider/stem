@@ -3,15 +3,15 @@ Neural Network library
 
 Overview
 --------
-The basic building block is an ``Op``, which is parameterized by the underyling storage type (see the ``Tensor`` documentation for more details). Every ``Op`` as the function ``apply``, which performs a transform on the ``Op`` s input updating the `output` variable. Currently ``Op`` s may have a variable number of inputs with a single output.
+The basic building block is an ``Op``, which is parameterized by the underyling storage type (see the ``Tensor`` documentation for more details). Every ``Op`` as the function ``apply``, which performs a transform on the ``Op`` s input updating the `output` variable. ``Op`` s may have a variable number of inputs and outputs.
 
 .. figure:: ../images/op_diagram.png
   :width: 400
   :align: center
 
-  **Figure 1**: Computation graph formed by connecting multiple ``Op`` s together.
+  **Figure 1**: A computation graph is formed by connecting multiple ``Op`` s together. The inputs are a collection of ``Op`` s, and the outputs, the result of the operation applied to the input, are a collection of ``Tensor`` s.
 
-The design of the ``Op`` class is keep the details of how the optimization is performed separate from the transform itself. The protocol ``Differentiable`` provides a method to extend the ``Op`` class with the ``gradient`` method. The ``gradient`` methods returns a new ``Op`` whose transform is the derivative of the target ``Op``. For example:
+The design of the ``Op`` class is keep the details of how the optimization is performed separate from the transform itself. For example, the protocol ``Differentiable`` provides a method to extend the ``Op`` class with the ``gradient`` method for stochastic gradient descent optimization. The ``gradient`` methods returns a new ``Op`` whose transform is the derivative of the target ``Op``. This allows a secondary computation graph to easily be constructed:
 
 .. code:: swift
 
@@ -23,7 +23,7 @@ Some ``Op`` s, like ``Sequence`` are collections of other ``Op`` s, and will inv
 .. code:: swift
 
   let net = Sequence<D>(
-    Symbol<D>(zeros(Extent(5))),
+    Variable<D>(zeros(Extent(5))),
     Linear<D>(inputSize: 5, outputSize: 3),
     Sigmoid<D>(size: 3),
     L2Loss<D>(size: 3))
@@ -34,7 +34,7 @@ Some ``Op`` s, like ``Sequence`` are collections of other ``Op`` s, and will inv
 There are a few important items of note in this example:
 
 1. The ``apply`` method takes no parameters and has no return value
-2. The input to the first layer of the network is of the type ``Symbol``, which is also an ``Op``
+2. The input to the first layer of the network is of the type ``Variable``, which is also an ``Op``
 3. The loss function ``L2Loss`` is also an ``Op``
 
 The design decision to make everything an ``Op`` allows the creation of the computational graph. In this case, all of the ``Op`` s are also ``Differentiable``, and thus you can do:
@@ -65,7 +65,7 @@ However, this code can be simplified using an ``Optimizer``:
 
 .. code::
 
-  let alpha = Symbol<D>(0.01)
+  let alpha = Variable<D>(0.01)
   let opt = GradientDescentOptimizer(net, alpha: alpha)
 
   for i in 0..<iterations {
@@ -74,7 +74,7 @@ However, this code can be simplified using an ``Optimizer``:
 
 where ``GradientDescentOptimizer`` automatically constructs the gradient network and collects the parmaeters for both the forward and backward sequences.
 
-One of the advantages to having everything an operation in the computation graph is that the ``alpha`` symbol can be set dynamically. For example, if a momentum optimization is desired, the ``alpha`` symbol can be computed from the current error.
+One of the advantages to having everything be an operation in the computation graph is that the ``alpha`` variable can be set dynamically. For example, if a momentum optimization is desired, the ``alpha`` variable can be computed from the current error.
 
 The Op class
 ----------------
@@ -82,12 +82,29 @@ The ``Op`` class has the following properties:
 
 * id: unique ID for instance of ``Op``
 * inputs: collection of ``Op`` s
-* output: result of the transform
+* output: collection ``Tensor`` s that are a result of the transform
 
 and has the following methods defined:
 
 * apply(): performs transform on inputs and stores results in ``output``
 * params(): returns all the parameters of the transform (e.g. if its a ``Linear`` Op, then the parameters are ``weight`` and ``bias``).
+
+-----------------
+OrderedDictionary
+-----------------
+
+One important detail about the ``inputs`` and ``outputs`` of an ``Op`` is that it
+is maintained by the ``OrderedDictionary`` class. An instance of the ``OrderedDictionary``
+class maintains a dictionary of (``String``: [``T``]), but also provides a method to
+traverse the items in the order that they were added. This provides a guarantee in
+the order of traversal as well as provide a method for efficient access (e.g. if
+an ``Op`` has a specific ordering of ``inputs``, an integer index may be used instead
+of a ``String``).
+
+By maintaining an array of ``T`` means that a single entry in the ``OrderedDictionary``
+may be a collection of items. This provides an easy way to create ``Op`` s that
+have a variable number of inputs and/or outputs. For example, the ``AddOp``
+can take in ``N`` inputs and will provide a single output.
 
 ----------
 Op library
@@ -99,6 +116,22 @@ Op library
 .. function:: Sigmoid
 
   Applies the sigmoid function to each element of the input.
+
+.. function:: Tanh
+
+  Applies the Tanh function to each element of the input
+
+.. function:: AddOp
+
+  Adds a collection of inputs together
+
+.. function:: MulOp
+
+  Multiplies a collection of inputs together
+
+.. function:: Concat
+
+  Concatenates a series of inputs together
 
 .. function:: L2Loss
 
@@ -168,7 +201,7 @@ We can change the construction of our network by adding ``Log`` into the sequenc
 .. code:: swift
 
   let net = Sequence<D>(
-    Symbol<D>(zeros(Extent(5))),
+    Variable<D>(zeros(Extent(5))),
     Log<D>(size: 5)
     Linear<D>(inputSize: 5, outputSize: 3),
     Sigmoid<D>(size: 3),
@@ -191,8 +224,8 @@ It is always a good idea to do a gradient check on a newly created ``Op``. You c
 
   func testLogOpGradient() {
     let eps = 10e-6
-    let input = Symbol<S>(uniform(Extent(10)))
-    let gradOutput = Symbol<S>(zeros(Extent(10)))
+    let input = Variable<S>(uniform(Extent(10)))
+    let gradOutput = Variable<S>(zeros(Extent(10)))
 
     let log = Log<S>(size: 10)
     log.setInput("input", to: input)
