@@ -6,10 +6,21 @@ import Cocoa
 import stem
 import XCPlayground
 
+
 //: Convenience aliases
 //: -------------------
 typealias F = NativeStorage<Float>
 typealias I = NativeStorage<Int>
+
+var d = OrderedDictionary<F>()
+d["l1"] = LinearOp<F>(inputSize: 5, outputSize: 10)
+d["l2"] = LinearOp<F>(inputSize: 5, outputSize: 5)
+d["l1"] = LinearOp<F>(inputSize: 5, outputSize: 20)
+
+print(d.keys)
+print(d.orderedValues)
+print(d.values)
+
 
 //: Creating vectors
 //: ----------------
@@ -118,4 +129,4 @@ String(m4)
 
 let s = Extent(3)
 let s2 = Extent(s, over: 5)
-s2.dims
+s2

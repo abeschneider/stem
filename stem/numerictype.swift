@@ -28,6 +28,8 @@ public protocol FloatNumericType: NumericType, FloatingPointType {
     static func pow(value: Self, _ power: Self) -> Self
     static func log(value: Self) -> Self
     static func tanh(value: Self) -> Self
+    
+    static func trunc(value: Self) -> Int
 
     init(_ v:Float)
     init(_ v:Double)
@@ -61,11 +63,12 @@ extension Int: NumericType {
 
     }
     
-    init(value:Int) {
-        self.init(value)
-    }
-    
+//    init(value:Int) {
+//        self.init(value)
+//    }
+
 //    init<T:FloatNumericType>(value:T) {
+//        let newValue = Int(value)
 //        self.init(value: value)
 //    }
     
@@ -113,6 +116,10 @@ extension Float: FloatNumericType {
     static public func tanh(value:Float) -> Float {
         return Darwin.tanhf(value)
     }
+    
+    public static func trunc(value:Float) -> Int {
+        return Int(value)
+    }
 }
 
 extension Double: FloatNumericType {
@@ -150,6 +157,10 @@ extension Double: FloatNumericType {
     
     static public func tanh(value:Double) -> Double {
         return Darwin.tanh(value)
+    }
+    
+    public static func trunc(value:Double) -> Int {
+        return Int(value)
     }
 }
 

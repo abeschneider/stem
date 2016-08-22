@@ -14,7 +14,7 @@ protocol Optimizer {
 }
 
 public class GradientDescentOptimizer<S:Storage where S.ElementType:FloatNumericType>: Op<S> {
-    var alpha:Symbol<S>
+    var alpha:Constant<S>
     var forward:Op<S>
     var backward:Op<S>
     var params:[Tensor<S>]
@@ -23,7 +23,7 @@ public class GradientDescentOptimizer<S:Storage where S.ElementType:FloatNumeric
     // NB: With current version of swift, constraints cannot be placed on
     // Op s.t. its differentiable. Until this is changed, this code can fail a
     // at runtime if non-differentiable op is used
-    public init(_ op:Op<S>, alpha:Symbol<S>) {
+    public init(_ op:Op<S>, alpha:Constant<S>) {
         self.alpha = alpha
         forward = op
         backward = (op as! Differentiable).gradient() as! Op<S>
@@ -31,8 +31,12 @@ public class GradientDescentOptimizer<S:Storage where S.ElementType:FloatNumeric
         params = forward.params()
         gradParams = backward.params()
         
-        super.init(inputs: [("alpha", alpha)],
-                   outputs: forward.outputs)
+//        super.init(inputs: [("alpha", InputType(alpha))],
+//                   outputs: forward.outputs)
+        super.init()
+        connect(from: alpha, "output", to: self, "alpha")
+        let forwardOutputs:[Tensor<S>] = forward.outputs["output"]!
+        outputs["output"] = forwardOutputs
     }
     
     public override func apply() {

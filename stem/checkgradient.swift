@@ -18,13 +18,15 @@ func calcForwardGrad<S:Storage where S.ElementType:FloatNumericType>
         
         // positive direction
         params[i] = old_value + S.ElementType(eps)
+        op.reset()
         op.apply()
-        let pvalue = copy(op.output)
+        let pvalue = copy(ravel(op.output))
         
         // negative direction
         params[i] = old_value - S.ElementType(eps)
+        op.reset()
         op.apply()
-        let nvalue = copy(op.output)
+        let nvalue = copy(ravel(op.output))
         
         // return to original value
         params[i] = old_value
@@ -39,10 +41,11 @@ func calcForwardGrad<S:Storage where S.ElementType:FloatNumericType>
 func calcBackwardGrad<S:Storage where S.ElementType:FloatNumericType>
     (forward:Op<S>, _ backward:Op<S>, gradParams:Tensor<S>) -> Tensor<S>
 {
+    forward.reset()
     forward.apply()
     backward.apply()
     
-    let gradOutput = ravel(backward.inputs["gradOutput"]!.output)
+    let gradOutput = ravel(backward.inputs["gradOutput"]!.output())
     let jacobian:Tensor<S> = zeros(Extent(gradParams.shape.elements, gradOutput.shape.elements))
 
     for i in 0..<gradOutput.shape.elements {
@@ -62,17 +65,19 @@ func calcBackwardGrad<S:Storage where S.ElementType:FloatNumericType>
 public func checkGradient<S:Storage where S.ElementType:FloatNumericType>
     (op:Op<S>, grad:Op<S>, params:Tensor<S>, gradParams:Tensor<S>, eps:Double) -> S.ElementType
 {
+    op.reset()
     op.apply()
     grad.apply()
     
     let fgrad = calcForwardGrad(op, params: ravel(params), eps: eps)
     let bgrad = calcBackwardGrad(op, grad, gradParams: ravel(gradParams))
-        
+    
     let error = Tensor<S>(zeros(fgrad.shape))
     sub(fgrad, bgrad, result: error)
     return max(abs(error))
 }
 
+// TODO: can we get rid of this version, or are both versions required?
 public func checkGradient<S:Storage, OpT:Op<S> where S.ElementType:FloatNumericType, OpT:Loss, OpT.StorageType.ElementType==S.ElementType>
     (op:OpT, grad:Op<S>, input:Tensor<S>, eps:Double) -> S.ElementType
 {

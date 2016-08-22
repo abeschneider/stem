@@ -74,9 +74,10 @@ class stemTests: XCTestCase {
             t4[i] = 3
         }
         
-        let expected:[Double] = [1, 2, 1, 1, 1,
-                                 0, 2, 3, 3, 3,
-                                 0, 2, 3, 3, 3]
+        let expected:[Double] = [
+            1, 2, 1, 1, 1,
+            0, 2, 3, 3, 3,
+            0, 2, 3, 3, 3]
         
         var k = 0
         for i in t1.indices() {
@@ -148,7 +149,13 @@ class stemTests: XCTestCase {
     func testIndexGenerator1() {
         let shape = Extent(3, 2)
         
-        let expected = [ [0, 0], [1, 0], [2, 0], [0, 1], [1, 1], [2, 1] ]
+        let expected = [
+            [0, 0],
+            [1, 0],
+            [2, 0],
+            [0, 1],
+            [1, 1],
+            [2, 1]]
         
         for (i, index) in GeneratorSequence(IndexGenerator(shape)).enumerate() {
             XCTAssertEqual(index, expected[i])
@@ -166,7 +173,14 @@ class stemTests: XCTestCase {
     func testIndexGenerator2() {
         let shape = Extent(3, 2)
         
-        let expected = [ [0, 0], [0, 1], [1, 0], [1, 1], [2, 0], [2, 1] ]
+        let expected = [
+            [0, 0],
+            [0, 1],
+            [1, 0],
+            [1, 1],
+            [2, 0],
+            [2, 1]
+        ]
         
         for (i, index) in GeneratorSequence(IndexGenerator(shape, dimIndex: [1, 0])).enumerate() {
             XCTAssertEqual(index, expected[i])
@@ -194,11 +208,13 @@ class stemTests: XCTestCase {
         let tensor2 = tensor1[5..<10, 5..<10]
         var indices = tensor2.indices()
 
-        let expected:[Int] = [  55, 56, 57, 58, 59,
-                                65, 66, 67, 68, 69,
-                                75, 76, 77, 78, 79,
-                                85, 86, 87, 88, 89,
-                                95, 96, 97, 98, 99]
+        let expected:[Int] = [
+            55, 56, 57, 58, 59,
+            65, 66, 67, 68, 69,
+            75, 76, 77, 78, 79,
+            85, 86, 87, 88, 89,
+            95, 96, 97, 98, 99
+        ]
 
         var i:Int = 0
         for j in 0..<tensor2.shape[0] {
@@ -334,7 +350,10 @@ class stemTests: XCTestCase {
     }
     
     func testMatrixTranspose() {
-        let array:[[Double]] = [[0, 1, 2, 3, 4], [5, 6, 7, 8, 9]]
+        let array:[[Double]] = [
+            [0, 1, 2, 3, 4],
+            [5, 6, 7, 8, 9]
+        ]
         let matrix1 = Tensor<D>(array)
         let matrix2 = matrix1.transpose()
         
@@ -363,7 +382,12 @@ class stemTests: XCTestCase {
     }
     
     func testMatrixTransposeOnReshape() {
-        let array:[[Double]] = [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11]]
+        let array:[[Double]] = [
+            [0, 1, 2, 3],
+            [4, 5, 6, 7],
+            [8, 9, 10, 11]
+        ]
+        
         let m = Tensor<D>(array)
         let ms = m.reshape(Extent(2,6))
         let mt = ms.transpose()
@@ -431,6 +455,7 @@ class stemTests: XCTestCase {
         let expected = Tensor<D>([[1, 0, 0, 4], [5, 0, 0, 8]])
         
         m[0..<2, 1..<3] = Tensor<D>([[0, 0], [0, 0]])
+        
         XCTAssert(isClose(m, expected, eps: 10e-4), "Not close")
     }
     

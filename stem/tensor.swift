@@ -267,7 +267,6 @@ public class Tensor<StorageType:Storage> {
     }
     
     public init(_ shape:Extent, storage:StorageType, offset:Int=0) {
-//        storage = StorageType(size: shape.elements, value: value)
         self.storage = StorageType(storage: storage, offset: offset)
         internalShape = shape
         self.offset = 0
@@ -331,7 +330,6 @@ public class Tensor<StorageType:Storage> {
     
     init(_ tensor:Tensor, dimIndex:[Int]?=nil, view:StorageView<StorageType>?=nil, stride: [Int]?=nil, copy:Bool=false) {
         if copy {
-//            storage = tensor.storage
             storage = StorageType(size: tensor.shape.elements, value: 0)
             for i in 0..<tensor.shape.elements {
                 storage[i] = tensor.storage[i]
@@ -352,7 +350,13 @@ public class Tensor<StorageType:Storage> {
         if let v = view {
             self.view = v
         } else {
-            self.view = ViewType(shape: tensor.shape, offset: tensor.view.offset)
+            if !copy {
+                self.view = ViewType(shape: tensor.shape, offset: tensor.view.offset)
+            } else {
+                // if we're making a copy, then the previously defined offset in the original Tensor
+                // is no longer correct
+                self.view = ViewType(shape: tensor.shape, offset: Array<Int>(count: tensor.dims, repeatedValue: 0))
+            }
         }
         
         if let s = stride {
@@ -579,7 +583,7 @@ public func broadcast<S>(left:Tensor<S>, _ right:Tensor<S>) -> (Tensor<S>, Tenso
     }
 }
 
-func copy<StorageType:Storage>(from from:[[StorageType.ElementType]], to:Tensor<StorageType>)  {
+public func copy<StorageType:Storage>(from from:[[StorageType.ElementType]], to:Tensor<StorageType>)  {
     precondition(to.shape[0] != from.count || to.shape[1] != from[0].count,
                  "Destination and source must be the same size")
 
@@ -591,7 +595,7 @@ func copy<StorageType:Storage>(from from:[[StorageType.ElementType]], to:Tensor<
     }
 }
 
-func copy<StorageType:Storage>(from from:Tensor<StorageType>, to:Tensor<StorageType>) {
+public func copy<StorageType:Storage>(from from:Tensor<StorageType>, to:Tensor<StorageType>) {
     precondition(to.shape == from.shape, "Destination and source must be the same size")
     
     let zippedIndices = zip(from.indices(), to.indices())
@@ -604,14 +608,14 @@ public func copy<StorageType>(tensor:Tensor<StorageType>) -> Tensor<StorageType>
     return Tensor<StorageType>(tensor, copy: true)
 }
 
-func fill<StorageType:Storage>(tensor:Tensor<StorageType>, value:StorageType.ElementType) {
+public func fill<StorageType:Storage>(tensor:Tensor<StorageType>, value:StorageType.ElementType) {
     for i in tensor.indices() {
         tensor[i] = value
     }
 }
 
 // concats two tensors along the given axis (0: rows, 1: cols, etc.)
-func concat<StorageType:Storage>(tensor1:Tensor<StorageType>, _ tensor2:Tensor<StorageType>, axis:Int=0) -> Tensor<StorageType> {
+public func concat<S:Storage>(tensor1:Tensor<S>, _ tensor2:Tensor<S>, axis:Int=0, to:Tensor<S>?=nil) -> Tensor<S> {
     let maxDims = max(tensor1.shape.count, tensor2.shape.count)
     
     // verify other dimensions match
@@ -629,7 +633,7 @@ func concat<StorageType:Storage>(tensor1:Tensor<StorageType>, _ tensor2:Tensor<S
     var shape = tensor1.shape
     shape[axis] += tensor2.shape[axis]
     
-    let result = Tensor<StorageType>(shape)
+    let result = to == nil ? Tensor<S>(shape) : to!
     var rpos = result.indices()
     
     for pos in tensor1.indices() {
@@ -647,7 +651,12 @@ public func ⊕<StorageType:Storage>(tensor1:Tensor<StorageType>, tensor2:Tensor
     return concat(tensor1, tensor2)
 }
 
-public func concat<StorageType:Storage>(tensor1:Tensor<StorageType>, _ tensor2:Tensor<StorageType>, _ tensor3:Tensor<StorageType>, _ rest:Tensor<StorageType>..., axis:Int=0) -> Tensor<StorageType> {
+public func concat<StorageType:Storage>(tensor1:Tensor<StorageType>,
+                                        _ tensor2:Tensor<StorageType>,
+                                        _ tensor3:Tensor<StorageType>,
+                                        _ rest:Tensor<StorageType>...,
+                                        axis:Int=0) -> Tensor<StorageType>
+{
     var result = concat(tensor1, tensor2, axis: axis)
     result = concat(result, tensor3, axis:axis)
     for i in 0..<rest.count {

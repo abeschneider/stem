@@ -24,17 +24,17 @@ class graphTests: XCTestCase {
     func testExample() {
 //        typealias D = NativeStorage<Double>
 //        
-//        let W = Symbol<D>(value: Matrix<D>(rows: 3, cols: 3))
-//        let bias = Symbol<D>(value: Vector<D>(rows: 3))
-//        let input = Symbol<D>(value: Vector<D>(cols: 3))
+//        let W = Variable<D>(value: Matrix<D>(rows: 3, cols: 3))
+//        let bias = Variable<D>(value: Vector<D>(rows: 3))
+//        let input = Variable<D>(value: Vector<D>(cols: 3))
 //        
 //        // TODO: Provide method to construct that doesn't require input. This
 //        // will allow convenience methods of construction like:
-//        //  sequence(Linear(W, b), Sigmoid()),
+//        //  sequence(LinearOp(W, b), SigmoidOp()),
 //        // which would create the topology along with the traversal.
 //        
-//        let linear = Linear<D>(input: input, weight: W, bias: bias)
-//        let sigmoid = Sigmoid<D>(input: linear.outputs[0])
+//        let linear = LinearOp<D>(input: input, weight: W, bias: bias)
+//        let sigmoid = SigmoidOp<D>(input: linear.outputs[0])
 //        
 //        let seq = SequentialTraversal<D>()
 //        seq.add(linear)

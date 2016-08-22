@@ -28,8 +28,8 @@ class ordereddictionaryTests: XCTestCase {
     
     func testAddItem() {
         var dict = OrderedDictionary<Op<F>>()
-        let op1 = Linear<F>(inputSize: 5, outputSize: 10)
-        let op2 = Linear<F>(inputSize: 5, outputSize: 5)
+        let op1 = LinearOp<F>(inputSize: 5, outputSize: 10)
+        let op2 = LinearOp<F>(inputSize: 5, outputSize: 5)
         dict["l1"] = op1
         dict["l2"] = op2
         
@@ -45,10 +45,10 @@ class ordereddictionaryTests: XCTestCase {
     
     func testChangeItem() {
         var dict = OrderedDictionary<Op<F>>()
-        let op1 = Linear<F>(inputSize: 5, outputSize: 10)
-        let op2 = Linear<F>(inputSize: 5, outputSize: 5)
-        let op3 = Linear<F>(inputSize: 5, outputSize: 20)
-        let op4 = Linear<F>(inputSize: 5, outputSize: 3)
+        let op1 = LinearOp<F>(inputSize: 5, outputSize: 10)
+        let op2 = LinearOp<F>(inputSize: 5, outputSize: 5)
+        let op3 = LinearOp<F>(inputSize: 5, outputSize: 20)
+        let op4 = LinearOp<F>(inputSize: 5, outputSize: 3)
         
         dict["l1"] = op1
         dict["l2"] = op2

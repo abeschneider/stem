@@ -48,8 +48,8 @@ public struct OrderedDictionary<T>: CollectionType {
         }
     }
     
-    public mutating func add(tensors:[(String, _Element)]) {
-        for (key, value) in tensors {
+    public mutating func add(values:[(String, _Element)]) {
+        for (key, value) in values {
             self[key] = value
         }
     }
@@ -86,7 +86,7 @@ public struct OrderedDictionary<T>: CollectionType {
         values[key] = value
     }
 
-    public subscript(key:String) -> _Element? {
+    public subscript(key:String) -> [T]? {
         get { return values[key] }
         set { setValue(key, newValue!) }
     }
@@ -101,7 +101,7 @@ public struct OrderedDictionary<T>: CollectionType {
         set { setValue(key, newValue!) }
     }
     
-    public subscript(index:Int) -> _Element {
+    public subscript(index:Int) -> [T] {
         get {
             return orderedValues[index]
         }
