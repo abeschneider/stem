@@ -9,8 +9,8 @@
 import Foundation
 
 
-@noreturn @inline(never)
-internal func _abstract(file:StaticString = #file, line:UInt=#line) {
+@inline(never)
+internal func _abstract(_ file:StaticString = #file, line:UInt=#line) -> Never  {
     fatalError("Method must be overridden", file: file, line: line)
 }
 
@@ -18,18 +18,18 @@ public protocol Ordering {
     associatedtype StorageType:Storage
     
 //    func generate() -> AnyGenerator<Op<StorageType>>
-    func traversal(ops:[Op<StorageType>]) -> AnySequence<Op<StorageType>>
+    func traversal(_ ops:[Op<StorageType>]) -> AnySequence<Op<StorageType>>
 }
 
-public class AnyOrdering<S:Storage>: Ordering {
+open class AnyOrdering<S:Storage>: Ordering {
     public typealias StorageType = S
     
-    public required init<M:Ordering where M.StorageType==S>(_ base:M)
+    public required init<M:Ordering>(_ base:M) where M.StorageType==S
     {
         self._box = _AnyOrderingBox(base)
     }
     
-    public func traversal(ops:[Op<S>]) -> AnySequence<Op<S>> {
+    open func traversal(_ ops:[Op<S>]) -> AnySequence<Op<S>> {
         return _box.traversal(ops)
     }
     
@@ -38,31 +38,31 @@ public class AnyOrdering<S:Storage>: Ordering {
 
 class _AnyOrderingBase {}
 class _AnyOrderingBoxBase<S:Storage>: _AnyOrderingBase, Ordering {
-    internal func traversal(ops:[Op<S>]) -> AnySequence<Op<S>> { _abstract() }
+    internal func traversal(_ ops:[Op<S>]) -> AnySequence<Op<S>> { _abstract() }
 }
 
 class _AnyOrderingBox<Base:Ordering>: _AnyOrderingBoxBase<Base.StorageType> {
     internal init(_ base: Base) { self._base = base }
     
-    override func traversal(ops:[Op<Base.StorageType>]) -> AnySequence<Op<Base.StorageType>> {
+    override func traversal(_ ops:[Op<Base.StorageType>]) -> AnySequence<Op<Base.StorageType>> {
         return _base.traversal(ops)
     }
     
     internal var _base: Base
 }
 
-public class SequentialOrdering<S:Storage>: Ordering {
+open class SequentialOrdering<S:Storage>: Ordering {
     public typealias StorageType = S
-    public typealias Generator = AnyGenerator<Op<S>>
+    public typealias Generator = AnyIterator<Op<S>>
     
     public init() {}
 
-    public func traversal(ops:[Op<S>]) -> AnySequence<Op<S>> {
+    open func traversal(_ ops:[Op<S>]) -> AnySequence<Op<S>> {
         return AnySequence<Op<S>>(ops)
     }
 }
 
-public struct RepeatGenerator<S:Storage>: GeneratorType {
+public struct RepeatGenerator<S:Storage>: IteratorProtocol {
     var ops:[Op<S>]
     var count:Int
     var index:Int
@@ -83,7 +83,7 @@ public struct RepeatGenerator<S:Storage>: GeneratorType {
     }
 }
 
-public struct RepeatSequence<S:Storage>: SequenceType {
+public struct RepeatSequence<S:Storage>: Sequence {
     typealias GeneratorType = RepeatGenerator<S>
     
     var ops:[Op<S>]
@@ -94,13 +94,13 @@ public struct RepeatSequence<S:Storage>: SequenceType {
         self.count = count
     }
     
-    public func generate() -> RepeatGenerator<S> {
+    public func makeIterator() -> RepeatGenerator<S> {
         return RepeatGenerator<S>(ops: ops, count: count)
     }
 
 }
 
-public class RepeatedSequentialOrdering<S:Storage>: Ordering {
+open class RepeatedSequentialOrdering<S:Storage>: Ordering {
     public typealias StorageType = S
     typealias Generator = RepeatSequence<S>
     
@@ -110,7 +110,7 @@ public class RepeatedSequentialOrdering<S:Storage>: Ordering {
         self.count = count
     }
     
-    public func traversal(ops:[Op<S>]) -> AnySequence<Op<S>> {
+    open func traversal(_ ops:[Op<S>]) -> AnySequence<Op<S>> {
         let seq = RepeatSequence<S>(ops: ops, count: count)
         return AnySequence<Op<S>>(seq)
     }
@@ -121,18 +121,18 @@ protocol Collection: OpType {
     associatedtype StorageType:Storage
     var ops:[Op<StorageType>] { get }
     
-    func add(op:Op<StorageType>)
+    func add(_ op:Op<StorageType>)
 }
 
-public class CollectionOp<S:Storage>: Op<S>, SequenceType {
-    public var ops:[Op<S>]
-    public var ordering:AnyOrdering<S>
+open class CollectionOp<S:Storage>: Op<S>, Sequence {
+    open var ops:[Op<S>]
+    open var ordering:AnyOrdering<S>
     
-    public init<T:Ordering where T.StorageType==S>(
+    public init<T:Ordering>(
         ops:[Op<S>],
         inputs:[Op<S>],
         outputs:[Op<S>],
-        ordering:T)
+        ordering:T) where T.StorageType==S
     {
         self.ordering = AnyOrdering<S>(ordering)
         self.ops = ops
@@ -147,45 +147,45 @@ public class CollectionOp<S:Storage>: Op<S>, SequenceType {
     public required init(op:Op<S>, shared:Bool) {
         let cop = op as! CollectionOp<S>
         ordering = AnyOrdering<S>(cop.ordering)
-        ops = cop.ops.map { copy($0, shared: shared) }
+        ops = cop.ops.map { copy(op: $0, shared: shared) }
         
         super.init(inputs: ["input"], outputs: ["outputs"])
         outputs["output"] = Tensor<S>(op.output.shape)
     }
     
-    func inputSet(label:String, value:[Op<S>]) {
+    func inputSet(_ label:String, value:[Op<S>]) {
         connect(from: value[0], to: ops[0])
     }
     
-    public override func apply() {
+    open override func apply() {
         for op in ordering.traversal(ops) {
             op.apply()
         }
     }
     
-    public func generate() -> AnyGenerator<Op<S>> {
-        return ordering.traversal(ops).generate()
+    open func makeIterator() -> AnyIterator<Op<S>> {
+        return ordering.traversal(ops).makeIterator()
     }
     
-    public override func reset() {
+    open override func reset() {
         fill(output, value: 0)
     }
 
-    public override var description: String {
-        let className = String(Mirror(reflecting: self).subjectType)
+    open override var description: String {
+        let className = String(describing: Mirror(reflecting: self).subjectType)
         let inputShapes = inputs["input"]!.map {
             let output:Tensor<S> = $0.output()
-            return String(output.shape.dims)
-        }.joinWithSeparator(", ")
+            return String(describing: output.shape.dims)
+        }.joined(separator: ", ")
         
-        let value = ops.map { String($0) }.joinWithSeparator("\n\t")
+        let value = ops.map { String(describing: $0) }.joined(separator: "\n\t")
         return "<\(className): inputs:\(inputShapes), outputs:\(output.shape.dims)> {\n\t\(value)\n}"
     }
 }
 
-public class CollectionGradient<S:Storage>: Op<S>, Gradient {
+open class CollectionGradient<S:Storage>: Op<S>, Gradient {
     public typealias StorageType = S
-    public var ops:[Op<StorageType>] = []
+    open var ops:[Op<StorageType>] = []
     var ordering:AnyOrdering<S>
     
     public required init(op:CollectionOp<S>) {
@@ -201,11 +201,11 @@ public class CollectionGradient<S:Storage>: Op<S>, Gradient {
         setAction("gradOutput", action: self.gradOutputSet)
     }
     
-    public init<T:Ordering where T.StorageType==S>(
+    public init<T:Ordering>(
         ops:[Op<S>],
         inputs:[Op<S>],
         outputs:[Op<S>],
-        ordering:T)
+        ordering:T) where T.StorageType==S
     {
         self.ordering = AnyOrdering<S>(ordering)
         self.ops = ops
@@ -215,12 +215,16 @@ public class CollectionGradient<S:Storage>: Op<S>, Gradient {
         self.outputs["output"] = outputs.map { $0.output }
         setAction("gradOutput", action: self.gradOutputSet)
     }
+
+    required public init(op: Op<S>, shared: Bool) {
+        fatalError("init(op:shared:) has not been implemented")
+    }
     
-    func createBackwardsGraph(ops:[Op<S>]) {
+    func createBackwardsGraph(_ ops:[Op<S>]) {
         // convert all ops -> opGradient
         var gradOps:[Int:Op<S>] = [:]
         
-        for op in ops.reverse() {
+        for op in ops.reversed() {
             if let diffOp = op as? Differentiable {
                 let gradOp = (diffOp.gradient() as! Op<S>)
                 gradOps[op.id] = gradOp
@@ -232,7 +236,7 @@ public class CollectionGradient<S:Storage>: Op<S>, Gradient {
         for op in ops {
             if let opInputs:[InputType<S>] = op.inputs["input"] {
                 for input in opInputs {
-                    if  let fromOp = gradOps[op.id], toOp = gradOps[input.op!.id] {
+                    if  let fromOp = gradOps[op.id], let toOp = gradOps[input.op!.id] {
                         connect(from: fromOp, to: toOp, "gradOutput")
                     }
                 }
@@ -240,17 +244,17 @@ public class CollectionGradient<S:Storage>: Op<S>, Gradient {
         }
     }
     
-    func gradOutputSet(key:String, value:[Op<S>]) {
+    func gradOutputSet(_ key:String, value:[Op<S>]) {
         connect(from: value, "output", to: ops.first!, "gradOutput")
     }
     
-    public override func apply() {
+    open override func apply() {
         for op in ordering.traversal(ops) {
             op.apply()
         }
     }
     
-    public override func reset() {
+    open override func reset() {
         for op in ops {
             (op as! GradientType).reset()
         }
@@ -258,10 +262,10 @@ public class CollectionGradient<S:Storage>: Op<S>, Gradient {
         fill(output, value: 0)
     }
     
-    public override var description: String {
-        let className = String(Mirror(reflecting: self).subjectType)
+    open override var description: String {
+        let className = String(describing: Mirror(reflecting: self).subjectType)
         
-        let value = ops.map { String($0) }.joinWithSeparator("\n\t")
+        let value = ops.map { String(describing: $0) }.joined(separator: "\n\t")
         return "<\(className): inputs=?, outputs=\(output.shape.dims)> {\n\t\(value)\n}"
     }
 }
@@ -272,7 +276,7 @@ extension CollectionOp:Differentiable {
     }
 }
 
-public class SequentialOp<S:Storage>: CollectionOp<S> {
+open class SequentialOp<S:Storage>: CollectionOp<S> {
     public init(_ ops:[Op<S>], modify:Bool=true)
     {
         if modify {
@@ -295,7 +299,7 @@ public class SequentialOp<S:Storage>: CollectionOp<S> {
     // required for Copyable
     public required convenience init(op:Op<S>, shared:Bool) {
         let cop = op as! SequentialOp<S>
-        let ops = cop.ops.map { copy($0, shared: shared) }
+        let ops = cop.ops.map { copy(op: $0, shared: shared) }
         
         self.init(ops, modify: true)
     }

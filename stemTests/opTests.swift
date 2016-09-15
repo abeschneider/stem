@@ -9,16 +9,14 @@
 import XCTest
 import stem
 
-// NB: For some reason unit tests don't see the previous version, so redeclared
-// for testing purposes
-public func copyOp<T:protocol<OpType, Copyable>>(op:T, shared:Bool) -> T {
-    //    return op.dynamicType.init(op: op as! Op<T.StorageType>, shared: shared)
-    return copy(op, shared: shared)
-}
-
 class opTests: XCTestCase {
     typealias D = NativeStorage<Double>
     typealias I = NativeStorage<Int>
+    
+    // Why is this required to be redefined?
+    func copy<T:OpType & Copyable>(op:T, shared:Bool) -> T {
+        return type(of: op).init(op: op as! Op<T.StorageType>, shared: shared)
+    }
 
     override func setUp() {
         super.setUp()
@@ -58,8 +56,8 @@ class opTests: XCTestCase {
     
     func testLinearOpCopy() {
         let linear = LinearOp<D>(inputSize: 10, outputSize: 5)
-        let linear2 = copyOp(linear, shared: true)
-        let linear3 = copyOp(linear, shared: false)
+        let linear2 = copy(op: linear, shared: true)
+        let linear3 = copy(op: linear, shared: false)
 
         let w = ravel(linear.weight)
         let w2 = ravel(linear2.weight)
@@ -166,15 +164,18 @@ class opTests: XCTestCase {
         let eps:Double = 10e-6
         let input = Constant<D>(uniform(Extent(10)))
         let target = Constant<D>(uniform(Extent(10)))
+        let gradOutput = Constant<D>(zeros(Extent(10)))
         
         let loss = L2Loss<D>()
         connect(from: input, to: loss, "input")
         connect(from: target, to: loss, "target")
         
         let lossGrad = loss.gradient() as! L2LossGrad<D>
+        connect(from: gradOutput, to: lossGrad, "gradOutput")
 
         // test gradient wrt to the input
         let inputError = checkGradient(loss, grad: lossGrad, input: input.output, eps: eps)
+
         XCTAssertLessThan(inputError, eps)
     }
     
@@ -247,6 +248,7 @@ class opTests: XCTestCase {
         
         // test gradient wrt to the input
         let inputError = checkGradient(view, grad: viewGrad, params: inputView, gradParams: viewGrad.output, eps: eps)
+
         XCTAssertLessThan(inputError, eps)
     }
     
@@ -450,50 +452,57 @@ class opTests: XCTestCase {
     }
     
     // DOES NOT WORK!
-//    func testRNN3() {
-//        let eps = 10e-6
-//        
-//        let size = 5
-//        let input = Constant<D>(uniform(Extent(size)))
-////        let gradOutput = Constant<D>(zeros(Extent(size)))
-////        let gradOutput = Constant<D>(Tensor<D>([0.5, 0.5, 0.5, 0.5, 0.5]))
-//        
-//        let concat = ConcatOp<D>()
-//        let linear = LinearOp<D>(outputSize: size)
-//        let sigmoid = SigmoidOp<D>(size: size)
-//        let prevOutput = Variable<D>()
-//        
-//        connect(from: [input, prevOutput], to: concat)
-//        connect(from: concat, to: linear)
-//        connect(from: linear, to: sigmoid)
-//        
-//        let rnn = CollectionOp<D>(ops: [input, prevOutput, concat, linear, sigmoid],
-//                                  inputs: [],
-//                                  outputs: [sigmoid],
-//                                  ordering: RepeatedSequentialOrdering<D>(count: 2))
-//        
-////        let rnnGrad = rnn.gradient() as! CollectionGradient<D>
-//        
-//        // manually build backwards graph
-//        let prevOutputGrad = prevOutput.gradient() as! VariableGradient<D>
-//        let concatGrad = concat.gradient() as! ConcatGrad<D>
-//        let linearGrad = linear.gradient() as! LinearGrad<D>
-//        let sigmoidGrad = sigmoid.gradient() as! SigmoidGrad<D>
-//
-//        connect(from: prevOutputGrad, to: sigmoidGrad, "gradOutput")
-//        connect(from: sigmoidGrad, to: linearGrad, "gradOutput")
-//        connect(from: linearGrad, to: concatGrad, "gradOutput")
-//
-//        
-//        // currently this has no effect (regardless of index or if this is commented out)
-//        connect(Source(op: concatGrad, label: "output", index: 0),
-//                Target(op: prevOutputGrad, label: "input"))
-//
-//        let rnnGrad = CollectionGradient<D>(ops: [prevOutputGrad, sigmoidGrad, linearGrad, concatGrad],
-//                                            inputs: [],
-//                                            outputs: [concatGrad],
-//                                            ordering: RepeatedSequentialOrdering<D>(count: 2))
-//
+    /*func testRNN3() {
+        let eps = 10e-6
+        
+        let size = 5
+        let input = Constant<D>(uniform(Extent(size)))
+//        let gradOutput = Constant<D>(zeros(Extent(size)))
+//        let gradOutput = Constant<D>(Tensor<D>([0.5, 0.5, 0.5, 0.5, 0.5]))
+        
+        let concat = ConcatOp<D>()
+        let linear = LinearOp<D>(outputSize: size)
+        let sigmoid = SigmoidOp<D>(size: size)
+        let prevOutput = Variable<D>()
+        
+        connect(from: [input, prevOutput], to: concat)
+        connect(from: concat, to: linear)
+        connect(from: linear, to: sigmoid)
+        connect(from: sigmoid, to: prevOutput)
+        
+        let rnn = CollectionOp<D>(ops: [input, prevOutput, concat, linear, sigmoid],
+                                  inputs: [],
+                                  outputs: [sigmoid],
+                                  ordering: RepeatedSequentialOrdering<D>(count: 2))
+        
+        rnn.apply()
+        
+//        let rnnGrad = rnn.gradient() as! CollectionGradient<D>
+        
+        // manually build backwards graph
+        let prevOutputGrad = prevOutput.gradient() as! VariableGradient<D>
+        let concatGrad = concat.gradient() as! ConcatGrad<D>
+        let linearGrad = linear.gradient() as! LinearGrad<D>
+        let sigmoidGrad = sigmoid.gradient() as! SigmoidGrad<D>
+
+        connect(from: prevOutputGrad, to: sigmoidGrad, "gradOutput")
+        connect(from: sigmoidGrad, to: linearGrad, "gradOutput")
+        connect(from: linearGrad, to: concatGrad, "gradOutput")
+
+        
+        // currently this has no effect (regardless of index or if this is commented out)
+        connect(Source(op: concatGrad, label: "output", index: 0),
+                Target(op: prevOutputGrad, label: "gradOutput"))
+
+        // ops: [prevOutputGrad, sigmoidGrad, linearGrad, concatGrad],
+        // outputs: [concatGrad],
+        let rnnGrad = CollectionGradient<D>(ops: [prevOutputGrad, sigmoidGrad, linearGrad, concatGrad],
+                                            inputs: [],
+                                            outputs: [concatGrad],
+                                            ordering: RepeatedSequentialOrdering<D>(count: 2))
+        
+        rnnGrad.apply()
+
 ////        connect(from: gradOutput, to: rnnGrad, "gradOutput")
 ////        print(rnnGrad)
 //        
@@ -505,7 +514,7 @@ class opTests: XCTestCase {
 //        let inputError = checkGradient(rnn, grad: rnnGrad, params: input.output, gradParams: rnnGrad.output, eps: eps)
 //        print(inputError)
 ////        XCTAssertLessThan(inputError, eps)
-//    }
+    }*/
     
 //    func testLSTM() {
 //        let size = 10

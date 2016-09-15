@@ -8,12 +8,12 @@
 
 import Foundation
 
-public class SharedArray<T where T:Equatable>: CollectionType {
-    public var memory:[T]
-    public var offset:Int
+open class SharedArray<T>: Swift.Collection where T:Equatable {
+    open var memory:[T]
+    open var offset:Int
     
-    public var startIndex:Int { return offset }
-    public var endIndex:Int { return memory.count + offset }
+    open var startIndex:Int { return offset }
+    open var endIndex:Int { return memory.count + offset }
     
     init(_ values:T...) {
         memory = values
@@ -26,24 +26,33 @@ public class SharedArray<T where T:Equatable>: CollectionType {
     }
     
     init(count:Int, repeatedValue:T) {
-        memory = [T](count:count, repeatedValue:repeatedValue)
+        memory = [T](repeating: repeatedValue, count: count)
         offset = 0
     }
     
-    public subscript(index:Int) -> T {
+    open subscript(index:Int) -> T {
         get { return memory[index+offset] }
         set { memory[index+offset] = newValue }
     }
     
-    func copy(array:SharedArray<T>) {
+    func copy(_ array:SharedArray<T>) {
         memory = array.memory
         offset = array.offset
+    }
+    
+    /// Returns the position immediately after the given index.
+    ///
+    /// - Parameter i: A valid index of the collection. `i` must be less than
+    ///   `endIndex`.
+    /// - Returns: The index value immediately after `i`.
+    public func index(after i: Int) -> Int {
+        return i+1
     }
 }
 
 extension SharedArray: CustomStringConvertible {
     public var description:String {
-        let values = memory.map { String($0) }.joinWithSeparator(", ")
+        let values = memory.map { String(describing: $0) }.joined(separator: ", ")
         return "[\(values)]"
     }
 }

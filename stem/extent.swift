@@ -15,7 +15,14 @@ enum ExtentElement {
     case broadcast
 }
 
-public struct Extent: CollectionType {
+// TODO: figure out proper place to put this
+public extension Int {
+    public init(_ bool: Bool) {
+        self = bool ? 1 : 0
+    }
+}
+
+public struct Extent: Swift.Collection {
     var values:[Int]
     public var elements:Int
     public var span:Int
@@ -25,20 +32,21 @@ public struct Extent: CollectionType {
     
     public init(_ ex: Int...) {
         values = ex
-        elements = values.reduce(1, combine: *)
-        span = (values.map { Int($0 > 1) }).reduce(0, combine: +)
+        elements = values.reduce(1, *)
+        
+        span = (values.map { Int($0 > 1) }).reduce(0, +)
     }
     
     public init(_ dims:[Int]) {
         values = dims
-        elements = values.reduce(1, combine: *)
-        span = (values.map { Int($0 > 1) }).reduce(0, combine: +)
+        elements = values.reduce(1, *)
+        span = (values.map { Int($0 > 1) }).reduce(0, +)
     }
     
     public init(_ extent:Extent) {
         values = extent.values
-        elements = values.reduce(1, combine: *)
-        span = (values.map { Int($0 > 1) }).reduce(0, combine: +)
+        elements = values.reduce(1, *)
+        span = (values.map { Int($0 > 1) }).reduce(0, +)
     }
     
     // extend the extent over additional dimensions
@@ -46,11 +54,11 @@ public struct Extent: CollectionType {
         precondition(over >= extent.count)
         let diff = over - extent.count
         
-        let ones = [Int](count: diff, repeatedValue: 1)
+        let ones = [Int](repeating: 1, count: diff)
         values = extent.values + ones
         
-        elements = values.reduce(1, combine: *)
-        span = (values.map { Int($0 > 1) }).reduce(0, combine: +)
+        elements = values.reduce(1, *)
+        span = (values.map { Int($0 > 1) }).reduce(0, +)
     }
     
     public var startIndex:Int { return 0 }
@@ -68,13 +76,13 @@ public struct Extent: CollectionType {
         }
         set {
             values[index] = newValue
-            elements = values.reduce(1, combine: *)
+            elements = values.reduce(1, *)
         }
     }
     
-    public func generate() -> AnyGenerator<Int> {
+    public func makeIterator() -> AnyIterator<Int> {
         var index:Int = 0
-        return AnyGenerator {
+        return AnyIterator {
             if index >= self.values.count { return nil }
             
             let currentIndex = index
@@ -95,6 +103,15 @@ public struct Extent: CollectionType {
         }
         
         return bestIndex
+    }
+    
+    /// Returns the position immediately after the given index.
+    ///
+    /// - Parameter i: A valid index of the collection. `i` must be less than
+    ///   `endIndex`.
+    /// - Returns: The index value immediately after `i`.
+    public func index(after i: Int) -> Int {
+        return i+1
     }
 }
 
@@ -121,6 +138,6 @@ public func <(left:Extent, right:Extent) -> Bool {
     return left.elements < right.elements
 }
 
-public func max(left:Extent, _ right:Extent) -> Extent {
+public func max(_ left:Extent, _ right:Extent) -> Extent {
     return left > right ? left : right
 }

@@ -12,7 +12,7 @@ func createUID() -> Int {
     return uniform()
 }
 
-func += <K, V> (inout left: [K:V], right: [K:V]) {
+func += <K, V> (left: inout [K:V], right: [K:V]) {
     for (k, v) in right {
         left[k] = v
     }
@@ -28,10 +28,9 @@ public protocol Copyable {
     init(op:Op<StorageType>, shared:Bool)
 }
 
-public func copy<T:protocol<OpType, Copyable>>(op:T, shared:Bool) -> T {
-    return op.dynamicType.init(op: op as! Op<T.StorageType>, shared: shared)
+public func copy<T:OpType & Copyable>(op:T, shared:Bool) -> T {
+    return type(of: op).init(op: op as! Op<T.StorageType>, shared: shared)
 }
-
 
 public struct InputType<S:Storage> {
     public var op:Op<S>?
@@ -90,22 +89,22 @@ public struct Target<S:Storage> {
     }
 }
 
-public class Op<S:Storage>: OpType, Copyable, Hashable, CustomStringConvertible {
-    public typealias StorageType = S
+open class Op<S:Storage>: OpType, Copyable, Hashable, CustomStringConvertible {
+    //public typealias StorageType = S
     public typealias InputAction = (String, [Op<S>]) -> ()
     
-    public var id:Int = createUID()
+    open var id:Int = createUID()
     
-    public var inputs:OrderedDictionary<InputType<S>>
-    public var outputs:OrderedDictionary<Tensor<S>>
+    open var inputs:OrderedDictionary<InputType<S>>
+    open var outputs:OrderedDictionary<Tensor<S>>
     
     // convenience variable for case when there is only a single output
-    public var output:Tensor<S> {
+    open var output:Tensor<S> {
         get { return outputs["output"]! }
         set { outputs["output"] = newValue }
     }
     
-    public var inputActions:[String:InputAction] = [:]
+    open var inputActions:[String:InputAction] = [:]
     
     public init() {
         inputs = OrderedDictionary<InputType<S>>()
@@ -122,7 +121,7 @@ public class Op<S:Storage>: OpType, Copyable, Hashable, CustomStringConvertible 
         outputs = OrderedDictionary<Tensor<S>>()
     }
     
-    public func setInput(inputLabel:String, to:InputType<S>) {
+    open func setInput(_ inputLabel:String, to:InputType<S>) {
         inputs[inputLabel] = to
         
         if let action = inputActions[inputLabel] {
@@ -130,7 +129,7 @@ public class Op<S:Storage>: OpType, Copyable, Hashable, CustomStringConvertible 
         }
     }
     
-    public func setInput(inputLabel:String, to:Op<S>, _ outputLabel:String="output") {
+    open func setInput(_ inputLabel:String, to:Op<S>, _ outputLabel:String="output") {
         inputs[inputLabel] = InputType(to, outputLabel)
         
         if let action = inputActions[inputLabel] {
@@ -138,7 +137,7 @@ public class Op<S:Storage>: OpType, Copyable, Hashable, CustomStringConvertible 
         }
     }
 
-    public func setInput(inputLabel:String, to:[Op<S>], _ outputLabel:String="output") {
+    open func setInput(_ inputLabel:String, to:[Op<S>], _ outputLabel:String="output") {
         inputs[inputLabel] = to.map { InputType($0, outputLabel) }
         
         if let action = inputActions[inputLabel] {
@@ -146,27 +145,27 @@ public class Op<S:Storage>: OpType, Copyable, Hashable, CustomStringConvertible 
         }
     }
     
-    public func setAction(key:String, action:(String, [Op<S>]) -> ()) {
+    open func setAction(_ key:String, action:@escaping (String, [Op<S>]) -> ()) {
         inputActions[key] = action
     }
     
-    public func getInput(label:String) -> Op<S> {
+    open func getInput(_ label:String) -> Op<S> {
         return inputs[label]!.op!
     }
     
-    public func apply() {
+    open func apply() {
         assertionFailure()
     }
     
-    public func reset() {
+    open func reset() {
         fill(output, value: 0)
     }
     
-    public func params() -> [Tensor<StorageType>] {
+    open func params() -> [Tensor<S>] {
         return []
     }
     
-    public var hashValue: Int { return id }
+    open var hashValue: Int { return id }
     
     func inputsToString() -> String {
         return inputs.keys.map {
@@ -175,15 +174,15 @@ public class Op<S:Storage>: OpType, Copyable, Hashable, CustomStringConvertible 
             } else {
                 return "\($0):<empty>"
             }
-        }.joinWithSeparator(", ")
+        }.joined(separator: ", ")
     }
     
     func outputsToString() -> String {
-        return outputs.map { String($0[0].shape.dims) }.joinWithSeparator(", ")
+        return outputs.map { String(describing: $0[0].shape.dims) }.joined(separator: ", ")
     }
     
-    public var description: String {
-        let className = String(Mirror(reflecting: self).subjectType)
+    open var description: String {
+        let className = String(describing: Mirror(reflecting: self).subjectType)
         let input_values:String = inputsToString()
         let output_values:String = outputsToString()
         
@@ -195,15 +194,15 @@ public func ==<S:Storage>(lhs:Op<S>, rhs:Op<S>) -> Bool {
     return lhs.id == rhs.id
 }
 
-public func connect<S:Storage>(from from:Op<S>, _ outputLabel:String="output", to:Op<S>, _ inputLabel:String="input") {
+public func connect<S:Storage>(from:Op<S>, _ outputLabel:String="output", to:Op<S>, _ inputLabel:String="input") {
     to.setInput(inputLabel, to: from, outputLabel)
 }
 
-public func connect<S:Storage>(from from:[Op<S>], _ outputLabel:String="output", to:Op<S>, _ inputLabel:String="input") {
+public func connect<S:Storage>(from:[Op<S>], _ outputLabel:String="output", to:Op<S>, _ inputLabel:String="input") {
     to.setInput(inputLabel, to: from, outputLabel)
 }
 
-public func connect<S:Storage>(source:Source<S>, _ target:Target<S>) {
+public func connect<S:Storage>(_ source:Source<S>, _ target:Target<S>) {
     target.op.setInput(target.label, to: source.op, source.label)
 }
 
@@ -222,7 +221,7 @@ public protocol Differentiable {
     func gradient() -> GradientType
 }
 
-public func gradient(op:Differentiable) -> GradientType {
+public func gradient(_ op:Differentiable) -> GradientType {
     return op.gradient()
 }
 
@@ -232,11 +231,11 @@ public protocol Loss: Differentiable, OpType {
     var value:StorageType.ElementType { get }
 }
 
-public class DataSequence<S:Storage>: GeneratorType {
+open class DataSequence<S:Storage>: IteratorProtocol {
     var data:[Tensor<S>] = []
     var index:Int = 0
     
-    public func next() -> Tensor<S>? {
+    open func next() -> Tensor<S>? {
         if index < data.count {
             return data[index]
         }
@@ -245,7 +244,7 @@ public class DataSequence<S:Storage>: GeneratorType {
     }
 }
 
-public class Constant<S:Storage>: Op<S> {
+open class Constant<S:Storage>: Op<S> {
     public init(_ value:S.ElementType) {
         super.init(inputs: [], outputs: ["output"])
         outputs["output"] = Tensor<S>([value])
@@ -272,7 +271,7 @@ public class Constant<S:Storage>: Op<S> {
         outputs["output"] = Tensor<S>(op.output.shape)
     }
     
-    public func set(input:Tensor<S>, copy makeCopy:Bool=true) {
+    open func set(_ input:Tensor<S>, copy makeCopy:Bool=true) {
         if makeCopy {
             copy(from: input, to: output)
         } else {
@@ -280,41 +279,54 @@ public class Constant<S:Storage>: Op<S> {
         }
     }
     
-    public override func apply() {}
+    open override func apply() {}
 }
 
-public class Variable<S:Storage>: Op<S> {
-    public var _input:Tensor<S> { return inputs[0].output() }
+open class Variable<S:Storage>: Op<S> {
+    open var _input:Tensor<S> { return inputs[0].output() }
 
     public override init() {
         super.init(inputs: ["input"], outputs: ["output"])
         setAction("input", action: inputSet)
     }
+
+    required public init(op: Op<S>, shared: Bool) {
+        fatalError("init(op:shared:) has not been implemented")
+    }
     
-    func inputSet(label:String, ops:[Op<S>]) {
+    func inputSet(_ label:String, ops:[Op<S>]) {
         outputs["output"] = Tensor<S>(ops[0].output.shape)
     }
     
-    public override func apply() {
+    open override func apply() {
         copy(from: _input, to: output)
     }
 }
 
-public class VariableGradient<S:Storage>: Op<S>, Gradient {
-    public var _variable:Tensor<S> { return inputs[0].output() }
-    public var _input:Tensor<S> { return inputs[1].output() }
-    public var _gradOutput:Tensor<S> { return inputs[2].output() }
+open class VariableGradient<S:Storage>: Op<S>, Gradient {
+    open var _variable:Tensor<S> { return inputs[0].output() }
+    open var _input:Tensor<S> { return inputs[1].output() }
+    open var _gradOutput:Tensor<S> { return inputs[2].output() }
 
     
     public required init(op:Variable<S>) {
         super.init(inputs: ["op", "input", "gradOutput"], outputs: ["output"])
+//        connect(from: op, "output", to: self, "input")
+        let v:InputType<S> = op.inputs[0]
+        connect(from: op, "output", to: self, "op")
+        connect(from: v.op!, "output", to: self, "input")
+        outputs["output"] = Tensor<S>(op.output.shape)
     }
 
-    public override func apply() {
+    required public init(op: Op<S>, shared: Bool) {
+        fatalError("init(op:shared:) has not been implemented")
+    }
+
+    open override func apply() {
         copy(from: _input, to: output)
     }
     
-    public override func reset() {
+    open override func reset() {
         fill(output, value: 0)
     }
 }
@@ -361,7 +373,7 @@ extension Variable: Differentiable {
 //    }
 //}
 
-public class SigmoidOp<S:Storage where S.ElementType:FloatNumericType>: Op<S> {
+open class SigmoidOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
     var _input:Tensor<S> { return inputs[0].output() }
     
     public override init() {
@@ -383,22 +395,22 @@ public class SigmoidOp<S:Storage where S.ElementType:FloatNumericType>: Op<S> {
         outputs["output"] = Tensor<S>(op.output.shape)
     }
     
-    func inputSet(label:String, input:[Op<S>]) {
+    func inputSet(_ label:String, input:[Op<S>]) {
         output.resize(_input.shape)
     }
     
-    public override func apply() {
+    open override func apply() {
         sigmoid(_input, output: output)
     }
 }
 
-public class SigmoidGrad<S:Storage where S.ElementType:FloatNumericType>: Op<S>, Gradient {
+open class SigmoidGrad<S:Storage>: Op<S>, Gradient where S.ElementType:FloatNumericType {
     public typealias StorageType = S
     public typealias OpType = SigmoidOp<S>
     
-    public var _sigmoid:Tensor<S> { return inputs[0].output() }
-    public var _input:Tensor<S> { return inputs[1].output() }
-    public var _gradOutput:Tensor<S> { return inputs[2].output() }
+    open var _sigmoid:Tensor<S> { return inputs[0].output() }
+    open var _input:Tensor<S> { return inputs[1].output() }
+    open var _gradOutput:Tensor<S> { return inputs[2].output() }
     
     public required init(op:SigmoidOp<S>) {
         let s:InputType<S> = op.inputs[0]
@@ -421,8 +433,12 @@ public class SigmoidGrad<S:Storage where S.ElementType:FloatNumericType>: Op<S>,
         connect(from: gradInput, "output", to: self, "gradOutput")
         outputs["output"] = Tensor<S>(input.output.shape)
     }
+
+    required public init(op: Op<S>, shared: Bool) {
+        fatalError("init(op:shared:) has not been implemented")
+    }
     
-    public override func apply() {
+    open override func apply() {
         // sigmoid(x)*(1 - sigmoid(x))
         let result = S.ElementType(1.0) - _sigmoid
         result *= _sigmoid
@@ -430,7 +446,7 @@ public class SigmoidGrad<S:Storage where S.ElementType:FloatNumericType>: Op<S>,
         output += result
     }
     
-    public override func reset() {
+    open override func reset() {
         fill(output, value: 0)
     }
 }
@@ -441,7 +457,7 @@ extension SigmoidOp: Differentiable {
     }
 }
 
-public class TanhOp<S:Storage where S.ElementType:FloatNumericType>: Op<S> {
+open class TanhOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
     var _input:Tensor<S> { return inputs[0].output() }
     
     public override init() {
@@ -464,23 +480,23 @@ public class TanhOp<S:Storage where S.ElementType:FloatNumericType>: Op<S> {
         outputs["output"] = Tensor<S>(op.output.shape)
     }
     
-    func inputSet(label:String, input:[Op<S>]) {
+    func inputSet(_ label:String, input:[Op<S>]) {
         output.resize(_input.shape)
     }
     
-    public override func apply() {
+    open override func apply() {
         tanh(_input, output: output)
     }
 }
 
-public class TanhGrad<S:Storage where S.ElementType:FloatNumericType>: Op<S>, Gradient {
+open class TanhGrad<S:Storage>: Op<S>, Gradient where S.ElementType:FloatNumericType {
     public typealias StorageType = S
     public typealias OpType = TanhOp<S>
     
-    public var _tanh:Tensor<S> { return inputs[0].output() }
+    open var _tanh:Tensor<S> { return inputs[0].output() }
     
-    public var _input:Tensor<S> { return inputs[1].output() }
-    public var _gradOutput:Tensor<S> { return inputs[2].output() }
+    open var _input:Tensor<S> { return inputs[1].output() }
+    open var _gradOutput:Tensor<S> { return inputs[2].output() }
     
     public required init(op:TanhOp<S>) {
         let s:InputType<S> = op.inputs[0]
@@ -503,11 +519,15 @@ public class TanhGrad<S:Storage where S.ElementType:FloatNumericType>: Op<S>, Gr
         connect(from: gradInput, to: self, "gradOutput")
         outputs["output"] = Tensor<S>(op.output.shape)
     }
+
+    required public init(op: Op<S>, shared: Bool) {
+        fatalError("init(op:shared:) has not been implemented")
+    }
     
     /*
      dtanh(x)/dx = (1 - tanh^2 x)*dx
     */
-    public override func apply() {
+    open override func apply() {
         let result = _tanh * _tanh
         result *= -1
         add(S.ElementType(1.0), result, result: result)
@@ -515,7 +535,7 @@ public class TanhGrad<S:Storage where S.ElementType:FloatNumericType>: Op<S>, Gr
         output += result
     }
     
-    public override func reset() {
+    open override func reset() {
         fill(output, value: 0)
     }
 }
@@ -526,14 +546,14 @@ extension TanhOp: Differentiable {
     }
 }
 
-public class LinearOp<S:Storage where S.ElementType:FloatNumericType>: Op<S> {
+open class LinearOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
     public typealias StorageType = S
     public typealias OpType = LinearOp<S>
     
-    public var weight:Tensor<S>
-    public var bias:Tensor<S>
+    open var weight:Tensor<S>
+    open var bias:Tensor<S>
     
-    public var _input:Tensor<S> { return inputs[0].output() }
+    open var _input:Tensor<S> { return inputs[0].output() }
     
     public override init() {
         weight = Tensor<S>()
@@ -582,6 +602,7 @@ public class LinearOp<S:Storage where S.ElementType:FloatNumericType>: Op<S> {
         setAction("input", action: self.inputSet)
     }
     
+    // required for Copyable
     public required init(op:Op<S>, shared:Bool) {
         let linear = op as! LinearOp<S>
         weight = shared ? linear.weight : copy(linear.weight)
@@ -592,7 +613,7 @@ public class LinearOp<S:Storage where S.ElementType:FloatNumericType>: Op<S> {
         setAction("input", action: self.inputSet)
     }
     
-    func inputSet(label:String, input:[Op<S>]) {
+    func inputSet(_ label:String, input:[Op<S>]) {
         let newShape = Extent(output.shape[0], input[0].output.shape[0])
         if weight.shape != newShape {
             weight.resize(newShape)
@@ -600,7 +621,7 @@ public class LinearOp<S:Storage where S.ElementType:FloatNumericType>: Op<S> {
         }
     }
     
-    public override func apply() {
+    open override func apply() {
         // TODO: review, not sure this is the best way to do this
         if _input.dims == 1 {
             output.resize(Extent(weight.shape[0]))
@@ -615,24 +636,24 @@ public class LinearOp<S:Storage where S.ElementType:FloatNumericType>: Op<S> {
         }
     }
     
-    public override func params() -> [Tensor<S>] {
+    open override func params() -> [Tensor<S>] {
         return [weight, bias]
     }
 }
 
-public class LinearGrad<S:Storage where S.ElementType:FloatNumericType>: Op<S>, Gradient {
+open class LinearGrad<S:Storage>: Op<S>, Gradient where S.ElementType:FloatNumericType {
     public typealias StorageType = S
 
-    public var weight:Tensor<S>
-    public var bias:Tensor<S>
+    open var weight:Tensor<S>
+    open var bias:Tensor<S>
     
-    public var linear:LinearOp<S> {
+    open var linear:LinearOp<S> {
         let input:InputType<S> = inputs[0]
         return input.op as! LinearOp<S>
     }
 
-    public var _input:Tensor<S> { return inputs[1].output() }
-    public var _gradOutput:Tensor<S> { return inputs[2].output() }
+    open var _input:Tensor<S> { return inputs[1].output() }
+    open var _gradOutput:Tensor<S> { return inputs[2].output() }
     
     public required init(op:LinearOp<S>) {
         weight = zeros(op.weight.shape)
@@ -663,9 +684,13 @@ public class LinearGrad<S:Storage where S.ElementType:FloatNumericType>: Op<S>, 
         connect(from: gradInput, "output", to: self, "gradOutput")
         outputs["output"] = zeros(Extent(op.weight.shape[1]))
     }
+
+    required public init(op: Op<S>, shared: Bool) {
+        fatalError("init(op:shared:) has not been implemented")
+    }
     
     // need to separate apply into accumulate and apply
-    public override func apply() {
+    open override func apply() {
         if _input.dims == 1 {
             outer(_gradOutput, _input, addTo: weight)
             bias += _gradOutput
@@ -683,11 +708,11 @@ public class LinearGrad<S:Storage where S.ElementType:FloatNumericType>: Op<S>, 
         dot(linear.weight.transpose(), _gradOutput, addTo: output)
     }
     
-    public override func params() -> [Tensor<S>] {
+    open override func params() -> [Tensor<S>] {
         return [weight, bias]
     }
     
-    public override func reset() {
+    open override func reset() {
         fill(weight, value: 0)
         fill(bias, value: 0)
         fill(output, value: 0)
@@ -700,13 +725,13 @@ extension LinearOp: Differentiable {
     }
 }
 
-public class L2Loss<S:Storage where S.ElementType:FloatNumericType>: Op<S>, Loss {
+open class L2Loss<S:Storage>: Op<S>, Loss where S.ElementType:FloatNumericType {
     public typealias StorageType = S
     
-    public var value:S.ElementType = 0
+    open var value:S.ElementType = 0
     
-    public var _input:Tensor<S> { return inputs[0].output() }
-    public var _target:Tensor<S> { return inputs[1].output() }
+    open var _input:Tensor<S> { return inputs[0].output() }
+    open var _target:Tensor<S> { return inputs[1].output() }
     
     public override init() {
         super.init(inputs: ["input", "target"], outputs: ["output"])
@@ -736,7 +761,7 @@ public class L2Loss<S:Storage where S.ElementType:FloatNumericType>: Op<S>, Loss
         outputs["output"] = Tensor<S>(op.output.shape)
     }
     
-    public override func apply() {
+    open override func apply() {
         // TODO: change to setAction
         if output.shape != _input.shape {
             output.resize(_input.shape)
@@ -753,16 +778,16 @@ public class L2Loss<S:Storage where S.ElementType:FloatNumericType>: Op<S>, Loss
     }
 }
 
-public class L2LossGrad<S:Storage where S.ElementType:FloatNumericType>: Op<S>, Gradient {
+open class L2LossGrad<S:Storage>: Op<S>, Gradient where S.ElementType:FloatNumericType {
     public typealias StorageType = S
     public typealias OpType = L2Loss<S>
     
-    public var linear:LinearOp<S> {
+    open var linear:LinearOp<S> {
         let input:InputType<S> = inputs[0]
         return input.op as! LinearOp<S>
     }
-    public var _input:Tensor<S> { return inputs[1].output() }
-    public var _target:Tensor<S> { return inputs[2].output() }
+    open var _input:Tensor<S> { return inputs[1].output() }
+    open var _target:Tensor<S> { return inputs[2].output() }
     
     public required init(op:L2Loss<S>) {
         let l:InputType<S> = op.inputs[0]
@@ -779,13 +804,17 @@ public class L2LossGrad<S:Storage where S.ElementType:FloatNumericType>: Op<S>, 
         super.init(inputs: ["op", "input", "target"], outputs: ["output"])
         outputs["output"] = Tensor<S>(Extent(size))
     }
+
+    required public init(op: Op<S>, shared: Bool) {
+        fatalError("init(op:shared:) has not been implemented")
+    }
     
-    public override func apply() {
+    open override func apply() {
         sub(_input, _target, result: output)
         output *= 2
     }
     
-    public override func reset() {
+    open override func reset() {
         fill(output, value: 0)
     }
 }
@@ -797,8 +826,8 @@ extension L2Loss: Differentiable {
 }
 
 // adds together inputs
-public class AddOp<S:Storage where S.ElementType:FloatNumericType>: Op<S> {
-    public var inOps:[Op<S>] {
+open class AddOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
+    open var inOps:[Op<S>] {
         let inputs:[InputType<S>] = self.inputs[0]
         return inputs.map { $0.op! }
     }
@@ -806,10 +835,14 @@ public class AddOp<S:Storage where S.ElementType:FloatNumericType>: Op<S> {
     public init(_ ops:Op<S>...) {
         super.init(inputs: ["input"], outputs: ["output"])
         connect(from: ops, "output", to: self, "input")
-        outputs["output"] = [Tensor<S>](count: ops.count, repeatedValue: zeros(ops[0].output.shape))
+        outputs["output"] = [Tensor<S>](repeating: zeros(ops[0].output.shape), count: ops.count)
+    }
+
+    required public init(op: Op<S>, shared: Bool) {
+        fatalError("init(op:shared:) has not been implemented")
     }
     
-    public override func apply() {
+    open override func apply() {
         if output.shape != inOps[0].output.shape {
             output.resize(inOps[0].output.shape)
         }
@@ -821,13 +854,13 @@ public class AddOp<S:Storage where S.ElementType:FloatNumericType>: Op<S> {
     }
 }
 
-public class AddOpGrad<S:Storage where S.ElementType:FloatNumericType>: Op<S>, Gradient {
-    public var _add:Tensor<S> { return inputs[0].output() }
-    public var _input:[Tensor<S>] {
+open class AddOpGrad<S:Storage>: Op<S>, Gradient where S.ElementType:FloatNumericType {
+    open var _add:Tensor<S> { return inputs[0].output() }
+    open var _input:[Tensor<S>] {
         let _in:[InputType<S>] = inputs[1]
         return _in.map { $0.output() }
     }
-    public var _gradOutput:Tensor<S> { return inputs[2].output() }
+    open var _gradOutput:Tensor<S> { return inputs[2].output() }
     
     public required init(op:AddOp<S>) {
         super.init(inputs: ["op", "input", "gradOutput"], outputs: ["output"])
@@ -835,12 +868,16 @@ public class AddOpGrad<S:Storage where S.ElementType:FloatNumericType>: Op<S>, G
         let opInputs:[InputType<S>] = op.inputs[0]
         connect(from: op, "output", to: self, "op")
         connect(from: opInputs.map { $0.op! }, "output", to: self, "input")
-        outputs["output"] = [Tensor<S>](count: _input.count, repeatedValue: Tensor<S>(_input[0].shape))
+        outputs["output"] = [Tensor<S>](repeating: Tensor<S>(_input[0].shape), count: _input.count)
+    }
+
+    required public init(op: Op<S>, shared: Bool) {
+        fatalError("init(op:shared:) has not been implemented")
     }
     
-    public override func apply() {
+    open override func apply() {
         if outputs["output"]!.count != _input.count {
-            outputs["output"] = [Tensor<S>](count: _input.count, repeatedValue: Tensor<S>(_input[0].shape))
+            outputs["output"] = [Tensor<S>](repeating: Tensor<S>(_input[0].shape), count: _input.count)
         }
         
         for out in outputs["output"]! {
@@ -848,7 +885,7 @@ public class AddOpGrad<S:Storage where S.ElementType:FloatNumericType>: Op<S>, G
         }
     }
     
-    public override func reset() {
+    open override func reset() {
         for out in outputs["output"]! {
             fill(out, value: 0)
         }
@@ -862,8 +899,8 @@ extension AddOp: Differentiable {
 }
 
 // multiplies together inputs
-public class MulOp<S:Storage where S.ElementType:FloatNumericType>: Op<S> {
-    public var _input:[Tensor<S>] {
+open class MulOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
+    open var _input:[Tensor<S>] {
         let _in:[InputType<S>] = inputs[0]
         return _in.map { $0.output() }
     }
@@ -871,10 +908,14 @@ public class MulOp<S:Storage where S.ElementType:FloatNumericType>: Op<S> {
     public init(_ ops:Op<S>...) {
         super.init(inputs: ["input"], outputs: ["output"])
         connect(from: ops, "output", to: self, "input")
-        outputs["output"] = [Tensor<S>](count: _input.count, repeatedValue: zeros(_input[0].shape))
+        outputs["output"] = [Tensor<S>](repeating: zeros(_input[0].shape), count: _input.count)
+    }
+
+    required public init(op: Op<S>, shared: Bool) {
+        fatalError("init(op:shared:) has not been implemented")
     }
     
-    public override func apply() {
+    open override func apply() {
         if output.shape != _input[0].shape {
             output.resize(_input[0].shape)
         }
@@ -886,13 +927,13 @@ public class MulOp<S:Storage where S.ElementType:FloatNumericType>: Op<S> {
     }
 }
 
-public class MulOpGrad<S:Storage where S.ElementType:FloatNumericType>: Op<S>, Gradient {
-    public var _op:Tensor<S> { return inputs[0].output() }
-    public var _input:[Tensor<S>] {
+open class MulOpGrad<S:Storage>: Op<S>, Gradient where S.ElementType:FloatNumericType {
+    open var _op:Tensor<S> { return inputs[0].output() }
+    open var _input:[Tensor<S>] {
         let _in:[InputType<S>] = inputs[1]
         return _in.map { $0.output() }
     }
-    public var _gradOutput:Tensor<S> { return inputs[2].output() }
+    open var _gradOutput:Tensor<S> { return inputs[2].output() }
     
     public required init(op:MulOp<S>) {
         super.init(inputs: ["op", "input", "gradOutput"], outputs: ["output"])
@@ -900,19 +941,23 @@ public class MulOpGrad<S:Storage where S.ElementType:FloatNumericType>: Op<S>, G
         let opInputs:[InputType<S>] = op.inputs[0]
         connect(from: op, "output", to: self, "op")
         connect(from: opInputs.map { $0.op! }, "output", to: self, "input")
-        outputs["output"] = [Tensor<S>](count: _input.count, repeatedValue: Tensor<S>(_input[0].shape))
+        outputs["output"] = [Tensor<S>](repeating: Tensor<S>(_input[0].shape), count: _input.count)
+    }
+
+    required public init(op: Op<S>, shared: Bool) {
+        fatalError("init(op:shared:) has not been implemented")
     }
     
-    public override func apply() {
+    open override func apply() {
         if outputs["output"]!.count != _input.count {
-            outputs["output"] = [Tensor<S>](count: _input.count, repeatedValue: Tensor<S>(_input[0].shape))
+            outputs["output"] = [Tensor<S>](repeating: Tensor<S>(_input[0].shape), count: _input.count)
         }
         
         // TODO: there is a more efficient way to implement this
-        for (i, out) in outputs[0].enumerate() {
+        for (i, out) in outputs[0].enumerated() {
             copy(from: _gradOutput, to: out)
             
-            for (j, output) in _input.enumerate() {
+            for (j, output) in _input.enumerated() {
                 if i != j {
                     imul(out, output)
                 }
@@ -920,7 +965,7 @@ public class MulOpGrad<S:Storage where S.ElementType:FloatNumericType>: Op<S>, G
         }
     }
     
-    public override func reset() {
+    open override func reset() {
         for out in outputs["output"]! {
             fill(out, value: 0)
         }
@@ -933,7 +978,7 @@ extension MulOp: Differentiable {
     }
 }
 
-public class LogOp<S:Storage where S.ElementType:FloatNumericType>: Op<S> {
+open class LogOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
     var _input:Tensor<S> { return inputs[0].output() }
     
     public init(size:Int) {
@@ -947,12 +992,16 @@ public class LogOp<S:Storage where S.ElementType:FloatNumericType>: Op<S> {
         super.init(inputs: ["input"], outputs: ["output"])
         setAction("input", action: self.inputSet)
     }
+
+    required public init(op: Op<S>, shared: Bool) {
+        fatalError("init(op:shared:) has not been implemented")
+    }
     
-    func inputSet(label:String, input:[Op<S>]) {
+    func inputSet(_ label:String, input:[Op<S>]) {
         output.resize(_input[0].shape)
     }
     
-    public override func apply() {
+    open override func apply() {
         if output.shape != _input.shape {
             output.resize(_input.shape)
         }
@@ -967,9 +1016,9 @@ extension LogOp: Differentiable {
     }
 }
 
-public class LogGrad<S:Storage where S.ElementType:FloatNumericType>: Op<S>, Gradient {
-    public var _input:Tensor<S> { return inputs[1].output() }
-    public var _gradOutput:Tensor<S> { return inputs[2].output() }
+open class LogGrad<S:Storage>: Op<S>, Gradient where S.ElementType:FloatNumericType {
+    open var _input:Tensor<S> { return inputs[1].output() }
+    open var _gradOutput:Tensor<S> { return inputs[2].output() }
     
     public required init(op:LogOp<S>) {
         let opInput:InputType<S> = op.inputs[0]
@@ -978,8 +1027,12 @@ public class LogGrad<S:Storage where S.ElementType:FloatNumericType>: Op<S>, Gra
         connect(from: opInput.op!, "output", to: self, "input")
         outputs["output"] = Tensor<S>(op.output.shape)
     }
+
+    required public init(op: Op<S>, shared: Bool) {
+        fatalError("init(op:shared:) has not been implemented")
+    }
     
-    public override func apply() {
+    open override func apply() {
         if output.shape != _gradOutput.shape {
             output.resize(_gradOutput.shape)
         }
@@ -989,12 +1042,12 @@ public class LogGrad<S:Storage where S.ElementType:FloatNumericType>: Op<S>, Gra
         output *= _gradOutput
     }
     
-    public override func reset() {
+    open override func reset() {
         fill(output, value: 0)
     }
 }
 
-public class ConcatOp<S:Storage where S.ElementType:FloatNumericType>: Op<S> {
+open class ConcatOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
     public override init() {
         super.init(inputs: ["input"], outputs: ["output"])
         outputs["output"] = Tensor<S>()
@@ -1012,8 +1065,12 @@ public class ConcatOp<S:Storage where S.ElementType:FloatNumericType>: Op<S> {
     public convenience init(_ ops:Op<S>...) {
         self.init(ops)
     }
+
+    required public init(op: Op<S>, shared: Bool) {
+        fatalError("init(op:shared:) has not been implemented")
+    }
     
-    func inputSet(label:String, inputs:[Op<S>]) {
+    func inputSet(_ label:String, inputs:[Op<S>]) {
         // TODO: to make more efficient, calculate size of concat first
         // so no temporary is required
         let result = concat(inputs.map { $0.output })
@@ -1021,17 +1078,17 @@ public class ConcatOp<S:Storage where S.ElementType:FloatNumericType>: Op<S> {
         copy(from: result, to: output)
     }
     
-    public override func apply() {
+    open override func apply() {
         let result = concat(inputs[0].map { $0.output() })
         output.resize(result.shape)
         copy(from: result, to: output)
     }
 }
 
-public class ConcatGrad<S:Storage where S.ElementType:FloatNumericType>: Op<S>, Gradient {
+open class ConcatGrad<S:Storage>: Op<S>, Gradient where S.ElementType:FloatNumericType {
     var _op:Tensor<S> { return inputs[0].output() }
     var _input:[Tensor<S>] { return inputs[1].output() }
-    public var _gradOutput:Tensor<S> { return inputs[2].output() }
+    open var _gradOutput:Tensor<S> { return inputs[2].output() }
     
     public required init(op:ConcatOp<S>) {
         let opInputs:[InputType<S>] = op.inputs["input"]!
@@ -1042,8 +1099,12 @@ public class ConcatGrad<S:Storage where S.ElementType:FloatNumericType>: Op<S>, 
         // TODO: check this makes sense
         outputs["output"] = opInputs.map { Tensor<S>($0.op!.output.shape) }
     }
+
+    required public init(op: Op<S>, shared: Bool) {
+        fatalError("init(op:shared:) has not been implemented")
+    }
     
-    public override func apply() {
+    open override func apply() {
         var index:Int = 0
         for output in outputs["output"]! {
             let first = index
@@ -1054,7 +1115,7 @@ public class ConcatGrad<S:Storage where S.ElementType:FloatNumericType>: Op<S>, 
         }
     }
     
-    public override func reset() {
+    open override func reset() {
         fill(output, value: 0)
     }
 }
@@ -1065,7 +1126,7 @@ extension ConcatOp: Differentiable {
     }
 }
 
-public class ViewOp<S:Storage where S.ElementType:FloatNumericType>: Op<S> {
+open class ViewOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
     var ranges:[TensorIndex]
     
     public init(input:Op<S>, ranges:[TensorIndex]) {
@@ -1084,15 +1145,19 @@ public class ViewOp<S:Storage where S.ElementType:FloatNumericType>: Op<S> {
         
         setAction("input", action: self.inputSet)
     }
+
+    required public init(op: Op<S>, shared: Bool) {
+        fatalError("init(op:shared:) has not been implemented")
+    }
     
-    func inputSet(label:String, inputs:[Op<S>]) {
+    func inputSet(_ label:String, inputs:[Op<S>]) {
         outputs[0] = inputs[0].outputs["output"]![ranges]
     }
     
-    public override func apply() {}
+    open override func apply() {}
 }
 
-public class ViewGrad<S:Storage where S.ElementType:FloatNumericType>: Op<S>, Gradient {
+open class ViewGrad<S:Storage>: Op<S>, Gradient where S.ElementType:FloatNumericType {
     var _op:Tensor<S> { return inputs[0].output() }
     var _input:Tensor<S> { return inputs[1].output() }
     var _gradOutput:Tensor<S> { return inputs[2].output() }
@@ -1106,12 +1171,16 @@ public class ViewGrad<S:Storage where S.ElementType:FloatNumericType>: Op<S>, Gr
         let opOutput = _input[op.ranges]
         outputs["output"] = Tensor<S>(opOutput.shape)
     }
+
+    required public init(op: Op<S>, shared: Bool) {
+        fatalError("init(op:shared:) has not been implemented")
+    }
     
-    public override func apply() {
+    open override func apply() {
         copy(from: _gradOutput, to: output)
     }
     
-    public override func reset() {
+    open override func reset() {
         fill(output, value: 0)
     }
 }

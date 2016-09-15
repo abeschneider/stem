@@ -64,12 +64,12 @@ let MatrixA:UInt64 = 0x9908b0df     // constant vector a
 let UpperMask:UInt64 = 0x80000000   // most significant w-r bits
 let LowerMask:UInt64 = 0x7fffffff   // least significant r bits
 
-public class RandomNumberGenerator {
+open class RandomNumberGenerator {
     var mt:[UInt64]
     var mti:Int
     
     init(seed:UInt64?=nil) {
-        mt = Array<UInt64>(count: N, repeatedValue: 0)
+        mt = Array<UInt64>(repeating: 0, count: N)
         mti = 0
         if let s = seed {
             setSeed(s)
@@ -80,11 +80,13 @@ public class RandomNumberGenerator {
         }
     }
     
-    func setSeed(seed:UInt64) {
+    func setSeed(_ seed:UInt64) {
         mt[0] = seed & UInt64(0xffffffff)
 
         let m1:UInt64 = 1812433253
-        for (mti=1; mti<N; mti += 1) {
+//        for (mti=1; mti<N; mti += 1) {
+        mti = 1
+        for _ in 1..<N {
             mt[mti] = (m1 * (mt[mti-1] ^ (mt[mti-1] >> 30)) + UInt64(mti))
             
             /* See Knuth TAOCP Vol2. 3rd Ed. P.106 for multiplier. */
@@ -93,6 +95,8 @@ public class RandomNumberGenerator {
             /* 2002/01/09 modified by Makoto Matsumoto             */
             mt[mti] &= 0xffffffff
             /* for >32 bit machines */
+            
+            mti += 1
         }
     }
     
@@ -140,7 +144,7 @@ int32: 	return start + (floor([self randomDouble0To1Exclusive] * (double)width))
 */
 
 extension Tensor where StorageType.ElementType:FloatNumericType {
-    public func uniform(rng:RandomNumberGenerator=globalRng) {
+    public func uniform(_ rng:RandomNumberGenerator=globalRng) {
         let prob:StorageType.ElementType = StorageType.ElementType(1.0/4294967295.0)
         for i in indices() {
             self[i] = StorageType.ElementType(rng.next())*prob
@@ -148,7 +152,7 @@ extension Tensor where StorageType.ElementType:FloatNumericType {
     }
 }
 
-public func uniform<S:Storage where S.ElementType:FloatNumericType>(shape:Extent) -> Tensor<S> {
+public func uniform<S:Storage>(_ shape:Extent) -> Tensor<S> where S.ElementType:FloatNumericType {
     let tensor = Tensor<S>(shape)
     tensor.uniform(globalRng)    
     return tensor

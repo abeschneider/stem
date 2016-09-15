@@ -9,8 +9,8 @@
 import Foundation
 
 public enum DimensionOrder {
-    case ColumnMajor
-    case RowMajor
+    case columnMajor
+    case rowMajor
 }
 
 public protocol Storage {
@@ -26,12 +26,12 @@ public protocol Storage {
     
     subscript(index:Int) -> ElementType {get set}
     
-    func calculateOrder(dims:Int) -> [Int]
-    func calculateOrder(values:[Int]) -> [Int]
+    func calculateOrder(_ dims:Int) -> [Int]
+    func calculateOrder(_ values:[Int]) -> [Int]
 }
 
-public func calculateStride(shape:Extent) -> [Int] {
-    var stride = Array<Int>(count:shape.count, repeatedValue: 0)
+public func calculateStride(_ shape:Extent) -> [Int] {
+    var stride = Array<Int>(repeating: 0, count: shape.count)
     
     var mult = 1
     stride[0] = 1

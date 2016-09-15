@@ -8,8 +8,8 @@
 
 import Foundation
 
-func calcForwardGrad<S:Storage where S.ElementType:FloatNumericType>
-    (op:Op<S>, params:Tensor<S>, eps:Double) -> Tensor<S>
+func calcForwardGrad<S:Storage>
+    (_ op:Op<S>, params:Tensor<S>, eps:Double) -> Tensor<S> where S.ElementType:FloatNumericType
 {
     let jacobian:Tensor<S> = zeros(Extent(params.shape.elements, op.output.shape.elements))
 
@@ -38,8 +38,8 @@ func calcForwardGrad<S:Storage where S.ElementType:FloatNumericType>
     return jacobian
 }
 
-func calcBackwardGrad<S:Storage where S.ElementType:FloatNumericType>
-    (forward:Op<S>, _ backward:Op<S>, gradParams:Tensor<S>) -> Tensor<S>
+func calcBackwardGrad<S:Storage>
+    (_ forward:Op<S>, _ backward:Op<S>, gradParams:Tensor<S>) -> Tensor<S> where S.ElementType:FloatNumericType
 {
     forward.reset()
     forward.apply()
@@ -62,8 +62,8 @@ func calcBackwardGrad<S:Storage where S.ElementType:FloatNumericType>
     return jacobian
 }
 
-public func checkGradient<S:Storage where S.ElementType:FloatNumericType>
-    (op:Op<S>, grad:Op<S>, params:Tensor<S>, gradParams:Tensor<S>, eps:Double) -> S.ElementType
+public func checkGradient<S:Storage>
+    (_ op:Op<S>, grad:Op<S>, params:Tensor<S>, gradParams:Tensor<S>, eps:Double) -> S.ElementType where S.ElementType:FloatNumericType
 {
     op.reset()
     op.apply()
@@ -78,8 +78,8 @@ public func checkGradient<S:Storage where S.ElementType:FloatNumericType>
 }
 
 // TODO: can we get rid of this version, or are both versions required?
-public func checkGradient<S:Storage, OpT:Op<S> where S.ElementType:FloatNumericType, OpT:Loss, OpT.StorageType.ElementType==S.ElementType>
-    (op:OpT, grad:Op<S>, input:Tensor<S>, eps:Double) -> S.ElementType
+public func checkGradient<S:Storage, OpT:Op<S>>
+    (_ op:OpT, grad:Op<S>, input:Tensor<S>, eps:Double) -> S.ElementType where S.ElementType:FloatNumericType, OpT:Loss, OpT.StorageType.ElementType==S.ElementType
 {
     op.apply()
     grad.apply()
@@ -96,12 +96,13 @@ public func checkGradient<S:Storage, OpT:Op<S> where S.ElementType:FloatNumericT
         // positive direction
         input[i] = old_value + S.ElementType(eps)
         op.apply()
-        let pvalue = op.value
+
+        let pvalue:OpT.StorageType.ElementType = op.value
         
         // negative direction
         input[i] = old_value - S.ElementType(eps)
         op.apply()
-        let nvalue = op.value
+        let nvalue:OpT.StorageType.ElementType = op.value
         
         
         // return to original value

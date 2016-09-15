@@ -13,7 +13,7 @@ protocol Optimizer {
     func optimize() -> Op<StorageType>
 }
 
-public class GradientDescentOptimizer<S:Storage where S.ElementType:FloatNumericType>: Op<S> {
+open class GradientDescentOptimizer<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
     var alpha:Constant<S>
     var forward:Op<S>
     var backward:Op<S>
@@ -38,8 +38,12 @@ public class GradientDescentOptimizer<S:Storage where S.ElementType:FloatNumeric
         let forwardOutputs:[Tensor<S>] = forward.outputs["output"]!
         outputs["output"] = forwardOutputs
     }
+
+    required public init(op: Op<S>, shared: Bool) {
+        fatalError("init(op:shared:) has not been implemented")
+    }
     
-    public override func apply() {
+    open override func apply() {
         (backward as! GradientType).reset()
         
         forward.apply()
@@ -47,7 +51,7 @@ public class GradientDescentOptimizer<S:Storage where S.ElementType:FloatNumeric
         
         // this is a place where having a TensorScalar class might be nice
         let a:S.ElementType = alpha.output[0]
-        for (param, gradParam) in Zip2Sequence(params, gradParams) {
+        for (param, gradParam) in zip(params, gradParams) {
             param -= a*gradParam
         }
     }

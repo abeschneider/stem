@@ -9,27 +9,27 @@
 import Foundation
 
 public protocol NumericType: AbsoluteValuable, Comparable { //, FloatingPointType {
-    func +(lhs:Self, rhs:Self) -> Self
-    func -(lhs:Self, rhs:Self) -> Self
-    func *(lhs:Self, rhs:Self) -> Self
-    func /(lhs:Self, rhs:Self) -> Self
-    func %(lhs:Self, rhs:Self) -> Self
-    func **(lhs:Self, rhs:Self) -> Self
+    static func +(lhs:Self, rhs:Self) -> Self
+    static func -(lhs:Self, rhs:Self) -> Self
+    static func *(lhs:Self, rhs:Self) -> Self
+    static func /(lhs:Self, rhs:Self) -> Self
+    static func %(lhs:Self, rhs:Self) -> Self
+    static func **(lhs:Self, rhs:Self) -> Self
     
-    static func max(lhs: Self, _ rhs: Self) -> Self
-    static func min(lhs: Self, _ rhs: Self) -> Self
+    static func max(_ lhs: Self, _ rhs: Self) -> Self
+    static func min(_ lhs: Self, _ rhs: Self) -> Self
     
     init(_ v:Int)
 }
 
-public protocol FloatNumericType: NumericType, FloatingPointType {
-    static func exp(value:Self) -> Self
-    static func sqrt(value:Self) -> Self
-    static func pow(value: Self, _ power: Self) -> Self
-    static func log(value: Self) -> Self
-    static func tanh(value: Self) -> Self
+public protocol FloatNumericType: NumericType, FloatingPoint {
+    static func exp(_ value:Self) -> Self
+    static func sqrt(_ value:Self) -> Self
+    static func pow(_ value: Self, _ power: Self) -> Self
+    static func log(_ value: Self) -> Self
+    static func tanh(_ value: Self) -> Self
     
-    static func trunc(value: Self) -> Int
+    static func trunc(_ value: Self) -> Int
 
     init(_ v:Float)
     init(_ v:Double)
@@ -48,14 +48,14 @@ public func **(lhs:Double, rhs:Double) -> Double {
 }
 
 extension Int: AbsoluteValuable {
-    public static func abs(x:Int) -> Int {
+    public static func abs(_ x:Int) -> Int {
         return Int.abs(x)
     }
 }
 
 extension Int: NumericType {
-    init<StorageType:Storage where StorageType.ElementType == Int>
-        (_ tensor:Tensor<StorageType>)
+    init<StorageType:Storage>
+        (_ tensor:Tensor<StorageType>) where StorageType.ElementType == Int
     {
         precondition(tensor.shape.elements == 1, "Can only convert tensors with a single element to a Int")
         
@@ -72,94 +72,94 @@ extension Int: NumericType {
 //        self.init(value: value)
 //    }
     
-    static public func max(lhs:Int, _ rhs:Int) -> Int {
+    static public func max(_ lhs:Int, _ rhs:Int) -> Int {
         return lhs > rhs ? lhs : rhs
     }
     
-    static public func min(lhs:Int, _ rhs:Int) -> Int {
+    static public func min(_ lhs:Int, _ rhs:Int) -> Int {
         return lhs < rhs ? lhs : rhs
     }
 }
 
 extension Float: FloatNumericType {
-    init<StorageType:Storage where StorageType.ElementType == Float>
-        (_ tensor:Tensor<StorageType>)
+    init<StorageType:Storage>
+        (_ tensor:Tensor<StorageType>) where StorageType.ElementType == Float
     {
         precondition(tensor.shape.elements == 1, "Can only convert tensors with a single element to a Float")
         
         self.init(tensor.storage[0])
     }
     
-    static public func exp(value:Float) -> Float {
+    static public func exp(_ value:Float) -> Float {
         return Foundation.exp(value)
     }
     
-    static public func sqrt(value:Float) -> Float {
+    static public func sqrt(_ value:Float) -> Float {
         return Foundation.sqrtf(value)
     }
     
-    static public func pow(value:Float, _ power:Float) -> Float {
+    static public func pow(_ value:Float, _ power:Float) -> Float {
         return powf(value, power)
     }
-    static public func log(value:Float) -> Float {
+    static public func log(_ value:Float) -> Float {
         return Foundation.log(value)
     }
     
-    static public func max(lhs:Float, _ rhs:Float) -> Float {
+    static public func max(_ lhs:Float, _ rhs:Float) -> Float {
         return lhs > rhs ? lhs : rhs
     }
     
-    static public func min(lhs:Float, _ rhs:Float) -> Float {
+    static public func min(_ lhs:Float, _ rhs:Float) -> Float {
         return lhs < rhs ? lhs : rhs
     }
     
-    static public func tanh(value:Float) -> Float {
+    static public func tanh(_ value:Float) -> Float {
         return Darwin.tanhf(value)
     }
     
-    public static func trunc(value:Float) -> Int {
+    public static func trunc(_ value:Float) -> Int {
         return Int(value)
     }
 }
 
 extension Double: FloatNumericType {
-    init<StorageType:Storage where StorageType.ElementType == Double>
-        (_ tensor:Tensor<StorageType>)
+    init<StorageType:Storage>
+        (_ tensor:Tensor<StorageType>) where StorageType.ElementType == Double
     {
         precondition(tensor.shape.elements == 1, "Can only convert tensors with a single element to a Double")
         
         self.init(tensor.storage[0])
     }
     
-    static public func exp(value: Double) -> Double {
+    static public func exp(_ value: Double) -> Double {
         return Foundation.exp(value)
     }
     
-    static public func sqrt(value:Double) -> Double {
+    static public func sqrt(_ value:Double) -> Double {
         return Foundation.sqrt(value)
     }
     
-    static public func pow(value:Double, _ power:Double) -> Double {
+    static public func pow(_ value:Double, _ power:Double) -> Double {
         return Foundation.pow(value, power)
     }
     
-    static public func log(value:Double) -> Double {
+    static public func log(_ value:Double) -> Double {
         return Foundation.log(value)
     }
     
-    static public func max(lhs:Double, _ rhs:Double) -> Double {
+    static public func max(_ lhs:Double, _ rhs:Double) -> Double {
         return lhs > rhs ? lhs : rhs
     }
     
-    static public func min(lhs:Double, _ rhs:Double) -> Double {
+    static public func min(_ lhs:Double, _ rhs:Double) -> Double {
         return lhs < rhs ? lhs : rhs
     }
     
-    static public func tanh(value:Double) -> Double {
+    static public func tanh(_ value:Double) -> Double {
         return Darwin.tanh(value)
     }
     
-    public static func trunc(value:Double) -> Int {
+    public static func trunc(_ value:Double) -> Int {
         return Int(value)
     }
 }

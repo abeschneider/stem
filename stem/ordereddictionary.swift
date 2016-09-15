@@ -9,19 +9,19 @@
 import Foundation
 
 public enum TensorParam<S:Storage> {
-    case TensorValue(Tensor<S>)
-    case TensorArray([Tensor<S>])
+    case tensorValue(Tensor<S>)
+    case tensorArray([Tensor<S>])
     
     public init(_ value:Tensor<S>) {
-        self = .TensorValue(value)
+        self = .tensorValue(value)
     }
 
     public init(_ values:[Tensor<S>]) {
-        self = .TensorArray(values)
+        self = .tensorArray(values)
     }
 }
 
-public struct OrderedDictionary<T>: CollectionType {
+public struct OrderedDictionary<T>: Swift.Collection {
     public typealias Index = Array<T>.Index
     public typealias _Element = [T]
     
@@ -42,44 +42,44 @@ public struct OrderedDictionary<T>: CollectionType {
         add(values)
     }
     
-    public mutating func add(values:[(String, T)]) {
+    public mutating func add(_ values:[(String, T)]) {
         for (key, value) in values {
             self[key] = [value]
         }
     }
     
-    public mutating func add(values:[(String, _Element)]) {
+    public mutating func add(_ values:[(String, _Element)]) {
         for (key, value) in values {
             self[key] = value
         }
     }
     
-    public mutating func add(key:String, values:[T]) {
+    public mutating func add(_ key:String, values:[T]) {
         self[key] = values
     }
     
-    mutating func setValue(key:String, _ value:T) {
+    mutating func setValue(_ key:String, _ value:T) {
         if values[key] == nil {
             // if key is new, insert it into our indices
             keys.append(key)
             orderedValues.append([value])
         } else {
             // otherwise, just update its current value
-            let index = keys.indexOf(key)!
+            let index = keys.index(of: key)!
             orderedValues[index] = [value]
         }
         
         values[key] = [value]
     }
     
-    mutating func setValue(key:String, _ value:_Element) {
+    mutating func setValue(_ key:String, _ value:_Element) {
         if values[key] == nil {
             // if key is new, insert it into our indices
             keys.append(key)
             orderedValues.append(value)
         } else {
             // otherwise, just update its current value
-            let index = keys.indexOf(key)!
+            let index = keys.index(of: key)!
             orderedValues[index] = value
         }
         
@@ -118,5 +118,14 @@ public struct OrderedDictionary<T>: CollectionType {
         set {
             orderedValues[index] = [newValue]
         }
+    }
+    
+    /// Returns the position immediately after the given index.
+    ///
+    /// - Parameter i: A valid index of the collection. `i` must be less than
+    ///   `endIndex`.
+    /// - Returns: The index value immediately after `i`.
+    public func index(after i: Int) -> Int {
+        return i+1
     }
 }

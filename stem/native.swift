@@ -8,14 +8,14 @@
 
 import Foundation
 
-public class NativeStorage<T:NumericType>: Storage {
+open class NativeStorage<T:NumericType>: Storage {
     public typealias ElementType = T
     
-    public var array:SharedArray<T>
-    public var offset:Int
+    open var array:SharedArray<T>
+    open var offset:Int
     
-    public var size:Int { return array.memory.count }
-    public var order:DimensionOrder { return .ColumnMajor }
+    open var size:Int { return array.memory.count }
+    open var order:DimensionOrder { return .columnMajor }
     
     public required init(size:Int, value:ElementType=0) {
         array = SharedArray<ElementType>(count: size, repeatedValue: value)
@@ -42,21 +42,21 @@ public class NativeStorage<T:NumericType>: Storage {
         }
     }
     
-    public func transform<NewStorageType:Storage>(fn:(el:ElementType) -> NewStorageType.ElementType) -> NewStorageType {
+    open func transform<NewStorageType:Storage>(_ fn:(_ el:ElementType) -> NewStorageType.ElementType) -> NewStorageType {
         let value:[NewStorageType.ElementType] = array.memory.map(fn)
         return NewStorageType(array:value)
     }
     
-    public subscript(index:Int) -> T {
+    open subscript(index:Int) -> T {
         get { return array[index+offset] }
         set { array[index+offset] = newValue }
     }
     
-    public func calculateOrder(dims:Int) -> [Int] {
+    open func calculateOrder(_ dims:Int) -> [Int] {
         return (0..<dims).map { dims-$0-1 }
     }
     
-    public func calculateOrder(values:[Int]) -> [Int] {
-        return values.reverse()
+    open func calculateOrder(_ values:[Int]) -> [Int] {
+        return values.reversed()
     }
 }

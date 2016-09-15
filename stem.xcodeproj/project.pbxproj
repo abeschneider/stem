@@ -19,15 +19,12 @@
 		2D17565E1BF986B7009C397D /* tensorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D17565D1BF986B7009C397D /* tensorTests.swift */; };
 		2D1756611BF9884B009C397D /* README.md in Sources */ = {isa = PBXBuildFile; fileRef = 2D1756601BF9884B009C397D /* README.md */; };
 		2D50D0A61C19269000C5A107 /* tensorops.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D50D0A51C19269000C5A107 /* tensorops.swift */; };
-		2D6A5F421C0BE6E4001838D4 /* nn.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D6A5F411C0BE6E4001838D4 /* nn.swift */; };
-		2D6A5F471C113A42001838D4 /* nnTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D6A5F461C113A42001838D4 /* nnTests.swift */; };
 		2D71DD291C17418B00FA7F16 /* checkgradient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D71DD281C17418B00FA7F16 /* checkgradient.swift */; };
 		2DC0CF831C19A6D3003CB088 /* vector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DC0CF821C19A6D3003CB088 /* vector.swift */; };
 		2DC0CF851C19A6F9003CB088 /* matrix.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DC0CF841C19A6F9003CB088 /* matrix.swift */; };
 		2DC0CF871C19E0C1003CB088 /* random.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DC0CF861C19E0C1003CB088 /* random.swift */; };
 		2DC0CF891C19F25B003CB088 /* randomTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DC0CF881C19F25B003CB088 /* randomTests.swift */; };
 		2DC0CF8C1C1B067D003CB088 /* numerictype.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DC0CF8A1C1B055A003CB088 /* numerictype.swift */; };
-		38A410431D04A4FB007B2B11 /* sequence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38A410421D04A4FB007B2B11 /* sequence.swift */; };
 		38A410451D04A564007B2B11 /* optimize.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38A410441D04A564007B2B11 /* optimize.swift */; };
 		38A410471D04A5A1007B2B11 /* tree.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38A410461D04A5A1007B2B11 /* tree.swift */; };
 		38BA50231CF5E03200A550EB /* ops.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38BA50221CF5E03200A550EB /* ops.swift */; };
@@ -36,6 +33,8 @@
 		38C235231CC3FAF800330A06 /* graphTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38C235221CC3FAF800330A06 /* graphTests.swift */; };
 		38CE89421CDE6277005F7DD5 /* cblasTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38CE89411CDE6277005F7DD5 /* cblasTests.swift */; };
 		38ED5A021C8936A100000C3B /* storageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38ED5A011C8936A100000C3B /* storageTests.swift */; };
+		38EF20F71D0E4C8C0004A504 /* ordereddictionary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38EF20F61D0E4C8C0004A504 /* ordereddictionary.swift */; };
+		38EF20F91D0E4CFE0004A504 /* ordereddictionaryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38EF20F81D0E4CFE0004A504 /* ordereddictionaryTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -54,36 +53,35 @@
 		2D17563A1BF98678009C397D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		2D17563F1BF98678009C397D /* stemTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = stemTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		2D1756461BF98678009C397D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		2D17564F1BF9869A009C397D /* tensor.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = tensor.swift; sourceTree = "<group>"; };
+		2D17564F1BF9869A009C397D /* tensor.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = tensor.swift; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.swift; };
 		2D1756501BF9869A009C397D /* sharedarray.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = sharedarray.swift; sourceTree = "<group>"; };
 		2D1756511BF9869A009C397D /* extent.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = extent.swift; sourceTree = "<group>"; };
 		2D1756521BF9869A009C397D /* storage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = storage.swift; sourceTree = "<group>"; };
 		2D1756531BF9869A009C397D /* view.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = view.swift; sourceTree = "<group>"; };
 		2D1756541BF9869A009C397D /* cblas.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = cblas.swift; sourceTree = "<group>"; };
 		2D1756551BF9869A009C397D /* native.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = native.swift; sourceTree = "<group>"; };
-		2D17565D1BF986B7009C397D /* tensorTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = tensorTests.swift; sourceTree = "<group>"; };
+		2D17565D1BF986B7009C397D /* tensorTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = tensorTests.swift; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.swift; };
 		2D17565F1BF987DC009C397D /* COPYING */ = {isa = PBXFileReference; lastKnownFileType = text; path = COPYING; sourceTree = "<group>"; };
 		2D1756601BF9884B009C397D /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		2D1756621BF9FA7E009C397D /* StemPlayground.playground */ = {isa = PBXFileReference; lastKnownFileType = file.playground; path = StemPlayground.playground; sourceTree = "<group>"; };
 		2D50D0A51C19269000C5A107 /* tensorops.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = tensorops.swift; sourceTree = "<group>"; };
-		2D6A5F411C0BE6E4001838D4 /* nn.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = nn.swift; path = stem/nn.swift; sourceTree = "<group>"; };
-		2D6A5F461C113A42001838D4 /* nnTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = nnTests.swift; sourceTree = "<group>"; };
 		2D71DD281C17418B00FA7F16 /* checkgradient.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = checkgradient.swift; sourceTree = "<group>"; };
 		2DC0CF821C19A6D3003CB088 /* vector.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = vector.swift; sourceTree = "<group>"; };
 		2DC0CF841C19A6F9003CB088 /* matrix.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = matrix.swift; sourceTree = "<group>"; };
 		2DC0CF861C19E0C1003CB088 /* random.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = random.swift; sourceTree = "<group>"; };
 		2DC0CF881C19F25B003CB088 /* randomTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = randomTests.swift; sourceTree = "<group>"; };
 		2DC0CF8A1C1B055A003CB088 /* numerictype.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = numerictype.swift; sourceTree = "<group>"; };
-		38A410421D04A4FB007B2B11 /* sequence.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = sequence.swift; path = stem/sequence.swift; sourceTree = "<group>"; };
 		38A410441D04A564007B2B11 /* optimize.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = optimize.swift; path = stem/optimize.swift; sourceTree = "<group>"; };
 		38A410461D04A5A1007B2B11 /* tree.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = tree.swift; path = stem/tree.swift; sourceTree = "<group>"; };
-		38BA50221CF5E03200A550EB /* ops.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = ops.swift; path = stem/ops.swift; sourceTree = "<group>"; };
-		38BA50241CF67C3200A550EB /* opTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = opTests.swift; sourceTree = "<group>"; };
+		38BA50221CF5E03200A550EB /* ops.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; name = ops.swift; path = stem/ops.swift; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.swift; };
+		38BA50241CF67C3200A550EB /* opTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = opTests.swift; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.swift; };
 		38C2351F1CBB444F00330A06 /* graph.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = graph.swift; path = stem/graph.swift; sourceTree = "<group>"; };
 		38C235211CC2C13800330A06 /* GraphPlayground.playground */ = {isa = PBXFileReference; lastKnownFileType = file.playground; path = GraphPlayground.playground; sourceTree = "<group>"; };
 		38C235221CC3FAF800330A06 /* graphTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = graphTests.swift; sourceTree = "<group>"; };
 		38CE89411CDE6277005F7DD5 /* cblasTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = cblasTests.swift; sourceTree = "<group>"; };
 		38ED5A011C8936A100000C3B /* storageTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = storageTests.swift; sourceTree = "<group>"; };
+		38EF20F61D0E4C8C0004A504 /* ordereddictionary.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ordereddictionary.swift; sourceTree = "<group>"; };
+		38EF20F81D0E4CFE0004A504 /* ordereddictionaryTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ordereddictionaryTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -146,6 +144,7 @@
 				2D50D0A51C19269000C5A107 /* tensorops.swift */,
 				2DC0CF861C19E0C1003CB088 /* random.swift */,
 				2DC0CF8A1C1B055A003CB088 /* numerictype.swift */,
+				38EF20F61D0E4C8C0004A504 /* ordereddictionary.swift */,
 			);
 			path = stem;
 			sourceTree = "<group>";
@@ -153,9 +152,9 @@
 		2D1756431BF98678009C397D /* stemTests */ = {
 			isa = PBXGroup;
 			children = (
+				38EF20F81D0E4CFE0004A504 /* ordereddictionaryTests.swift */,
 				38ED5A011C8936A100000C3B /* storageTests.swift */,
 				2D17565D1BF986B7009C397D /* tensorTests.swift */,
-				2D6A5F461C113A42001838D4 /* nnTests.swift */,
 				2DC0CF881C19F25B003CB088 /* randomTests.swift */,
 				2D1756461BF98678009C397D /* Info.plist */,
 				38C235221CC3FAF800330A06 /* graphTests.swift */,
@@ -168,10 +167,8 @@
 		2D6A5F431C0DC54B001838D4 /* nn */ = {
 			isa = PBXGroup;
 			children = (
-				2D6A5F411C0BE6E4001838D4 /* nn.swift */,
 				38C2351F1CBB444F00330A06 /* graph.swift */,
 				38BA50221CF5E03200A550EB /* ops.swift */,
-				38A410421D04A4FB007B2B11 /* sequence.swift */,
 				38A410441D04A564007B2B11 /* optimize.swift */,
 				38A410461D04A5A1007B2B11 /* tree.swift */,
 			);
@@ -240,9 +237,11 @@
 				TargetAttributes = {
 					2D1756341BF98678009C397D = {
 						CreatedOnToolsVersion = 7.1.1;
+						LastSwiftMigration = 0800;
 					};
 					2D17563E1BF98678009C397D = {
 						CreatedOnToolsVersion = 7.1.1;
+						LastSwiftMigration = 0800;
 					};
 				};
 			};
@@ -286,7 +285,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				38A410431D04A4FB007B2B11 /* sequence.swift in Sources */,
 				2DC0CF851C19A6F9003CB088 /* matrix.swift in Sources */,
 				2DC0CF831C19A6D3003CB088 /* vector.swift in Sources */,
 				2DC0CF871C19E0C1003CB088 /* random.swift in Sources */,
@@ -299,11 +297,11 @@
 				2D50D0A61C19269000C5A107 /* tensorops.swift in Sources */,
 				2D1756561BF9869A009C397D /* tensor.swift in Sources */,
 				38A410451D04A564007B2B11 /* optimize.swift in Sources */,
+				38EF20F71D0E4C8C0004A504 /* ordereddictionary.swift in Sources */,
 				38A410471D04A5A1007B2B11 /* tree.swift in Sources */,
 				38C235201CBB444F00330A06 /* graph.swift in Sources */,
 				2D17565A1BF9869A009C397D /* view.swift in Sources */,
 				2D1756581BF9869A009C397D /* extent.swift in Sources */,
-				2D6A5F421C0BE6E4001838D4 /* nn.swift in Sources */,
 				2DC0CF8C1C1B067D003CB088 /* numerictype.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -316,8 +314,8 @@
 				2D1756611BF9884B009C397D /* README.md in Sources */,
 				38BA50251CF67C3200A550EB /* opTests.swift in Sources */,
 				38C235231CC3FAF800330A06 /* graphTests.swift in Sources */,
-				2D6A5F471C113A42001838D4 /* nnTests.swift in Sources */,
 				38CE89421CDE6277005F7DD5 /* cblasTests.swift in Sources */,
+				38EF20F91D0E4CFE0004A504 /* ordereddictionaryTests.swift in Sources */,
 				2D17565E1BF986B7009C397D /* tensorTests.swift in Sources */,
 				38ED5A021C8936A100000C3B /* storageTests.swift in Sources */,
 			);
@@ -437,6 +435,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 3.0;
 			};
 			name = Debug;
 		};
@@ -456,6 +455,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = none.stem;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 3.0;
 			};
 			name = Release;
 		};
@@ -469,6 +469,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = none.stemTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 3.0;
 			};
 			name = Debug;
 		};
@@ -481,6 +482,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = none.stemTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 3.0;
 			};
 			name = Release;
 		};

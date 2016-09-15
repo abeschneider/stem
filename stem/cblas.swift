@@ -9,13 +9,13 @@
 import Foundation
 import Accelerate
 
-public class CBlasStorage<T:NumericType>: Storage {
+open class CBlasStorage<T:NumericType>: Storage {
     public typealias ElementType = T
     
     var array:SharedArray<T>
     
-    public var size:Int { return array.memory.count }
-    public var order:DimensionOrder { return .RowMajor }
+    open var size:Int { return array.memory.count }
+    open var order:DimensionOrder { return .rowMajor }
     
     public required init(size:Int, value:ElementType=0) {
         array = SharedArray<ElementType>(count: size, repeatedValue: value)
@@ -38,22 +38,22 @@ public class CBlasStorage<T:NumericType>: Storage {
         }
     }
 
-    public subscript(index:Int) -> T {
+    open subscript(index:Int) -> T {
         get { return array[index] }
         set { array[index] = newValue }
     }
     
-    public func calculateOrder(dims:Int) -> [Int] {
+    open func calculateOrder(_ dims:Int) -> [Int] {
         return (0..<dims).map { $0 }
     }
     
-    public func calculateOrder(values:[Int]) -> [Int] {
+    open func calculateOrder(_ values:[Int]) -> [Int] {
         return values
     }
 }
 
 func add(
-    left left:Tensor<CBlasStorage<Double>>,
+    left:Tensor<CBlasStorage<Double>>,
     right:Tensor<CBlasStorage<Double>>,
     result:Tensor<CBlasStorage<Double>>)
 {
@@ -61,7 +61,7 @@ func add(
     if left.shape.span == 1 && right.shape.span == 1 {
         let v1Ptr = UnsafePointer<Double>(left.storage.array.memory) + left.calculateOffset()
         let v2Ptr = UnsafePointer<Double>(right.storage.array.memory) + right.calculateOffset()
-        let resultPtr = UnsafeMutablePointer<Double>(result.storage.array.memory) + result.calculateOffset()
+        let resultPtr = UnsafeMutablePointer<Double>(mutating: result.storage.array.memory) + result.calculateOffset()
         let numElements = Int32(left.shape.elements)
 
         // result += left
@@ -86,13 +86,13 @@ func +(left:Tensor<CBlasStorage<Double>>,
 }
 
 func iadd(
-    left left:Tensor<CBlasStorage<Double>>,
+    left:Tensor<CBlasStorage<Double>>,
     right:Tensor<CBlasStorage<Double>>)
 {
     if left.shape.span == 1 && right.shape.span == 1 {
         let numElements = Int32(right.shape.elements)
         let v2Ptr = UnsafePointer<Double>(right.storage.array.memory) + right.calculateOffset()
-        let leftPtr = UnsafeMutablePointer<Double>(left.storage.array.memory) + left.calculateOffset()
+        let leftPtr = UnsafeMutablePointer<Double>(mutating: left.storage.array.memory) + left.calculateOffset()
         
         cblas_daxpy(numElements, 1.0, v2Ptr, Int32(right.stride[0]), leftPtr, Int32(left.stride[0]))
     } else {
@@ -109,7 +109,7 @@ func +=(left:Tensor<CBlasStorage<Double>>,
 }
 
 func dot(
-    left left:Tensor<CBlasStorage<Double>>, // Matrix
+    left:Tensor<CBlasStorage<Double>>, // Matrix
     right:Tensor<CBlasStorage<Double>>,     // Vector
     result:Tensor<CBlasStorage<Double>>,    // Vector
     alpha:Double=1.0,
@@ -121,7 +121,7 @@ func dot(
     precondition(left.shape[1] == right.shape[0])
     
     // TODO: check if this is correct (or should it be .RowVector)?
-    let leftTransposed = (left.type == .ColumnVector)
+    let leftTransposed = (left.type == .columnVector)
     
     cblas_dgemv(CblasColMajor,
                 leftTransposed ? CblasTrans : CblasNoTrans,
@@ -133,12 +133,12 @@ func dot(
                 UnsafePointer<Double>(right.storage.array.memory) + right.calculateOffset(),
                 Int32(right.stride[0]),
                 beta,
-                UnsafeMutablePointer<Double>(result.storage.array.memory) + result.calculateOffset(),
+                UnsafeMutablePointer<Double>(mutating: result.storage.array.memory) + result.calculateOffset(),
                 Int32(result.stride[0]))
 }
 
 public func outer(
-    left left:Tensor<CBlasStorage<Double>>, // Vector
+    left:Tensor<CBlasStorage<Double>>, // Vector
     right:Tensor<CBlasStorage<Double>>,     // Vector
     result:Tensor<CBlasStorage<Double>>)
 {
@@ -155,7 +155,7 @@ public func outer(
                 Int32(left.stride[0]),
                 UnsafePointer<Double>(right.storage.array.memory),
                 Int32(right.stride[0]),
-                UnsafeMutablePointer<Double>(result.storage.array.memory),
+                UnsafeMutablePointer<Double>(mutating: result.storage.array.memory),
                 Int32(result.stride[0]))
 }
 

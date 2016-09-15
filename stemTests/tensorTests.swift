@@ -157,15 +157,15 @@ class stemTests: XCTestCase {
             [1, 1],
             [2, 1]]
         
-        for (i, index) in GeneratorSequence(IndexGenerator(shape)).enumerate() {
+        for (i, index) in IteratorSequence(IndexGenerator(shape)).enumerated() {
             XCTAssertEqual(index, expected[i])
         }
         
-        for (i, index) in GeneratorSequence(IndexGenerator(shape, dimIndex: [0, 1])).enumerate() {
+        for (i, index) in IteratorSequence(IndexGenerator(shape, dimIndex: [0, 1])).enumerated() {
             XCTAssertEqual(index, expected[i])
         }
         
-        for (i, index) in GeneratorSequence(IndexGenerator(shape, order: .RowMajor)).enumerate() {
+        for (i, index) in IteratorSequence(IndexGenerator(shape, order: .rowMajor)).enumerated() {
             XCTAssertEqual(index, expected[i])
         }
     }
@@ -182,11 +182,11 @@ class stemTests: XCTestCase {
             [2, 1]
         ]
         
-        for (i, index) in GeneratorSequence(IndexGenerator(shape, dimIndex: [1, 0])).enumerate() {
+        for (i, index) in IteratorSequence(IndexGenerator(shape, dimIndex: [1, 0])).enumerated() {
             XCTAssertEqual(index, expected[i])
         }
         
-        for (i, index) in GeneratorSequence(IndexGenerator(shape, order: .ColumnMajor)).enumerate() {
+        for (i, index) in IteratorSequence(IndexGenerator(shape, order: .columnMajor)).enumerated() {
             XCTAssertEqual(index, expected[i])
         }
     }
@@ -196,7 +196,7 @@ class stemTests: XCTestCase {
         let tensor = Tensor<D>(array: array, shape: Extent(2, 10))
         let indices = tensor.indices()
         
-        for (i, index) in indices.enumerate() {
+        for (i, index) in indices.enumerated() {
             let offset = tensor.calculateOffset(index)
             XCTAssertEqual(i, offset)
         }
@@ -257,7 +257,7 @@ class stemTests: XCTestCase {
         let cube = Tensor<D>(Extent(3, 4, 5))
         let expected = (0..<cube.shape.elements).map { $0 }
         
-        for (i, index) in GeneratorSequence(IndexGenerator(cube.shape, order:.ColumnMajor)).enumerate() {
+        for (i, index) in IteratorSequence(IndexGenerator(cube.shape, order:.columnMajor)).enumerated() {
             let offset = cube.calculateOffset(index)
             XCTAssertEqual(offset, expected[i])
         }
@@ -463,7 +463,7 @@ class stemTests: XCTestCase {
         let v = Tensor<D>(rowvector: [1, 2, 3, 4, 5])
         
         let expected = "[[1.0,\t2.0,\t3.0,\t4.0,\t5.0]]"
-        XCTAssertEqual(String(v), expected)
+        XCTAssertEqual(String(describing: v), expected)
     }
     
     func testMatrixToString() {
@@ -471,7 +471,7 @@ class stemTests: XCTestCase {
         
         // layout should be row-major
         let expected = "[[1.0,\t2.0,\t3.0,\t4.0]\n [5.0,\t6.0,\t7.0,\t8.0]]"
-        XCTAssertEqual(String(m), expected)
+        XCTAssertEqual(String(describing: m), expected)
     }
 
     func testVectorAdd() {
@@ -914,7 +914,7 @@ class stemTests: XCTestCase {
         
         let expected = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
         
-        for (k, i) in b.indices().enumerate() {
+        for (k, i) in b.indices().enumerated() {
             XCTAssertEqual(b[i], expected[k])
         }
     }

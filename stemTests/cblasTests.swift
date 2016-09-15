@@ -25,9 +25,9 @@ class cblasTests: XCTestCase {
         super.tearDown()
     }
 
-    func asColumnMajor(array:[Double], rows:Int, cols:Int) -> [Double] {
+    func asColumnMajor(_ array:[Double], rows:Int, cols:Int) -> [Double] {
         let m = Tensor<D>(array: array, shape: Extent(rows, cols))
-        var result = Array<Double>(count: m.shape.elements, repeatedValue: Double(0))
+        var result = Array<Double>(repeating: Double(0), count: m.shape.elements)
         
         var k = 0
         for i in 0..<m.shape[1] {
@@ -52,7 +52,7 @@ class cblasTests: XCTestCase {
         // traverse the tensor in column major to
         // test expected values
         var k = 0
-        for index in t.indices(.ColumnMajor) {
+        for index in t.indices(.columnMajor) {
             XCTAssertEqual(t[index], expected[k])
             k += 1
         }
@@ -66,7 +66,7 @@ class cblasTests: XCTestCase {
         let expected:[Double] = [11, 12, 21, 22]
         
         var k = 0
-        for i in t2.indices(.ColumnMajor) {
+        for i in t2.indices(.columnMajor) {
             XCTAssertEqual(t2[i], expected[k])
             k += 1
         }
@@ -99,7 +99,7 @@ class cblasTests: XCTestCase {
                                  0, 2, 3, 3, 3]
         
         var k = 0
-        for i in t1.indices(.ColumnMajor) {
+        for i in t1.indices(.columnMajor) {
             XCTAssertEqual(t1[i], expected[k])
             k += 1
         }
@@ -116,7 +116,7 @@ class cblasTests: XCTestCase {
         let expected:[Double] = [0, 5, 1, 6, 2, 7, 3, 8, 4, 9]
         var k = 0
         
-        for i in tensor2.indices(.ColumnMajor) {
+        for i in tensor2.indices(.columnMajor) {
             XCTAssertEqual(tensor2[i], expected[k])
             k += 1
         }
@@ -135,7 +135,7 @@ class cblasTests: XCTestCase {
         
         // verify contents are still valid
         var k = 0
-        for i in tensor2.indices(.ColumnMajor) {
+        for i in tensor2.indices(.columnMajor) {
             XCTAssertEqual(tensor2[i], expected[k])
             k += 1
         }
@@ -240,7 +240,7 @@ class cblasTests: XCTestCase {
                         1.0, 2.0, 3.0]
   
         var k = 0
-        for i in b.indices(.ColumnMajor) {
+        for i in b.indices(.columnMajor) {
             XCTAssertEqual(b[i], expected[k])
             k += 1
         }
@@ -255,7 +255,7 @@ class cblasTests: XCTestCase {
                         3.0, 3.0, 3.0]
         
         var k = 0
-        for i in b.indices(.ColumnMajor) {
+        for i in b.indices(.columnMajor) {
             XCTAssertEqual(b[i], expected[k])
             k += 1
         }
@@ -267,7 +267,7 @@ class cblasTests: XCTestCase {
         
         let expected = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
         
-        for (k, i) in b.indices(.ColumnMajor).enumerate() {
+        for (k, i) in b.indices(.columnMajor).enumerated() {
             XCTAssertEqual(b[i], expected[k])
         }
     }
