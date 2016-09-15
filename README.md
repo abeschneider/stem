@@ -9,6 +9,13 @@ STEM provides an extensible Tensor library for Swift with a primary focus on the
 3. Construction of network is done be explicitely connecting different modules together (via `connect`). Most other libraries simplify network construction by either constructing networks based on translating mathematical expressions or allowing operations to be sequentially laid out. This complicates the process of making networks with non-sequential topologies (e.g. recurrent or skip networks).
 4. Allows for good design. One example is that Swift `Extension`s allow an operation to be defined independent of its optimization method. For example, `LinearOp` does not have a concept of how it should be optimized. The extension `LinearGrad`, which adheres to the `Differentiable` protocol allows the operation to be used in gradient descent. Another extension can be proposed to allow for other optimization to be used.
 
+STEM is split into multiple sections (similar to Torch). Currently it consists of:
+
+1. A Tensor library allowing for multiple storage backings. Swift's ability to define new operators makes writing out equations simple and intuitive.
+2. A random library for generating random Tensors
+3. A network library for composing operations
+4. Optimization using gradient descent
+
 For more information, please visit the documentation: 
 
 http://stem.readthedocs.org/en/latest/
