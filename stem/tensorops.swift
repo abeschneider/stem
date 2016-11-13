@@ -707,28 +707,31 @@ public func sum<StorageType:Storage>(_ tensor:Tensor<StorageType>) -> StorageTyp
  hO=(h+2pH−kH)/sY+1
  w0=(w+2pW−kW)/sX+1
  */
-public func conv2d<S:Storage>(_ input:Tensor<S>, kernel:Tensor<S>, stride:[Int]=[1, 1], padding:[Int]=[0, 0], paddingValue:S.ElementType=0) -> Tensor<S> {
+// currently only supports 'same' mode; the output is the same size as 'input'
+public func conv2d<S:Storage>(_ input:Tensor<S>, kernel:Tensor<S>, stride:[Int]=[1, 1], padding:[Int]=[0, 0], paddingValue:S.ElementType=0) -> Tensor<S>
+{
     let centerX = kernel.shape[1] / 2
     let centerY = kernel.shape[0] / 2
     
-    var rows = (input.shape[0]+2*padding[0]-kernel.shape[0])
+    var rows = (input.shape[0]+2*padding[0]) // - kernel.shape[0])
     rows /= stride[0]
-    var cols = (input.shape[1]+2*padding[1]-kernel.shape[1])
+    var cols = (input.shape[1]+2*padding[1]) // - kernel.shape[1])
     cols /= stride[1]
+    
+    print("rows: \(rows), cols: \(cols)")
     let outputShape = Extent(rows, cols)
     
     let out = Tensor<S>(outputShape)
         
-    for i in 0..<(outputShape[0]) {
-        for j in 0..<(outputShape[1]) {
-            for k in 0..<kernel.shape[0] {
-                
+    for i in padding[0]..<(outputShape[0]-padding[0]) {
+        for j in padding[1]..<(outputShape[1]-padding[1]) {
+            for k in 0..<kernel.shape[0] {                
                 let kflipped = kernel.shape[0] - k - 1
                 for l in 0..<kernel.shape[1] {
                     let lflipped = kernel.shape[1] - l - 1
                     
-                    let m = (i + (k - centerY) - padding[0])*stride[0] + centerY
-                    let n = (j + (l - centerX) - padding[1])*stride[1] + centerX
+                    let m = (i + (k - centerY) - padding[0])*stride[0] + centerY - 1
+                    let n = (j + (l - centerX) - padding[1])*stride[1] + centerX - 1
                     
                     let o = i+padding[0]/2
                     let p = j+padding[1]/2
