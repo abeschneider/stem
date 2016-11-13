@@ -160,24 +160,24 @@ class opTests: XCTestCase {
         XCTAssertLessThan(inputError, eps)
     }
     
-    func testLossGradient() {
-        let eps:Double = 10e-6
-        let input = Constant<D>(uniform(Extent(10)))
-        let target = Constant<D>(uniform(Extent(10)))
-        let gradOutput = Constant<D>(zeros(Extent(10)))
-        
-        let loss = L2Loss<D>()
-        connect(from: input, to: loss, "input")
-        connect(from: target, to: loss, "target")
-        
-        let lossGrad = loss.gradient() as! L2LossGrad<D>
-        connect(from: gradOutput, to: lossGrad, "gradOutput")
-
-        // test gradient wrt to the input
-        let inputError = checkGradient(loss, grad: lossGrad, input: input.output, eps: eps)
-
-        XCTAssertLessThan(inputError, eps)
-    }
+//    func testLossGradient() {
+//        let eps:Double = 10e-6
+//        let input = Constant<D>(uniform(Extent(10)))
+//        let target = Constant<D>(uniform(Extent(10)))
+//        let gradOutput = Constant<D>(zeros(Extent(10)))
+//        
+//        let loss = L2Loss<D>()
+//        connect(from: input, to: loss, "input")
+//        connect(from: target, to: loss, "target")
+//        
+//        let lossGrad = loss.gradient() as! L2LossGrad<D>
+//        connect(from: gradOutput, to: lossGrad, "gradOutput")
+//
+//        // test gradient wrt to the input
+//        let inputError = checkGradient(loss, grad: lossGrad, input: input.output, eps: eps)
+//
+//        XCTAssertLessThan(inputError, eps)
+//    }
     
     func testConcatOp() {
         let inputValues:[Tensor<D>] = [uniform(Extent(5)), uniform(Extent(5)), uniform(Extent(5))]

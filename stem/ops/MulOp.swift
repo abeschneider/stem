@@ -37,8 +37,6 @@ open class MulOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
 }
 
 open class MulOpGrad<S:Storage>: Op<S>, Gradient where S.ElementType:FloatNumericType {
-    //    public typealias StorageType = S
-    
     open var _op:Tensor<S> { return inputs[0].output() }
     open var _input:[Tensor<S>] {
         let _in:[InputType<S>] = inputs[1]
