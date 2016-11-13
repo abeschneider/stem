@@ -32,6 +32,20 @@
 		38C235201CBB444F00330A06 /* graph.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38C2351F1CBB444F00330A06 /* graph.swift */; };
 		38C235231CC3FAF800330A06 /* graphTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38C235221CC3FAF800330A06 /* graphTests.swift */; };
 		38CE89421CDE6277005F7DD5 /* cblasTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38CE89411CDE6277005F7DD5 /* cblasTests.swift */; };
+		38E59DD81DD79D34002F8094 /* gradient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38E59DD71DD79D34002F8094 /* gradient.swift */; };
+		38E59DEF1DD7F31C002F8094 /* ConcatOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38E59DEE1DD7F31C002F8094 /* ConcatOp.swift */; };
+		38E59DFE1DD7F3A0002F8094 /* L2Loss.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38E59DF21DD7F3A0002F8094 /* L2Loss.swift */; };
+		38E59DFF1DD7F3A0002F8094 /* ViewOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38E59DF31DD7F3A0002F8094 /* ViewOp.swift */; };
+		38E59E001DD7F3A0002F8094 /* LogOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38E59DF41DD7F3A0002F8094 /* LogOp.swift */; };
+		38E59E011DD7F3A0002F8094 /* MulOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38E59DF51DD7F3A0002F8094 /* MulOp.swift */; };
+		38E59E021DD7F3A0002F8094 /* SigmoidOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38E59DF61DD7F3A0002F8094 /* SigmoidOp.swift */; };
+		38E59E031DD7F3A0002F8094 /* TanhOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38E59DF71DD7F3A0002F8094 /* TanhOp.swift */; };
+		38E59E041DD7F3A0002F8094 /* AddOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38E59DF81DD7F3A0002F8094 /* AddOp.swift */; };
+		38E59E051DD7F3A0002F8094 /* LinearOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38E59DF91DD7F3A0002F8094 /* LinearOp.swift */; };
+		38E59E061DD7F3A0002F8094 /* VariableOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38E59DFA1DD7F3A0002F8094 /* VariableOp.swift */; };
+		38E59E071DD7F3A0002F8094 /* ConstantOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38E59DFB1DD7F3A0002F8094 /* ConstantOp.swift */; };
+		38E59E081DD7F3A0002F8094 /* Op.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38E59DFC1DD7F3A0002F8094 /* Op.swift */; };
+		38E59E091DD7F3A0002F8094 /* Loss.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38E59DFD1DD7F3A0002F8094 /* Loss.swift */; };
 		38ED5A021C8936A100000C3B /* storageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38ED5A011C8936A100000C3B /* storageTests.swift */; };
 		38EF20F71D0E4C8C0004A504 /* ordereddictionary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38EF20F61D0E4C8C0004A504 /* ordereddictionary.swift */; };
 		38EF20F91D0E4CFE0004A504 /* ordereddictionaryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38EF20F81D0E4CFE0004A504 /* ordereddictionaryTests.swift */; };
@@ -79,6 +93,20 @@
 		38C235211CC2C13800330A06 /* GraphPlayground.playground */ = {isa = PBXFileReference; lastKnownFileType = file.playground; path = GraphPlayground.playground; sourceTree = "<group>"; };
 		38C235221CC3FAF800330A06 /* graphTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = graphTests.swift; sourceTree = "<group>"; };
 		38CE89411CDE6277005F7DD5 /* cblasTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = cblasTests.swift; sourceTree = "<group>"; };
+		38E59DD71DD79D34002F8094 /* gradient.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = gradient.swift; path = stem/gradient.swift; sourceTree = "<group>"; };
+		38E59DEE1DD7F31C002F8094 /* ConcatOp.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = ConcatOp.swift; path = stem/ops/ConcatOp.swift; sourceTree = "<group>"; };
+		38E59DF21DD7F3A0002F8094 /* L2Loss.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = L2Loss.swift; path = stem/ops/L2Loss.swift; sourceTree = "<group>"; };
+		38E59DF31DD7F3A0002F8094 /* ViewOp.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = ViewOp.swift; path = stem/ops/ViewOp.swift; sourceTree = "<group>"; };
+		38E59DF41DD7F3A0002F8094 /* LogOp.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = LogOp.swift; path = stem/ops/LogOp.swift; sourceTree = "<group>"; };
+		38E59DF51DD7F3A0002F8094 /* MulOp.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = MulOp.swift; path = stem/ops/MulOp.swift; sourceTree = "<group>"; };
+		38E59DF61DD7F3A0002F8094 /* SigmoidOp.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = SigmoidOp.swift; path = stem/ops/SigmoidOp.swift; sourceTree = "<group>"; };
+		38E59DF71DD7F3A0002F8094 /* TanhOp.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = TanhOp.swift; path = stem/ops/TanhOp.swift; sourceTree = "<group>"; };
+		38E59DF81DD7F3A0002F8094 /* AddOp.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = AddOp.swift; path = stem/ops/AddOp.swift; sourceTree = "<group>"; };
+		38E59DF91DD7F3A0002F8094 /* LinearOp.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = LinearOp.swift; path = stem/ops/LinearOp.swift; sourceTree = "<group>"; };
+		38E59DFA1DD7F3A0002F8094 /* VariableOp.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = VariableOp.swift; path = stem/ops/VariableOp.swift; sourceTree = "<group>"; };
+		38E59DFB1DD7F3A0002F8094 /* ConstantOp.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = ConstantOp.swift; path = stem/ops/ConstantOp.swift; sourceTree = "<group>"; };
+		38E59DFC1DD7F3A0002F8094 /* Op.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Op.swift; path = stem/ops/Op.swift; sourceTree = "<group>"; };
+		38E59DFD1DD7F3A0002F8094 /* Loss.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Loss.swift; path = stem/ops/Loss.swift; sourceTree = "<group>"; };
 		38ED5A011C8936A100000C3B /* storageTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = storageTests.swift; sourceTree = "<group>"; };
 		38EF20F61D0E4C8C0004A504 /* ordereddictionary.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ordereddictionary.swift; sourceTree = "<group>"; };
 		38EF20F81D0E4CFE0004A504 /* ordereddictionaryTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ordereddictionaryTests.swift; sourceTree = "<group>"; };
@@ -167,12 +195,34 @@
 		2D6A5F431C0DC54B001838D4 /* nn */ = {
 			isa = PBXGroup;
 			children = (
+				38E59DE71DD7F1E4002F8094 /* ops */,
 				38C2351F1CBB444F00330A06 /* graph.swift */,
 				38BA50221CF5E03200A550EB /* ops.swift */,
 				38A410441D04A564007B2B11 /* optimize.swift */,
 				38A410461D04A5A1007B2B11 /* tree.swift */,
+				38E59DD71DD79D34002F8094 /* gradient.swift */,
 			);
 			name = nn;
+			sourceTree = "<group>";
+		};
+		38E59DE71DD7F1E4002F8094 /* ops */ = {
+			isa = PBXGroup;
+			children = (
+				38E59DF21DD7F3A0002F8094 /* L2Loss.swift */,
+				38E59DF31DD7F3A0002F8094 /* ViewOp.swift */,
+				38E59DF41DD7F3A0002F8094 /* LogOp.swift */,
+				38E59DF51DD7F3A0002F8094 /* MulOp.swift */,
+				38E59DF61DD7F3A0002F8094 /* SigmoidOp.swift */,
+				38E59DF71DD7F3A0002F8094 /* TanhOp.swift */,
+				38E59DF81DD7F3A0002F8094 /* AddOp.swift */,
+				38E59DF91DD7F3A0002F8094 /* LinearOp.swift */,
+				38E59DFA1DD7F3A0002F8094 /* VariableOp.swift */,
+				38E59DFB1DD7F3A0002F8094 /* ConstantOp.swift */,
+				38E59DFC1DD7F3A0002F8094 /* Op.swift */,
+				38E59DFD1DD7F3A0002F8094 /* Loss.swift */,
+				38E59DEE1DD7F31C002F8094 /* ConcatOp.swift */,
+			);
+			name = ops;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -285,22 +335,36 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				38E59E051DD7F3A0002F8094 /* LinearOp.swift in Sources */,
+				38E59DFE1DD7F3A0002F8094 /* L2Loss.swift in Sources */,
+				38E59E091DD7F3A0002F8094 /* Loss.swift in Sources */,
 				2DC0CF851C19A6F9003CB088 /* matrix.swift in Sources */,
 				2DC0CF831C19A6D3003CB088 /* vector.swift in Sources */,
 				2DC0CF871C19E0C1003CB088 /* random.swift in Sources */,
+				38E59DEF1DD7F31C002F8094 /* ConcatOp.swift in Sources */,
 				2D1756571BF9869A009C397D /* sharedarray.swift in Sources */,
 				2D17565B1BF9869A009C397D /* cblas.swift in Sources */,
 				2D17565C1BF9869A009C397D /* native.swift in Sources */,
 				38BA50231CF5E03200A550EB /* ops.swift in Sources */,
 				2D71DD291C17418B00FA7F16 /* checkgradient.swift in Sources */,
 				2D1756591BF9869A009C397D /* storage.swift in Sources */,
+				38E59E041DD7F3A0002F8094 /* AddOp.swift in Sources */,
 				2D50D0A61C19269000C5A107 /* tensorops.swift in Sources */,
+				38E59E021DD7F3A0002F8094 /* SigmoidOp.swift in Sources */,
 				2D1756561BF9869A009C397D /* tensor.swift in Sources */,
 				38A410451D04A564007B2B11 /* optimize.swift in Sources */,
+				38E59E071DD7F3A0002F8094 /* ConstantOp.swift in Sources */,
+				38E59DFF1DD7F3A0002F8094 /* ViewOp.swift in Sources */,
 				38EF20F71D0E4C8C0004A504 /* ordereddictionary.swift in Sources */,
 				38A410471D04A5A1007B2B11 /* tree.swift in Sources */,
+				38E59DD81DD79D34002F8094 /* gradient.swift in Sources */,
+				38E59E001DD7F3A0002F8094 /* LogOp.swift in Sources */,
+				38E59E081DD7F3A0002F8094 /* Op.swift in Sources */,
 				38C235201CBB444F00330A06 /* graph.swift in Sources */,
+				38E59E011DD7F3A0002F8094 /* MulOp.swift in Sources */,
+				38E59E031DD7F3A0002F8094 /* TanhOp.swift in Sources */,
 				2D17565A1BF9869A009C397D /* view.swift in Sources */,
+				38E59E061DD7F3A0002F8094 /* VariableOp.swift in Sources */,
 				2D1756581BF9869A009C397D /* extent.swift in Sources */,
 				2DC0CF8C1C1B067D003CB088 /* numerictype.swift in Sources */,
 			);

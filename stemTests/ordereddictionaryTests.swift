@@ -30,17 +30,17 @@ class ordereddictionaryTests: XCTestCase {
         var dict = OrderedDictionary<Op<F>>()
         let op1 = LinearOp<F>(inputSize: 5, outputSize: 10)
         let op2 = LinearOp<F>(inputSize: 5, outputSize: 5)
-        dict["l1"] = op1
-        dict["l2"] = op2
+        dict["l1"] = [op1]
+        dict["l2"] = [op2]
         
         
         XCTAssert(dict.keys[0] == "l1")
         XCTAssert(dict.orderedValues[0][0] == op1)
-        XCTAssert(dict["l1"]! == op1)
+        XCTAssert(dict["l1"]![0] == op1)
         
         XCTAssert(dict.keys[1] == "l2")
         XCTAssert(dict.orderedValues[1][0] == op2)
-        XCTAssert(dict["l2"] == op2)
+        XCTAssert(dict["l2"]![0] == op2)
     }
     
     func testChangeItem() {
@@ -50,17 +50,17 @@ class ordereddictionaryTests: XCTestCase {
         let op3 = LinearOp<F>(inputSize: 5, outputSize: 20)
         let op4 = LinearOp<F>(inputSize: 5, outputSize: 3)
         
-        dict["l1"] = op1
-        dict["l2"] = op2
-        dict["l1"] = op3
-        dict["l2"] = op4
+        dict["l1"] = [op1]
+        dict["l2"] = [op2]
+        dict["l1"] = [op3]
+        dict["l2"] = [op4]
         
         XCTAssert(dict.keys[0] == "l1")
         XCTAssert(dict.orderedValues[0][0] == op3)
-        XCTAssert(dict["l1"] == op3)
+        XCTAssert(dict["l1"]![0] == op3)
         
         XCTAssert(dict.keys[1] == "l2")
         XCTAssert(dict.orderedValues[1][0] == op4)
-        XCTAssert(dict["l2"] == op4)
+        XCTAssert(dict["l2"]![0] == op4)
     }
 }

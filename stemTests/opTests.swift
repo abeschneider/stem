@@ -451,9 +451,57 @@ class opTests: XCTestCase {
         XCTAssertLessThan(inputError, eps)
     }
     
-    // DOES NOT WORK!
-    /*func testRNN3() {
+    // using Identity like Torch
+    func testRNNAlt() {
         let eps = 10e-6
+        
+        // input, h_{t-1}
+        let size = 5
+        let input = IdentityOp<D>()
+        let prevOutput = IdentityOp<D>()
+        let concat = ConcatOp<D>([input, prevOutput])
+        let linear = LinearOp<D>(outputSize: size)
+        let sigmoid = SigmoidOp<D>(size: size)
+        
+        connect(from: concat, to: linear)
+        connect(from: linear, to: sigmoid)
+        connect(from: sigmoid, to: prevOutput)
+    }
+    
+    
+/*
+forward:
+     [input[0], 0s] -> concat() -> linear() -> sigmoid() -> prevOutput
+     [input[1], prevOutput] -> concat() -> linear() -> sigmoid() -> prevOutput
+     ...
+     
+backward:
+     error -> sigmoidGrad() -> linearGrad() -> concatGrad() -> [gradInput[n], gradPrevOutput]
+     gradPrevOutput -> sigmoidGrad() -> linearGrad() -> concatGrad() -> [gradInput[n-1], gradPrevOutput]
+     ...
+     
+     
+-- unrolled version
+     
+forward:
+     sigmoid(linear(concat(input[1], sigmoid(linear(concat([input[0], 0s]))))))
+     c0 = concat(input[0], 0s)
+     l0 = linear(c0)
+     s0 = sigmoid(l0)
+     c1 = concat(input[1], s0)
+     l1 = linear(c1)
+     s1 = sigmoid(l1)
+     
+backward:
+     sg1 = sigmoidGrad(gradInput)
+     lg1 = linearGrad(sg1)
+     input[1], cg1 = concatGrad(lg1)
+     sg0 = sigmoidGrad(cg1)
+     lg0 = linearGrad(sg0)
+     input[0], cg0 = concatGrad(lg0)
+*/
+    func testRNN3() {
+        let eps = 10e-3
         
         let size = 5
         let input = Constant<D>(uniform(Extent(size)))
@@ -461,9 +509,12 @@ class opTests: XCTestCase {
 //        let gradOutput = Constant<D>(Tensor<D>([0.5, 0.5, 0.5, 0.5, 0.5]))
         
         let concat = ConcatOp<D>()
-        let linear = LinearOp<D>(outputSize: size)
+        let linear = LinearOp<D>(inputSize: 2*size, outputSize: size)
         let sigmoid = SigmoidOp<D>(size: size)
-        let prevOutput = Variable<D>()
+        
+        // is a Variable in order to allow connections to have an effect
+        let prevOutput = Variable<D>(Extent(size))
+//        let prevOutput = Constant<D>(zeros(Extent(size)))
         
         connect(from: [input, prevOutput], to: concat)
         connect(from: concat, to: linear)
@@ -475,12 +526,15 @@ class opTests: XCTestCase {
                                   outputs: [sigmoid],
                                   ordering: RepeatedSequentialOrdering<D>(count: 2))
         
-        rnn.apply()
+//        rnn.apply()
         
 //        let rnnGrad = rnn.gradient() as! CollectionGradient<D>
         
         // manually build backwards graph
-        let prevOutputGrad = prevOutput.gradient() as! VariableGradient<D>
+        //let prevOutputGrad = prevOutput.gradient() as! VariableGradient<D>
+        // for now try not using Gradient version (should be the same?)
+//        let prevOutputGrad = Variable<D>(Extent(size))
+        let prevOutputGrad = prevOutput.gradient() as! VariableGrad<D>
         let concatGrad = concat.gradient() as! ConcatGrad<D>
         let linearGrad = linear.gradient() as! LinearGrad<D>
         let sigmoidGrad = sigmoid.gradient() as! SigmoidGrad<D>
@@ -488,20 +542,25 @@ class opTests: XCTestCase {
         connect(from: prevOutputGrad, to: sigmoidGrad, "gradOutput")
         connect(from: sigmoidGrad, to: linearGrad, "gradOutput")
         connect(from: linearGrad, to: concatGrad, "gradOutput")
-
         
         // currently this has no effect (regardless of index or if this is commented out)
         connect(Source(op: concatGrad, label: "output", index: 0),
                 Target(op: prevOutputGrad, label: "gradOutput"))
+        
+        // want:
+        // collection[gradOutput] -> sigmoid[gradOutput]
+        // ...
+        //prevGradOutput -> sigmoid[gradOutput]
 
         // ops: [prevOutputGrad, sigmoidGrad, linearGrad, concatGrad],
         // outputs: [concatGrad],
-        let rnnGrad = CollectionGradient<D>(ops: [prevOutputGrad, sigmoidGrad, linearGrad, concatGrad],
+        let gradOutput = Constant<D>(Extent(size))
+        let rnnGrad = CollectionGradient<D>(ops: [sigmoidGrad, linearGrad, concatGrad, prevOutputGrad],
                                             inputs: [],
                                             outputs: [concatGrad],
                                             ordering: RepeatedSequentialOrdering<D>(count: 2))
         
-        rnnGrad.apply()
+//        rnnGrad.apply()
 
 ////        connect(from: gradOutput, to: rnnGrad, "gradOutput")
 ////        print(rnnGrad)
@@ -511,10 +570,12 @@ class opTests: XCTestCase {
 //        fill(out[0], value: Double(0.5))
 ////        rnnGrad.apply()
 //
-//        let inputError = checkGradient(rnn, grad: rnnGrad, params: input.output, gradParams: rnnGrad.output, eps: eps)
-//        print(inputError)
+        connect(from: gradOutput, to: rnnGrad, "gradOutput")
+        let inputError = checkGradient(rnn, grad: rnnGrad, params: input.output, gradParams: gradOutput.output, eps: eps)
+//        let weightError = checkGradient(rnn, grad: rnnGrad, params: linear.weight, gradParams: linearGrad.weight, eps: eps)
+        print(inputError)
 ////        XCTAssertLessThan(inputError, eps)
-    }*/
+    }
     
 //    func testLSTM() {
 //        let size = 10
@@ -570,4 +631,59 @@ class opTests: XCTestCase {
 ////        let forgetValue = MulOp(state, forgetGate)
 ////        let stateInput = AddOp(inputValue, forgetValue)
 //    }
+    
+    func testRNN4() {
+        let eps = 10e-3
+        
+        let size = 5
+        
+        let initial = Constant<D>(zeros(Extent(size)))
+        let input = Constant<D>(uniform(Extent(size)))
+        let concat = ConcatOp<D>()
+        let linear = LinearOp<D>(inputSize: 2*size, outputSize: size)
+        let sigmoid = SigmoidOp<D>(size: size)
+        
+        // is a Variable in order to allow connections to have an effect
+        let prevOutput = Variable<D>(Extent(size))
+        //        let prevOutput = Constant<D>(zeros(Extent(size)))
+        
+        connect(from: [input, prevOutput], to: concat)
+        connect(from: concat, to: linear)
+        connect(from: linear, to: sigmoid)
+        connect(from: sigmoid, to: prevOutput)
+        
+        let rnn = RecurrentCollectionOp<D>(ops: [input, prevOutput, concat, linear, sigmoid],
+                                  inputs: [initial],
+                                  outputs: [sigmoid],
+                                  recurrentVars: [prevOutput],
+                                  ordering: RepeatedSequentialOrdering<D>(count: 2))
+        
+        
+        let prevOutputGrad = prevOutput.gradient() as! VariableGrad<D>
+        let concatGrad = concat.gradient() as! ConcatGrad<D>
+        let linearGrad = linear.gradient() as! LinearGrad<D>
+        let sigmoidGrad = sigmoid.gradient() as! SigmoidGrad<D>
+        
+        connect(from: prevOutputGrad, to: sigmoidGrad, "gradOutput")
+        connect(from: sigmoidGrad, to: linearGrad, "gradOutput")
+        connect(from: linearGrad, to: concatGrad, "gradOutput")
+        
+        // currently this has no effect (regardless of index or if this is commented out)
+        connect(Source(op: concatGrad, label: "output", index: 0),
+                Target(op: prevOutputGrad, label: "gradOutput"))
+
+        let gradOutput = Constant<D>(zeros(Extent(size)))
+        let rnnGrad = RecurrentCollectionGrad<D>(ops: [sigmoidGrad, linearGrad, concatGrad, prevOutputGrad],
+                                                 inputs: [],
+                                                 outputs: [concatGrad],
+                                                 recurrentVars: [prevOutputGrad],
+                                                 ordering: RepeatedSequentialOrdering<D>(count: 2))
+        
+        connect(from: gradOutput, to: rnnGrad, "gradOutput")
+        
+//        rnn.apply()
+//        rnnGrad.apply()
+        let inputError = checkGradient(rnn, grad: rnnGrad, params: input.output, gradParams: gradOutput.output, eps: eps)
+        print(inputError)
+    }
 }

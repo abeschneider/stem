@@ -8,18 +8,11 @@
 
 import Foundation
 
-public enum TensorParam<S:Storage> {
-    case tensorValue(Tensor<S>)
-    case tensorArray([Tensor<S>])
-    
-    public init(_ value:Tensor<S>) {
-        self = .tensorValue(value)
-    }
+/*
+ Provides a method to store a map of <string:[T]> that can also be accessed
+ by position. The order of the key entries follows insertion order.
+ */
 
-    public init(_ values:[Tensor<S>]) {
-        self = .tensorArray(values)
-    }
-}
 
 public struct OrderedDictionary<T>: Swift.Collection {
     public typealias Index = Array<T>.Index
@@ -85,7 +78,7 @@ public struct OrderedDictionary<T>: Swift.Collection {
         
         values[key] = value
     }
-
+    
     public subscript(key:String) -> [T]? {
         get { return values[key] }
         set { setValue(key, newValue!) }

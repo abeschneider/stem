@@ -1,0 +1,108 @@
+//
+//  l2loss.swift
+//  stem
+//
+//  Created by Schneider, Abraham R. on 11/12/16.
+//  Copyright © 2016 none. All rights reserved.
+//
+
+import Foundation
+
+open class L2Loss<S:Storage>: Op<S>, Loss where S.ElementType:FloatNumericType {
+    public typealias StorageType = S
+    
+    open var value:S.ElementType = 0
+    
+    open var _input:Tensor<S> { return inputs[0].output() }
+    open var _target:Tensor<S> { return inputs[1].output() }
+    
+    public override init() {
+        super.init(inputs: ["input", "target"], outputs: ["output"])
+        outputs["output"] = [Tensor<S>()]
+    }
+    
+    public init(size:Int) {
+        super.init(inputs: ["input", "target"], outputs: ["output"])
+        outputs["output"] = [zeros(Extent(size))]
+    }
+    
+    public init(target t:Op<S>) {
+        super.init(inputs: ["input", "target"], outputs: ["output"])
+        connect(from: t, "output", to: self, "target")
+        outputs["output"] = [zeros(t.output.shape)]
+    }
+    
+    public init(value:Op<S>, target t:Op<S>) {
+        super.init(inputs: ["input", "target"], outputs: ["output"])
+        connect(from: value, "output", to: self, "input")
+        connect(from: t, "output", to: self, "target")
+        outputs["output"] = [Tensor<S>(value.output.shape)]
+    }
+    
+    public required init(op:Op<S>, shared:Bool) {
+        super.init(inputs: ["input", "target"], outputs: ["output"])
+        outputs["output"] = [Tensor<S>(op.output.shape)]
+    }
+    
+    open override func apply() {
+        // TODO: change to setAction
+        if output.shape != _input.shape {
+            output.resize(_input.shape)
+        }
+        
+        if _input.dims == 1 {
+            sub(_input, _target, result: output)
+        } else if _input.dims == 2 {
+            sub(_input, _target, result: output)
+        }
+        
+        pow(output, 2, result: output)
+        value = sum(output)
+    }
+}
+
+open class L2LossGrad<S:Storage>: Op<S>, Gradient where S.ElementType:FloatNumericType {
+    public typealias OpType = L2Loss<S>
+    
+    open var linear:LinearOp<S> {
+        let input:InputType<S> = inputs[0]
+        return input.op as! LinearOp<S>
+    }
+    open var _input:Tensor<S> { return inputs[1].output() }
+    open var _target:Tensor<S> { return inputs[2].output() }
+    
+    public required init(op:L2Loss<S>) {
+        let l:InputType<S> = op.inputs[0]
+        let t:InputType<S> = op.inputs[1]
+        
+        super.init(inputs: ["op", "input", "target"], outputs: ["output"])
+        connect(from: op, "output", to: self, "op")
+        connect(Source(op: l.op!), Target(op: self, label: "input"))
+        connect(Source(op: t.op!), Target(op: self, label: "target"))
+        outputs["output"] = [Tensor<S>(Extent(op._target.shape))]
+    }
+    
+    public init(size:Int) {
+        super.init(inputs: ["op", "input", "target"], outputs: ["output"])
+        outputs["output"] = [Tensor<S>(Extent(size))]
+    }
+    
+    required public init(op: Op<S>, shared: Bool) {
+        fatalError("init(op:shared:) has not been implemented")
+    }
+    
+    open override func apply() {
+        sub(_input, _target, result: output)
+        output *= 2
+    }
+    
+    open override func reset() {
+        fill(output, value: 0)
+    }
+}
+
+extension L2Loss: Differentiable {
+    public func gradient() -> GradientType {
+        return L2LossGrad<S>(op: self)
+    }
+}

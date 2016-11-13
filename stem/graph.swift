@@ -150,7 +150,7 @@ open class CollectionOp<S:Storage>: Op<S>, Sequence {
         ops = cop.ops.map { copy(op: $0, shared: shared) }
         
         super.init(inputs: ["input"], outputs: ["outputs"])
-        outputs["output"] = Tensor<S>(op.output.shape)
+        outputs["output"] = [Tensor<S>(op.output.shape)]
     }
     
     func inputSet(_ label:String, value:[Op<S>]) {
@@ -188,15 +188,18 @@ open class CollectionGradient<S:Storage>: Op<S>, Gradient {
     open var ops:[Op<StorageType>] = []
     var ordering:AnyOrdering<S>
     
+    open var _input:Tensor<S> { return inputs[1].output() }
+    open var _gradOutput:Tensor<S> { return inputs[2].output() }
+    
     public required init(op:CollectionOp<S>) {
         ordering = op.ordering
         super.init(inputs: ["op", "inputs", "gradOutput"], outputs: ["output"])
         
-        outputs["output"] = Tensor<S>()
+        outputs["output"] = [Tensor<S>()]
 
         // start with outputs, and work backwards
         createBackwardsGraph(op.ops)
-        output = ops.last!.output
+//        output = ops.last!.output
         
         setAction("gradOutput", action: self.gradOutputSet)
     }
@@ -210,12 +213,12 @@ open class CollectionGradient<S:Storage>: Op<S>, Gradient {
         self.ordering = AnyOrdering<S>(ordering)
         self.ops = ops
         super.init(inputs: ["op", "input", "gradOutput"], outputs: ["outputs"])
-        connect(from: outputs, "output", to: self, "gradOutput")
+//        connect(from: outputs, "output", to: self, "gradOutput")
         
         self.outputs["output"] = outputs.map { $0.output }
         setAction("gradOutput", action: self.gradOutputSet)
     }
-
+    
     required public init(op: Op<S>, shared: Bool) {
         fatalError("init(op:shared:) has not been implemented")
     }
@@ -249,16 +252,29 @@ open class CollectionGradient<S:Storage>: Op<S>, Gradient {
     }
     
     open override func apply() {
+        print("CollectionGrad: \(_gradOutput)")
+        
+        var lastOp:Op<S>?
         for op in ordering.traversal(ops) {
             op.apply()
+            lastOp = op
+        }
+        
+        if let op:Op<S> = lastOp {
+            // TODO: make this a function (part of copy?)
+            // Also: is it necessary to copy, or should we
+            // just point?
+            if output.shape != op.output.shape {
+                output.resize(op.output.shape)
+            }
+            
+            copy(from: op.output, to: output)
+            print("graph: \(output)")
         }
     }
     
     open override func reset() {
-        for op in ops {
-            (op as! GradientType).reset()
-        }
-        
+        ops.forEach { $0.reset() }
         fill(output, value: 0)
     }
     
@@ -277,8 +293,7 @@ extension CollectionOp:Differentiable {
 }
 
 open class SequentialOp<S:Storage>: CollectionOp<S> {
-    public init(_ ops:[Op<S>], modify:Bool=true)
-    {
+    public init(_ ops:[Op<S>], modify:Bool=true) {
         if modify {
             for i in 0..<ops.count-1 {
                 connect(from: ops[i], to: ops[i+1])
@@ -305,9 +320,9 @@ open class SequentialOp<S:Storage>: CollectionOp<S> {
     }
 }
 
-// NB: Currently cannot overide an extension. For now just use
-// gradient as defined by CollectionGradient.
-//
+// TODO: previous versions of Swift didn't allow override of an extension.
+// it seems to compile now. Should finish this, as it allows a more efficient
+// method to calculate the gradient
 //public class SequentialGradient<S:Storage>: CollectionGradient<S> {
 //    public required init(op:CollectionOp<S>) {
 //        super.init(op: op)
@@ -315,4 +330,88 @@ open class SequentialOp<S:Storage>: CollectionOp<S> {
 //        // TODO: can likely make init more efficient by traversing
 //        // list in reverse order instead of using processOutputs
 //    }
+//    
+//    required public init(op: Op<S>, shared: Bool) {
+//        fatalError("init(op:shared:) has not been implemented")
+//    }
 //}
+
+open class RecurrentCollectionOp<S:Storage>: CollectionOp<S> {
+    var recurrentVars:[Variable<S>]
+    
+    public init<T:Ordering>(
+        ops:[Op<S>],
+        inputs:[Op<S>],
+        outputs:[Op<S>],
+        recurrentVars:[Variable<S>], // inputs get copied to these
+        ordering:T) where T.StorageType==S
+    {
+        self.recurrentVars = recurrentVars
+        super.init(ops: ops, inputs: inputs, outputs: outputs, ordering: ordering)
+    }
+    
+    public required init(op: Op<S>, shared: Bool) {
+        fatalError("init(op:shared:) has not been implemented")
+    }
+
+    public override func inputSet(_ label: String, value: [Op<S>]) {
+        // do nothing?
+    }
+    
+    open override func apply() {
+        // copy over input array to recurrentVars
+        if let inputs:[InputType<S>] = self.inputs["input"] {
+            for (input, recurrentVar) in zip(inputs, recurrentVars) {
+                copy(from: input.output(), to: recurrentVar.output)
+            }
+        }
+        
+        super.apply()
+    }
+}
+
+open class RecurrentCollectionGrad<S:Storage>: CollectionGradient<S> {
+    public typealias StorageType = S
+
+    var recurrentVars:[VariableGrad<S>]
+
+    public init<T:Ordering>(
+        ops:[Op<S>],
+        inputs:[Op<S>],
+        outputs:[Op<S>],
+        recurrentVars:[VariableGrad<S>], // inputs get copied to these
+        ordering:T) where T.StorageType==S
+    {
+        self.recurrentVars = recurrentVars
+        super.init(ops: ops, inputs: inputs, outputs: outputs, ordering: ordering)
+    }
+    
+    public required init(op: Op<S>, shared: Bool) {
+        fatalError("init(op:shared:) has not been implemented")
+    }
+    
+    public required init(op: CollectionOp<S>) {
+        fatalError("init(op:) has not been implemented")
+    }
+    
+    open override func apply() {
+        // copy over input array to recurrentVars
+        if let inputs:[InputType<S>] = self.inputs["gradOutput"] {
+            for (input, recurrentVar) in zip(inputs, recurrentVars) {
+                copy(from: input.output(), to: recurrentVar.output)
+            }
+        }
+        
+        super.apply()
+    }
+    
+    open override func reset() {
+        ops.forEach { $0.reset() }
+        
+        fill(output, value: 0)
+    }
+    
+    override func gradOutputSet(_ key:String, value:[Op<S>]) {
+        // do nothing
+    }
+}
