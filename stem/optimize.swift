@@ -33,7 +33,8 @@ open class GradientDescentOptimizer<S:Storage>: Op<S> where S.ElementType:FloatN
         
 //        super.init(inputs: [("alpha", InputType(alpha))],
 //                   outputs: forward.outputs)
-        super.init()
+//        super.init()
+        super.init(inputs: ["alpha"], outputs: [])
         connect(from: alpha, "output", to: self, "alpha")
         let forwardOutputs:[Tensor<S>] = forward.outputs["output"]!
         outputs["output"] = forwardOutputs

@@ -9,7 +9,7 @@
 import Foundation
 
 open class ConcatOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
-    public override init() {
+    public init() {
         super.init(inputs: ["input"], outputs: ["output"])
         outputs["output"] = [Tensor<S>()]
         setAction("input", action: self.inputSet)

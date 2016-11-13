@@ -24,10 +24,10 @@ open class Constant<S:Storage>: Op<S> {
         outputs["output"] = [Tensor<S>(shape)]
     }
     
-    public init(data:DataSequence<S>) {
-        super.init(inputs: [], outputs: ["output"])
-        outputs["output"] = [data.next()!]
-    }
+//    public init(data:DataSequence<S>) {
+//        super.init(inputs: [], outputs: ["output"])
+//        outputs["output"] = [data.next()!]
+//    }
     
     // required for Copyable
     public required init(op:Op<S>, shared:Bool) {

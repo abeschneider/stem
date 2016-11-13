@@ -11,7 +11,7 @@ import Foundation
 open class Variable<S:Storage>: Op<S> {
     open var _input:Tensor<S> { return inputs[0].output() }
     
-    public override init() {
+    public init() {
         super.init(inputs: ["input"], outputs: ["output"])
         setAction("input", action: inputSet)
     }

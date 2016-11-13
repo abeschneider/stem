@@ -452,7 +452,7 @@ class opTests: XCTestCase {
     }
     
     // using Identity like Torch
-    func testRNNAlt() {
+    /*func testRNNAlt() {
         let eps = 10e-6
         
         // input, h_{t-1}
@@ -466,7 +466,7 @@ class opTests: XCTestCase {
         connect(from: concat, to: linear)
         connect(from: linear, to: sigmoid)
         connect(from: sigmoid, to: prevOutput)
-    }
+    }*/
     
     
 /*

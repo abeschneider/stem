@@ -8,16 +8,7 @@
 
 import Foundation
 
-func createUID() -> Int {
-    return uniform()
-}
-
-//func += <K, V> (left: inout [K:V], right: [K:V]) {
-//    for (k, v) in right {
-//        left[k] = v
-//    }
-//}
-
+/*
 open class DataSequence<S:Storage>: IteratorProtocol {
     var data:[Tensor<S>] = []
     var index:Int = 0
@@ -70,7 +61,7 @@ open class DataSequence<S:Storage>: IteratorProtocol {
 open class IdentityOp<S:Storage>: Op<S> {
     var _input:Tensor<S> { return inputs[0].output() }
 
-    public override init() {
+    public init() {
         super.init(inputs: ["input"], outputs: ["output"])
     }
     
@@ -115,3 +106,4 @@ open class IdentityGrad<S:Storage>: Op<S>, Gradient {
         fill(output, value: 0)
     }
 }
+*/

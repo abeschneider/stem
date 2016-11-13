@@ -17,7 +17,7 @@ open class LinearOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
     
     open var _input:Tensor<S> { return inputs[0].output() }
     
-    public override init() {
+    public init() {
         weight = Tensor<S>()
         bias = Tensor<S>()
         super.init(inputs: ["input"], outputs: ["output"])

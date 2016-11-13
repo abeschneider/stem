@@ -16,7 +16,7 @@ open class L2Loss<S:Storage>: Op<S>, Loss where S.ElementType:FloatNumericType {
     open var _input:Tensor<S> { return inputs[0].output() }
     open var _target:Tensor<S> { return inputs[1].output() }
     
-    public override init() {
+    public init() {
         super.init(inputs: ["input", "target"], outputs: ["output"])
         outputs["output"] = [Tensor<S>()]
     }

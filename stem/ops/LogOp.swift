@@ -18,7 +18,7 @@ open class LogOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
         setAction("input", action: self.inputSet)
     }
     
-    public override init() {
+    public init() {
         super.init(inputs: ["input"], outputs: ["output"])
         setAction("input", action: self.inputSet)
     }
