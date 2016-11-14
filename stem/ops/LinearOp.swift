@@ -9,7 +9,6 @@
 import Foundation
 
 open class LinearOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
-    //    public typealias StorageType = S
     public typealias OpType = LinearOp<S>
     
     open var weight:Tensor<S>
@@ -104,8 +103,6 @@ open class LinearOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
 }
 
 open class LinearGrad<S:Storage>: Op<S>, Gradient where S.ElementType:FloatNumericType {
-    //    public typealias StorageType = S
-    
     open var weight:Tensor<S>
     open var bias:Tensor<S>
     
@@ -153,7 +150,6 @@ open class LinearGrad<S:Storage>: Op<S>, Gradient where S.ElementType:FloatNumer
     
     // need to separate apply into accumulate and apply
     open override func apply() {
-        print("linear: \(_gradOutput)")
         if _input.dims == 1 {
             outer(_gradOutput, _input, addTo: weight)
             bias += _gradOutput

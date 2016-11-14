@@ -73,7 +73,6 @@ open class SigmoidGrad<S:Storage>: Op<S>, Gradient where S.ElementType:FloatNume
     }
     
     open override func apply() {
-        print("sigmoid: \(_gradOutput)")
         // sigmoid(x)*(1 - sigmoid(x))
         let result = S.ElementType(1.0) - _sigmoid
         result *= _sigmoid
