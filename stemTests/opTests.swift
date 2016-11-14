@@ -294,7 +294,6 @@ class opTests: XCTestCase {
         mulOp.apply()
         
         let expected = Tensor<D>([30, 30, 30, 30, 30])
-        print(mulOp.output)
         XCTAssert(isClose(mulOp.output, expected, eps:10e-4))
     }
     
@@ -317,6 +316,17 @@ class opTests: XCTestCase {
         
         let inputError = checkGradient(mulOp, grad: mulOpGrad, params: values, gradParams: gradInput, eps: eps)
         XCTAssertLessThan(inputError, eps)
+    }
+    
+    func testConvOp() {
+        let image = Constant(Tensor<D>([[1, 2, 3], [4, 5, 6], [7, 8, 9]]))
+        let kernel = Constant(Tensor<D>([[-1, -2, -1], [0, 0, 0], [1, 2, 1]]))
+        
+        let convOp = Conv2dOp<D>(image: image, kernel: kernel)
+        convOp.apply()
+        
+        let expected = Tensor<D>([[-13, -20, -17], [-18, -24, -18], [13, 20, 17]])
+        XCTAssert(isClose(convOp.output, expected, eps:10e-4))
     }
     
     func testCollection() {
