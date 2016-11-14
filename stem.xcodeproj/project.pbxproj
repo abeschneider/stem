@@ -25,6 +25,9 @@
 		2DC0CF871C19E0C1003CB088 /* random.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DC0CF861C19E0C1003CB088 /* random.swift */; };
 		2DC0CF891C19F25B003CB088 /* randomTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DC0CF881C19F25B003CB088 /* randomTests.swift */; };
 		2DC0CF8C1C1B067D003CB088 /* numerictype.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DC0CF8A1C1B055A003CB088 /* numerictype.swift */; };
+		386E2A9C1DD8C06100777F8C /* InputType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 386E2A9B1DD8C06100777F8C /* InputType.swift */; };
+		386E2A9E1DD8C0A700777F8C /* Connections.swift in Sources */ = {isa = PBXBuildFile; fileRef = 386E2A9D1DD8C0A700777F8C /* Connections.swift */; };
+		386E2AA01DD8FB4E00777F8C /* Conv2dOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 386E2A9F1DD8FB4E00777F8C /* Conv2dOp.swift */; };
 		38A410451D04A564007B2B11 /* optimize.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38A410441D04A564007B2B11 /* optimize.swift */; };
 		38A410471D04A5A1007B2B11 /* tree.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38A410461D04A5A1007B2B11 /* tree.swift */; };
 		38BA50231CF5E03200A550EB /* ops.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38BA50221CF5E03200A550EB /* ops.swift */; };
@@ -79,12 +82,15 @@
 		2D1756601BF9884B009C397D /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		2D1756621BF9FA7E009C397D /* StemPlayground.playground */ = {isa = PBXFileReference; lastKnownFileType = file.playground; path = StemPlayground.playground; sourceTree = "<group>"; };
 		2D50D0A51C19269000C5A107 /* tensorops.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = tensorops.swift; sourceTree = "<group>"; };
-		2D71DD281C17418B00FA7F16 /* checkgradient.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = checkgradient.swift; sourceTree = "<group>"; };
+		2D71DD281C17418B00FA7F16 /* checkgradient.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = checkgradient.swift; path = stem/checkgradient.swift; sourceTree = "<group>"; };
 		2DC0CF821C19A6D3003CB088 /* vector.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = vector.swift; sourceTree = "<group>"; };
 		2DC0CF841C19A6F9003CB088 /* matrix.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = matrix.swift; sourceTree = "<group>"; };
 		2DC0CF861C19E0C1003CB088 /* random.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = random.swift; sourceTree = "<group>"; };
 		2DC0CF881C19F25B003CB088 /* randomTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = randomTests.swift; sourceTree = "<group>"; };
 		2DC0CF8A1C1B055A003CB088 /* numerictype.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = numerictype.swift; sourceTree = "<group>"; };
+		386E2A9B1DD8C06100777F8C /* InputType.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = InputType.swift; path = stem/ops/InputType.swift; sourceTree = "<group>"; };
+		386E2A9D1DD8C0A700777F8C /* Connections.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Connections.swift; path = stem/ops/Connections.swift; sourceTree = "<group>"; };
+		386E2A9F1DD8FB4E00777F8C /* Conv2dOp.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Conv2dOp.swift; path = stem/ops/Conv2dOp.swift; sourceTree = "<group>"; };
 		38A410441D04A564007B2B11 /* optimize.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = optimize.swift; path = stem/optimize.swift; sourceTree = "<group>"; };
 		38A410461D04A5A1007B2B11 /* tree.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = tree.swift; path = stem/tree.swift; sourceTree = "<group>"; };
 		38BA50221CF5E03200A550EB /* ops.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; name = ops.swift; path = stem/ops.swift; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.swift; };
@@ -168,7 +174,6 @@
 				2D1756551BF9869A009C397D /* native.swift */,
 				2D1756381BF98678009C397D /* stem.h */,
 				2D17563A1BF98678009C397D /* Info.plist */,
-				2D71DD281C17418B00FA7F16 /* checkgradient.swift */,
 				2D50D0A51C19269000C5A107 /* tensorops.swift */,
 				2DC0CF861C19E0C1003CB088 /* random.swift */,
 				2DC0CF8A1C1B055A003CB088 /* numerictype.swift */,
@@ -201,6 +206,7 @@
 				38A410441D04A564007B2B11 /* optimize.swift */,
 				38A410461D04A5A1007B2B11 /* tree.swift */,
 				38E59DD71DD79D34002F8094 /* gradient.swift */,
+				2D71DD281C17418B00FA7F16 /* checkgradient.swift */,
 			);
 			name = nn;
 			sourceTree = "<group>";
@@ -221,6 +227,9 @@
 				38E59DFC1DD7F3A0002F8094 /* Op.swift */,
 				38E59DFD1DD7F3A0002F8094 /* Loss.swift */,
 				38E59DEE1DD7F31C002F8094 /* ConcatOp.swift */,
+				386E2A9B1DD8C06100777F8C /* InputType.swift */,
+				386E2A9D1DD8C0A700777F8C /* Connections.swift */,
+				386E2A9F1DD8FB4E00777F8C /* Conv2dOp.swift */,
 			);
 			name = ops;
 			sourceTree = "<group>";
@@ -337,6 +346,7 @@
 			files = (
 				38E59E051DD7F3A0002F8094 /* LinearOp.swift in Sources */,
 				38E59DFE1DD7F3A0002F8094 /* L2Loss.swift in Sources */,
+				386E2AA01DD8FB4E00777F8C /* Conv2dOp.swift in Sources */,
 				38E59E091DD7F3A0002F8094 /* Loss.swift in Sources */,
 				2DC0CF851C19A6F9003CB088 /* matrix.swift in Sources */,
 				2DC0CF831C19A6D3003CB088 /* vector.swift in Sources */,
@@ -350,9 +360,11 @@
 				2D1756591BF9869A009C397D /* storage.swift in Sources */,
 				38E59E041DD7F3A0002F8094 /* AddOp.swift in Sources */,
 				2D50D0A61C19269000C5A107 /* tensorops.swift in Sources */,
+				386E2A9C1DD8C06100777F8C /* InputType.swift in Sources */,
 				38E59E021DD7F3A0002F8094 /* SigmoidOp.swift in Sources */,
 				2D1756561BF9869A009C397D /* tensor.swift in Sources */,
 				38A410451D04A564007B2B11 /* optimize.swift in Sources */,
+				386E2A9E1DD8C0A700777F8C /* Connections.swift in Sources */,
 				38E59E071DD7F3A0002F8094 /* ConstantOp.swift in Sources */,
 				38E59DFF1DD7F3A0002F8094 /* ViewOp.swift in Sources */,
 				38EF20F71D0E4C8C0004A504 /* ordereddictionary.swift in Sources */,
