@@ -708,7 +708,12 @@ public func sum<StorageType:Storage>(_ tensor:Tensor<StorageType>) -> StorageTyp
  w0=(w+2pW−kW)/sX+1
  */
 // currently only supports 'valid' mode; the kernel cannot exceed the bounds of the image
-public func conv2d<S:Storage>(_ input:Tensor<S>, kernel:Tensor<S>, stride:[Int]=[1, 1], padding:[Int]=[0, 0], paddingValue:S.ElementType=0) -> Tensor<S>
+public func conv2d<S:Storage>(_ input:Tensor<S>,
+                                kernel:Tensor<S>,
+                                stride:[Int]=[1, 1],
+                                padding:[Int]=[0, 0],
+                                paddingValue:S.ElementType=0,
+                                flip:Bool=true) -> Tensor<S>
 {
     let centerX = kernel.shape[1] / 2
     let centerY = kernel.shape[0] / 2
@@ -718,18 +723,18 @@ public func conv2d<S:Storage>(_ input:Tensor<S>, kernel:Tensor<S>, stride:[Int]=
     var cols = (input.shape[1] - kernel.shape[1] + 2*padding[1]) + 1
     cols /= stride[1]
     
-    let outputShape = Extent(rows, cols)    
+    let outputShape = Extent(rows, cols)
     let out = Tensor<S>(outputShape)
         
     for i in 0..<outputShape[0] {
         for j in 0..<outputShape[1] {
             for k in 0..<kernel.shape[0] {                
-                let kflipped = kernel.shape[0] - k - 1
+                let kflipped = flip ? kernel.shape[0] - k - 1 : k
                 for l in 0..<kernel.shape[1] {
-                    let lflipped = kernel.shape[1] - l - 1
+                    let lflipped = flip ? kernel.shape[1] - l - 1 : l
                     
-                    let m = (i + (k - centerY) - padding[0])*stride[0] + centerY //- 1
-                    let n = (j + (l - centerX) - padding[1])*stride[1] + centerX //- 1
+                    let m = (i + (k - centerY) - padding[0])*stride[0] + centerY
+                    let n = (j + (l - centerX) - padding[1])*stride[1] + centerX
                     
                     let o = i+padding[0]/2
                     let p = j+padding[1]/2

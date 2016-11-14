@@ -53,10 +53,8 @@ func calcBackwardGrad<S:Storage>
         gradOutput[i] = 1
         
         (backward as! GradientType).reset()
-        print("!! \(gradOutput)")
         backward.apply()
-        var din = gradParams
-        din = din.reshape(Extent(din.shape[0], 1))
+        let din = gradParams.reshape(Extent(gradParams.shape[0], 1))
         jacobian[all, i] = din
     }
     
@@ -71,11 +69,10 @@ public func checkGradient<S:Storage>
     grad.apply()
     
     let fgrad = calcForwardGrad(op, params: ravel(params), eps: eps)
-    print("----------------------")
     let bgrad = calcBackwardGrad(op, grad, gradParams: ravel(gradParams))
     
-    print("fgrad = \(fgrad)")
-    print("bgrad = \(bgrad)")
+//    print("fgrad = \(fgrad)")
+//    print("bgrad = \(bgrad)")
     
     let error = Tensor<S>(zeros(fgrad.shape))
     sub(fgrad, bgrad, result: error)

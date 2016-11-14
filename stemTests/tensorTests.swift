@@ -965,6 +965,16 @@ class stemTests: XCTestCase {
         XCTAssert(isClose(result, expected, eps: 10e-4))
     }
     
+    func testCorr2D() {
+        let image = Tensor<F>([[0, 0, 0, 0, 0], [0, 1, 2, 3, 0], [0, 4, 5, 6, 0], [0, 7, 8, 9, 0], [0, 0, 0, 0, 0]])
+        let kernel = Tensor<F>([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
+        let result = conv2d(image, kernel: kernel, flip: false)
+        
+        let expected = Tensor<F>([[13, 20, 17], [18, 24, 18], [-13, -20, -17]])
+        XCTAssert(isClose(result, expected, eps: 10e-4))
+    }
+
+    
     func testConv2DWithPadding() {
         let image = Tensor<F>([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
         let kernel = Tensor<F>([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
