@@ -61,6 +61,7 @@ open class Conv2dGrad<S:Storage>: Op<S>, Gradient where S.ElementType:FloatNumer
         outputs["output"] = [Tensor<S>()]
     }
     
+    // required for copying
     required public init(op: Op<S>, shared: Bool) {
         fatalError("init(op:shared:) has not been implemented")
     }
@@ -72,6 +73,7 @@ open class Conv2dGrad<S:Storage>: Op<S>, Gradient where S.ElementType:FloatNumer
         
         // TODO: conv2d should take a Tensor to store results
         let result = conv2d(_gradOutput, kernel: conv.filter, padding: [1, 1], flip: false)
+        iadd(filter, result)
         iadd(output, result)
     }
     

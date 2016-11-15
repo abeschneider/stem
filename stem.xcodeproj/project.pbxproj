@@ -28,6 +28,7 @@
 		386E2A9C1DD8C06100777F8C /* InputType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 386E2A9B1DD8C06100777F8C /* InputType.swift */; };
 		386E2A9E1DD8C0A700777F8C /* Connections.swift in Sources */ = {isa = PBXBuildFile; fileRef = 386E2A9D1DD8C0A700777F8C /* Connections.swift */; };
 		386E2AA01DD8FB4E00777F8C /* Conv2dOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 386E2A9F1DD8FB4E00777F8C /* Conv2dOp.swift */; };
+		386E2AA21DDA652900777F8C /* PoolingOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 386E2AA11DDA652900777F8C /* PoolingOp.swift */; };
 		38A410451D04A564007B2B11 /* optimize.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38A410441D04A564007B2B11 /* optimize.swift */; };
 		38A410471D04A5A1007B2B11 /* tree.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38A410461D04A5A1007B2B11 /* tree.swift */; };
 		38BA50231CF5E03200A550EB /* ops.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38BA50221CF5E03200A550EB /* ops.swift */; };
@@ -91,6 +92,7 @@
 		386E2A9B1DD8C06100777F8C /* InputType.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = InputType.swift; path = stem/ops/InputType.swift; sourceTree = "<group>"; };
 		386E2A9D1DD8C0A700777F8C /* Connections.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Connections.swift; path = stem/ops/Connections.swift; sourceTree = "<group>"; };
 		386E2A9F1DD8FB4E00777F8C /* Conv2dOp.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Conv2dOp.swift; path = stem/ops/Conv2dOp.swift; sourceTree = "<group>"; };
+		386E2AA11DDA652900777F8C /* PoolingOp.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = PoolingOp.swift; path = stem/ops/PoolingOp.swift; sourceTree = "<group>"; };
 		38A410441D04A564007B2B11 /* optimize.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = optimize.swift; path = stem/optimize.swift; sourceTree = "<group>"; };
 		38A410461D04A5A1007B2B11 /* tree.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = tree.swift; path = stem/tree.swift; sourceTree = "<group>"; };
 		38BA50221CF5E03200A550EB /* ops.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; name = ops.swift; path = stem/ops.swift; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.swift; };
@@ -200,13 +202,17 @@
 		2D6A5F431C0DC54B001838D4 /* nn */ = {
 			isa = PBXGroup;
 			children = (
-				38E59DE71DD7F1E4002F8094 /* ops */,
 				38C2351F1CBB444F00330A06 /* graph.swift */,
 				38BA50221CF5E03200A550EB /* ops.swift */,
 				38A410441D04A564007B2B11 /* optimize.swift */,
 				38A410461D04A5A1007B2B11 /* tree.swift */,
 				38E59DD71DD79D34002F8094 /* gradient.swift */,
 				2D71DD281C17418B00FA7F16 /* checkgradient.swift */,
+				38E59DFC1DD7F3A0002F8094 /* Op.swift */,
+				386E2A9D1DD8C0A700777F8C /* Connections.swift */,
+				386E2A9B1DD8C06100777F8C /* InputType.swift */,
+				38E59DFD1DD7F3A0002F8094 /* Loss.swift */,
+				38E59DE71DD7F1E4002F8094 /* ops */,
 			);
 			name = nn;
 			sourceTree = "<group>";
@@ -224,12 +230,9 @@
 				38E59DF91DD7F3A0002F8094 /* LinearOp.swift */,
 				38E59DFA1DD7F3A0002F8094 /* VariableOp.swift */,
 				38E59DFB1DD7F3A0002F8094 /* ConstantOp.swift */,
-				38E59DFC1DD7F3A0002F8094 /* Op.swift */,
-				38E59DFD1DD7F3A0002F8094 /* Loss.swift */,
 				38E59DEE1DD7F31C002F8094 /* ConcatOp.swift */,
-				386E2A9B1DD8C06100777F8C /* InputType.swift */,
-				386E2A9D1DD8C0A700777F8C /* Connections.swift */,
 				386E2A9F1DD8FB4E00777F8C /* Conv2dOp.swift */,
+				386E2AA11DDA652900777F8C /* PoolingOp.swift */,
 			);
 			name = ops;
 			sourceTree = "<group>";
@@ -291,7 +294,7 @@
 			isa = PBXProject;
 			attributes = {
 				LastSwiftUpdateCheck = 0710;
-				LastUpgradeCheck = 0710;
+				LastUpgradeCheck = 0810;
 				ORGANIZATIONNAME = none;
 				TargetAttributes = {
 					2D1756341BF98678009C397D = {
@@ -349,6 +352,7 @@
 				386E2AA01DD8FB4E00777F8C /* Conv2dOp.swift in Sources */,
 				38E59E091DD7F3A0002F8094 /* Loss.swift in Sources */,
 				2DC0CF851C19A6F9003CB088 /* matrix.swift in Sources */,
+				386E2AA21DDA652900777F8C /* PoolingOp.swift in Sources */,
 				2DC0CF831C19A6D3003CB088 /* vector.swift in Sources */,
 				2DC0CF871C19E0C1003CB088 /* random.swift in Sources */,
 				38E59DEF1DD7F31C002F8094 /* ConcatOp.swift in Sources */,
@@ -421,8 +425,10 @@
 				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_IDENTITY = "-";
@@ -468,8 +474,10 @@
 				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_IDENTITY = "-";
@@ -489,6 +497,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 10.11;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = macosx;
+				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
 				VERSIONING_SYSTEM = "apple-generic";
 				VERSION_INFO_PREFIX = "";
 			};
