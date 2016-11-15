@@ -8,7 +8,7 @@
 
 import Foundation
 
-public protocol NumericType: AbsoluteValuable, Comparable { //, FloatingPointType {
+public protocol NumericType: AbsoluteValuable, Comparable {
     static func +(lhs:Self, rhs:Self) -> Self
     static func -(lhs:Self, rhs:Self) -> Self
     static func *(lhs:Self, rhs:Self) -> Self
@@ -18,6 +18,8 @@ public protocol NumericType: AbsoluteValuable, Comparable { //, FloatingPointTyp
     
     static func max(_ lhs: Self, _ rhs: Self) -> Self
     static func min(_ lhs: Self, _ rhs: Self) -> Self
+    
+    static var infinity:Self { get }
     
     init(_ v:Int)
 }
@@ -30,7 +32,7 @@ public protocol FloatNumericType: NumericType, FloatingPoint {
     static func tanh(_ value: Self) -> Self
     
     static func trunc(_ value: Self) -> Int
-
+    
     init(_ v:Float)
     init(_ v:Double)
 }
@@ -63,15 +65,6 @@ extension Int: NumericType {
 
     }
     
-//    init(value:Int) {
-//        self.init(value)
-//    }
-
-//    init<T:FloatNumericType>(value:T) {
-//        let newValue = Int(value)
-//        self.init(value: value)
-//    }
-    
     static public func max(_ lhs:Int, _ rhs:Int) -> Int {
         return lhs > rhs ? lhs : rhs
     }
@@ -79,6 +72,8 @@ extension Int: NumericType {
     static public func min(_ lhs:Int, _ rhs:Int) -> Int {
         return lhs < rhs ? lhs : rhs
     }
+    
+    public static var infinity:Int{ return Int.infinity }
 }
 
 extension Float: FloatNumericType {
@@ -120,6 +115,8 @@ extension Float: FloatNumericType {
     public static func trunc(_ value:Float) -> Int {
         return Int(value)
     }
+    
+    public static var infinity:Float { return Float.infinity }
 }
 
 extension Double: FloatNumericType {
@@ -162,5 +159,7 @@ extension Double: FloatNumericType {
     public static func trunc(_ value:Double) -> Int {
         return Int(value)
     }
+    
+    public static var infinity:Double { return Double.infinity }
 }
 

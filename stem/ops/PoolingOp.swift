@@ -8,9 +8,9 @@
 
 import Foundation
 
-func max<S:Storage>(input:Tensor<S>) -> Int {
+func max<S:Storage>(input:Tensor<S>) -> Int where S.ElementType:NumericType {
     let flattenedInput = ravel(input)
-    var best = S.ElementType(10000)
+    var best = S.ElementType.infinity
     var bestIndex:Int = 0
     for index in flattenedInput.indices() {
         let value = input[index]
@@ -23,9 +23,9 @@ func max<S:Storage>(input:Tensor<S>) -> Int {
     return bestIndex
 }
 
-func min<S:Storage>(input:Tensor<S>) -> Int {
+func min<S:Storage>(input:Tensor<S>) -> Int where S.ElementType:NumericType {
     let flattenedInput = ravel(input)
-    var best = S.ElementType(-10000)
+    var best = -S.ElementType.infinity
     var bestIndex:Int = 0
     for index in flattenedInput.indices() {
         let value = input[index]
