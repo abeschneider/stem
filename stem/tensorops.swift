@@ -651,8 +651,6 @@ func reduce<S:Storage>(
             result.storage[resultOffset] = op(result.storage[resultOffset], tensor.storage[tensorOffset])
         }
     }
-    
-//    return result
 }
 
 func reduce<S:Storage>(_ tensor:Tensor<S>,
