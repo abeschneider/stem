@@ -55,7 +55,6 @@ open class PoolingOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
         
         indices = Tensor<NativeStorage<Int>>()
         super.init(inputs: ["input"], outputs: ["output"])
-//        connect(from: input, "output", to: self, "input")
         
         outputs["output"] = Tensor<S>()
     }
