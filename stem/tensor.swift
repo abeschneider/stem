@@ -231,6 +231,12 @@ open class Tensor<StorageType:Storage> {
         self.init(array: array, shape: shape)
     }
     
+    /**
+     
+     Creates a column vector
+     
+     - Parameter colvector: contents of array
+     */
     public convenience init(colvector array:[StorageType.ElementType]) {
         let rows = array.count
         let shape = Extent(rows, 1)
@@ -256,26 +262,16 @@ open class Tensor<StorageType:Storage> {
         self.init(Extent(0))
     }
     
-    public init(_ shape:Extent, value:StorageType.ElementType=0) {
+    init(_ shape:Extent, value:StorageType.ElementType=0, offset:Int=0) {
         storage = StorageType(size: shape.elements, value: value)
         internalShape = shape
-        offset = 0
+        self.offset = offset
         self.stride = calculateStride(Extent(storage.calculateOrder(shape.dims)))
         dimIndex = storage.calculateOrder(shape.count)
         
         view = ViewType(shape: shape, offset: Array<Int>(repeating: 0, count: shape.count))
     }
-    
-    public init(_ shape:Extent, storage:StorageType, offset:Int=0) {
-        self.storage = StorageType(storage: storage, offset: offset)
-        internalShape = shape
-        self.offset = 0
-        self.stride = calculateStride(Extent(storage.calculateOrder(shape.dims)))
-        dimIndex = storage.calculateOrder(shape.count)
         
-        view = ViewType(shape: shape, offset: Array<Int>(repeating: 0, count: shape.count))
-    }
-    
     init(array:[StorageType.ElementType], shape:Extent, offset:Int?=nil) {
         storage = StorageType(array: array)
         internalShape = shape
