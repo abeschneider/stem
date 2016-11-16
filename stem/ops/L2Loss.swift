@@ -50,12 +50,7 @@ open class L2Loss<S:Storage>: Op<S>, Loss where S.ElementType:FloatNumericType {
             output.resize(_input.shape)
         }
         
-        if _input.dims == 1 {
-            sub(_input, _target, result: output)
-        } else if _input.dims == 2 {
-            sub(_input, _target, result: output)
-        }
-        
+        sub(_input, _target, result: output)
         pow(output, 2, result: output)
         value = sum(output)
     }

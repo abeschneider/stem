@@ -79,7 +79,7 @@ public func checkGradient<S:Storage>
     return max(abs(error))
 }
 
-// TODO: can we get rid of this version, or are both versions required?
+// Required for testing loss functions (where gradParams is not available).
 public func checkGradient<S:Storage, OpT:Op<S>>
     (_ op:OpT, grad:Op<S>, input:Tensor<S>, eps:Double) -> S.ElementType where S.ElementType:FloatNumericType, OpT:Loss, OpT.StorageType.ElementType==S.ElementType
 {
