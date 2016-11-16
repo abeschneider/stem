@@ -115,8 +115,6 @@ extension Float: FloatNumericType {
     public static func trunc(_ value:Float) -> Int {
         return Int(value)
     }
-    
-    public static var infinity:Float { return Float.infinity }
 }
 
 extension Double: FloatNumericType {
@@ -159,7 +157,5 @@ extension Double: FloatNumericType {
     public static func trunc(_ value:Double) -> Int {
         return Int(value)
     }
-    
-    public static var infinity:Double { return Double.infinity }
 }
 

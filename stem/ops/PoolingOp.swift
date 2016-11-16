@@ -8,48 +8,46 @@
 
 import Foundation
 
-func max<S:Storage>(input:Tensor<S>) -> Int where S.ElementType:NumericType {
-    let flattenedInput = ravel(input)
-    var best = S.ElementType.infinity
-    var bestIndex:Int = 0
-    for index in flattenedInput.indices() {
+public func max<S:Storage>(input:Tensor<S>) -> ([Int], S.ElementType) where S.ElementType:NumericType {
+    var best = -S.ElementType.infinity
+    var bestIndex:[Int] = [0, 0]
+    for index in input.indices() {
         let value = input[index]
         if value > best {
             best = value
-            bestIndex = index[0]
+            bestIndex = index
         }
     }
     
-    return bestIndex
+    return (bestIndex, best)
 }
 
-func min<S:Storage>(input:Tensor<S>) -> Int where S.ElementType:NumericType {
-    let flattenedInput = ravel(input)
-    var best = -S.ElementType.infinity
-    var bestIndex:Int = 0
-    for index in flattenedInput.indices() {
+public func min<S:Storage>(input:Tensor<S>) -> ([Int], S.ElementType) where S.ElementType:NumericType {
+    var best = S.ElementType.infinity
+    var bestIndex:[Int] = [0, 0]
+    for index in input.indices() {
         let value = input[index]
         if value < best {
             best = value
-            bestIndex = index[0]
+            bestIndex = index
         }
     }
     
-    return bestIndex
+    return (bestIndex, best)
 }
 
 open class PoolingOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
     open var _input:Tensor<S> { return inputs[0].output() }
+    open var _output:Tensor<S> { return outputs[0] }
     
     var poolingSize:Extent
     var stride:Extent
-    var evalFn:(_ input:Tensor<S>) -> Int
+    var evalFn:(_ input:Tensor<S>) -> ([Int], S.ElementType)
     var indices:Tensor<NativeStorage<Int>>
 
-    public init(input: Op<S>,
-                poolingSize:Extent,
+    public init(poolingSize:Extent,
                 stride:Extent,
-                evalFn:@escaping (_ input:Tensor<S>) -> Int)
+                evalFn:@escaping (_ input:Tensor<S>) -> ([Int], S.ElementType))
     {
         self.poolingSize = poolingSize
         self.stride = stride
@@ -57,7 +55,7 @@ open class PoolingOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
         
         indices = Tensor<NativeStorage<Int>>()
         super.init(inputs: ["input"], outputs: ["output"])
-        connect(from: input, "output", to: self, "input")
+//        connect(from: input, "output", to: self, "input")
         
         outputs["output"] = Tensor<S>()
     }
@@ -72,7 +70,8 @@ open class PoolingOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
         let height = _input.shape[0] / stride[1]
         
         if indices.shape != Extent(width, height) {
-            indices.resize(Extent(width, height))
+            indices.resize(Extent(2, width, height))
+            _output.resize(Extent(width, height))
         }
         
         for i in 0..<width {
@@ -82,7 +81,10 @@ open class PoolingOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
                 let col_start = j*stride[1]
                 let col_end = col_start + stride[1]
                 let view = _input[row_start..<row_end, col_start..<col_end]
-                indices[i, j] = evalFn(view)
+                let (index, value) = evalFn(view)
+                indices[0, i, j] = index[0]
+                indices[1, i, j] = index[1]
+                _output[i, j] = value
             }
         }
     }

@@ -344,6 +344,24 @@ class opTests: XCTestCase {
         XCTAssertLessThan(inputError, eps)
     }
     
+    func testMaxPoolingOp() {
+        let poolingOp = PoolingOp<D>(poolingSize: Extent(2, 2), stride: Extent(2, 2), evalFn: max)
+        
+        let data:Tensor<D> = zeros(Extent(10, 10))
+        for i in 0..<10 {
+            for j in 0..<10 {
+                data[i, j] = Double(i)*Double(j)
+            }
+        }
+        
+        let input = Constant(data)
+        connect(from: input, to: poolingOp)        
+        poolingOp.apply()
+        
+        let expected = Tensor<D>([[1, 3, 5, 7, 9], [3, 9, 15, 21, 27], [5, 15, 25, 35, 45], [7, 21, 35, 49, 63], [9, 27, 45, 63, 81]])
+        XCTAssert(isClose(poolingOp._output, expected, eps:10e-4))
+    }
+    
     func testCollection() {
         let eps = 10e-6
         let input = Constant<D>(uniform(Extent(5)))
