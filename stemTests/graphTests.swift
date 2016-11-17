@@ -7,7 +7,7 @@
 //
 
 import XCTest
-import stem
+@testable import stem
 
 class graphTests: XCTestCase {
 
@@ -21,7 +21,7 @@ class graphTests: XCTestCase {
         super.tearDown()
     }
 
-    func testExample() {
+//    func testExample() {
 //        typealias D = NativeStorage<Double>
 //        
 //        let W = Variable<D>(value: Matrix<D>(rows: 3, cols: 3))
@@ -40,10 +40,9 @@ class graphTests: XCTestCase {
 //        seq.add(linear)
 //        seq.add(sigmoid)
 //        seq.update()
-    }
+//    }
     
     func testExamples2() {
-        typealias D = NativeStorage<Double>
         let v1 = Tensor<D>(Extent(1, 3))
         let v2 = Tensor<D>(Extent(3, 1))
         let result = Tensor<D>(Extent(1, 1))

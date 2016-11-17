@@ -278,12 +278,7 @@ open class Tensor<StorageType:Storage> {
         self.stride = calculateStride(Extent(storage.calculateOrder(shape.dims)))
         dimIndex = storage.calculateOrder(shape.count)
 
-        if let o = offset {
-            self.offset = o
-        } else {
-            self.offset = 0
-        }
-        
+        self.offset = offset ?? 0
         view = ViewType(shape: shape, offset: Array<Int>(repeating: 0, count: shape.count))
     }
     
@@ -293,17 +288,8 @@ open class Tensor<StorageType:Storage> {
         self.stride = calculateStride(Extent(storage.calculateOrder(shape.dims)))
         dimIndex = storage.calculateOrder(shape.count)
         
-        if let o = offset {
-            self.offset = o
-        } else {
-            self.offset = 0
-        }
-        
-        if let v = view {
-            self.view = v
-        } else {
-            self.view = ViewType(shape: shape, offset: Array<Int>(repeating: 0, count: shape.count))
-        }
+        self.offset = offset ?? 0
+        self.view = view ?? ViewType(shape: shape, offset: Array<Int>(repeating: 0, count: shape.count))
     }
     
     init(_ tensor:Tensor, window:[CountableRange<Int>]) {
