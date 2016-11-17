@@ -199,9 +199,9 @@ open class Tensor<StorageType:Storage> {
     }
     
     // convenience accessor to generate a transposed view
-    open var T:Tensor<StorageType> {
-        get { return transpose() }
-    }
+//    open var T:Tensor<StorageType> {
+//        get { return transpose() }
+//    }
     
     /**
      Creates a vector along a specified axis.
@@ -358,12 +358,10 @@ open class Tensor<StorageType:Storage> {
         return pos
     }
 
-    // TODO: modified to allow less indices than dimensions to
-    // be specified (e.g. v: [3x1] can be indexed as v[i]
     open func calculateOffset(_ indices:[Int]) -> Int {
         var pos = offset
         let size = min(indices.count, dimIndex.count)
-        for i in 0..<size { // was dimIndex.count
+        for i in 0..<size {
             let di = dimIndex[i] // + start
             pos += (indices[di]+view.offset[di])*stride[i]
         }
