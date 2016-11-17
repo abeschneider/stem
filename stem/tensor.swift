@@ -312,40 +312,22 @@ open class Tensor<StorageType:Storage> {
     
     init(_ tensor:Tensor, dimIndex:[Int]?=nil, view:StorageView<StorageType>?=nil, stride: [Int]?=nil, copy:Bool=false) {
         if copy {
+            self.view = view ?? ViewType(shape: tensor.shape, offset: tensor.view.offset)
             storage = StorageType(size: tensor.shape.elements, value: 0)
             for i in 0..<tensor.shape.elements {
                 storage[i] = tensor.storage[i]
             }
         } else {
+            // NB: If making a copy, previously defined offset is no longer valid
+            self.view = view ?? ViewType(shape: tensor.shape, offset: Array<Int>(repeating: 0, count: tensor.dims))
             storage = tensor.storage
         }
         
-        internalShape = tensor.internalShape
         offset = 0
-        
-        if let d = dimIndex {
-            self.dimIndex = d
-        } else {
-            self.dimIndex = tensor.dimIndex
-        }
-        
-        if let v = view {
-            self.view = v
-        } else {
-            if !copy {
-                self.view = ViewType(shape: tensor.shape, offset: tensor.view.offset)
-            } else {
-                // if we're making a copy, then the previously defined offset in the original Tensor
-                // is no longer correct
-                self.view = ViewType(shape: tensor.shape, offset: Array<Int>(repeating: 0, count: tensor.dims))
-            }
-        }
-        
-        if let s = stride {
-            self.stride = s
-        } else {
-            self.stride = tensor.stride
-        }
+        internalShape = tensor.internalShape
+        self.view = view ?? ViewType(shape: tensor.shape, offset: copy ? tensor.view.offset : Array<Int>(repeating: 0, count: tensor.dims))
+        self.dimIndex = dimIndex ?? tensor.dimIndex
+        self.stride = stride ?? tensor.stride
     }
     
     init(tensor:Tensor, shape:Extent, stride:[Int]) {
@@ -450,11 +432,8 @@ open class Tensor<StorageType:Storage> {
     // Defaults to given indices in native layout (to allow for better performance). However,
     // if consistency in traversal between storage types is required, the order can be specified
     open func indices(_ order:DimensionOrder?=nil) -> IteratorSequence<IndexGenerator> {
-        if let o = order {
-            return IteratorSequence<IndexGenerator>(IndexGenerator(shape, order: o))
-        } else {
-            return IteratorSequence<IndexGenerator>(IndexGenerator(shape, order: storage.order))
-        }
+        let o = order ?? storage.order
+        return IteratorSequence<IndexGenerator>(IndexGenerator(shape, order: o))
     }
 }
 
@@ -490,13 +469,7 @@ extension Tensor {
             let values:[String] = (0..<shape[dim]).map({(i:Int) -> String in
                 idx[dim] = i
                 
-                var indent:String
-                if i > 0 {
-                    indent = String(repeating: " ", count: dim+1)
-                } else {
-                    indent = ""
-                }
-                
+                let indent:String = i > 0 ? String(repeating: " ", count: dim+1) : ""
                 return "\(indent)\(convertToString(idx, dim: dim+1))"
             })
             return "[\(values.joined(separator: "\n"))]"
@@ -648,8 +621,7 @@ public func concat<StorageType:Storage>(_ tensor1:Tensor<StorageType>,
     return result
 }
 
-public func concat<StorageType:Storage>(_ tensors:[Tensor<StorageType>], axis:Int=0)
-    -> Tensor<StorageType>
+public func concat<StorageType:Storage>(_ tensors:[Tensor<StorageType>], axis:Int=0) -> Tensor<StorageType>
 {
     var result = concat(tensors[0], tensors[1], axis: axis)
     for i in 2..<tensors.count {
@@ -659,14 +631,12 @@ public func concat<StorageType:Storage>(_ tensors:[Tensor<StorageType>], axis:In
     return result
 }
 
-public func vstack<StorageType:Storage>(_ tensor1:Tensor<StorageType>, _ tensor2:Tensor<StorageType>)
-    -> Tensor<StorageType>
+public func vstack<StorageType:Storage>(_ tensor1:Tensor<StorageType>, _ tensor2:Tensor<StorageType>) -> Tensor<StorageType>
 {
     return concat(tensor1, tensor2, axis: 0)
 }
 
-public func hstack<StorageType:Storage>(_ tensor1:Tensor<StorageType>, _ tensor2:Tensor<StorageType>)
-    -> Tensor<StorageType>
+public func hstack<StorageType:Storage>(_ tensor1:Tensor<StorageType>, _ tensor2:Tensor<StorageType>) -> Tensor<StorageType>
 {
     return concat(tensor1, tensor2, axis: 1)
 }
