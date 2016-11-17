@@ -88,3 +88,48 @@ open class PoolingOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
         }
     }
 }
+
+open class PoolingGrad<S:Storage>: Op<S>, Gradient where S.ElementType:FloatNumericType {
+    open var pooling:PoolingOp<S> {
+        let input:InputType<S> = inputs[0]
+        return input.op as! PoolingOp<S>
+    }
+
+    open var _input:Tensor<S> { return inputs[1].output() }
+    open var _gradOutput:Tensor<S> { return inputs[2].output() }
+
+    public required init(op:PoolingOp<S>) {
+        super.init(inputs: ["op", "input", "gradOutput"], outputs: ["output"])
+        
+        let opInputs:[InputType<S>] = op.inputs[0]
+        connect(from: op, "output", to: self, "op")
+        connect(from: opInputs.map { $0.op! }, "output", to: self, "input")
+        outputs["output"] = [Tensor<S>()]
+    }
+    
+    required public init(op: Op<S>, shared: Bool) {
+        fatalError("init(op:shared:) has not been implemented")
+    }
+    
+    open override func apply() {
+        if output.shape != _input.shape {
+            output.resize(_input.shape)
+        }
+        
+        let width = _input.shape[0] / pooling.stride[0]
+        let height = _input.shape[0] / pooling.stride[1]
+        
+        fill(output, value: 0)
+        for i in 0..<width {
+            for j in 0..<height {
+                output[i*pooling.stride[0] + pooling.indices[0, i, j], j*pooling.stride[1] + pooling.indices[1, i, j]] = _gradOutput[i, j]
+            }
+        }
+    }
+}
+
+extension PoolingOp: Differentiable {
+    public func gradient() -> GradientType {
+        return PoolingGrad<S>(op: self)
+    }
+}

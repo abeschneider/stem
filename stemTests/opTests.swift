@@ -363,6 +363,29 @@ class opTests: XCTestCase {
         XCTAssert(isClose(poolingOp._output, expected, eps:10e-4))
     }
     
+    func testMaxPoolingGrad() {
+        let eps = 10e-6
+        let poolingOp = PoolingOp<D>(poolingSize: Extent(2, 2), stride: Extent(2, 2), evalFn: max)
+        
+        let data:Tensor<D> = zeros(Extent(10, 10))
+        for i in 0..<10 {
+            for j in 0..<10 {
+                data[i, j] = Double(i)*Double(j)
+            }
+        }
+        
+        let input = Constant(data)
+        connect(from: input, to: poolingOp)
+
+        let poolingGrad = poolingOp.gradient() as! PoolingGrad<D>
+        
+        let gradOutput = Constant<D>(zeros(Extent(5, 5)))
+        connect(from: gradOutput, to: poolingGrad, "gradOutput")
+        
+        let inputError = checkGradient(poolingOp, grad: poolingGrad, params: data, gradParams: poolingGrad.output, eps: eps)
+        XCTAssertLessThan(inputError, eps)
+    }
+    
     func testCollection() {
         let eps = 10e-6
         let input = Constant<D>(uniform(Extent(5)))
