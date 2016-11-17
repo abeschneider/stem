@@ -13,7 +13,6 @@ import Foundation
 // 2. allow more than one channel to be specified
 open class Conv2dOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
     open var _input:Tensor<S> { return inputs[0].output() }
-    
     open var filter:Tensor<S>
     
     public init(input: Op<S>, filterSize:Extent) {
