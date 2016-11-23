@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import Tensor
 
 public protocol Loss: Differentiable, OpType {
     associatedtype StorageType:Storage

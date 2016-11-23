@@ -7,7 +7,8 @@
 //
 
 import XCTest
-import stem
+@testable import Tensor
+@testable import Op
 
 class opTests: XCTestCase {
     typealias D = NativeStorage<Double>

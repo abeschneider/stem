@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import Tensor
 
 open class AddOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
     open var inOps:[Op<S>] {

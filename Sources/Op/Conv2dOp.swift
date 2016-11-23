@@ -7,6 +7,8 @@
 //
 
 import Foundation
+import Tensor
+
 
 // TODO:
 // 1. add more parameters (e.g. stride, padding, etc.)
@@ -23,6 +25,13 @@ open class Conv2dOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
         
         outputs["output"] = Tensor<S>()
     }
+    
+    public init(filterSize:Extent) {
+        filter = uniform(filterSize)
+        super.init(inputs: ["input"], outputs: ["output"])
+        outputs["output"] = Tensor<S>()
+    }
+
     
     required public init(op: Op<S>, shared: Bool) {
         fatalError("init(op:shared:) has not been implemented")

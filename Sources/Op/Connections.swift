@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import Tensor
 
 // source for a connection
 public struct Source<S:Storage> {

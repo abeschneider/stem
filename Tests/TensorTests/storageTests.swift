@@ -7,7 +7,7 @@
 //
 
 import XCTest
-@testable import stem
+@testable import Tensor
 
 
 class storageTests: XCTestCase {

@@ -7,7 +7,8 @@
 //
 
 import XCTest
-@testable import stem
+@testable import Tensor
+@testable import Op
 
 class ordereddictionaryTests: XCTestCase {
     typealias F = NativeStorage<Float>

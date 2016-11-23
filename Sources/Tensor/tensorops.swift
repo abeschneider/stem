@@ -415,7 +415,7 @@ public func *=<StorageType:Storage>
 // matrix multiplication
 //
 
-func matmul<S:Storage>
+public func matmul<S:Storage>
     (_ lhs:Tensor<S>, _ rhs:Tensor<S>, addTo result:Tensor<S>) where S.ElementType:NumericType
 {
     precondition(lhs.shape.dims.count == 2)
@@ -432,7 +432,7 @@ func matmul<S:Storage>
     }
 }
 
-func matmul<S:Storage>
+public func matmul<S:Storage>
     (_ lhs:Tensor<S>, _ rhs:Tensor<S>, result:Tensor<S>) where S.ElementType:NumericType
 {
     precondition(lhs.shape.dims.count == 2)
@@ -454,15 +454,15 @@ func matmul<S:Storage>
 // dot product
 //
 
-func isVector(_ type:TensorType) -> Bool {
+public func isVector(_ type:TensorType) -> Bool {
     return type == .vector || type == .rowVector || type == .columnVector
 }
 
-func isMatrix(_ type:TensorType) -> Bool {
+public func isMatrix(_ type:TensorType) -> Bool {
     return type == .matrix
 }
 
-func isCube(_ type:TensorType) -> Bool {
+public func isCube(_ type:TensorType) -> Bool {
     return type == .cube
 }
 
@@ -653,7 +653,7 @@ func reduce<S:Storage>(
     }
 }
 
-func reduce<S:Storage>(_ tensor:Tensor<S>,
+public func reduce<S:Storage>(_ tensor:Tensor<S>,
             axis:Int,
             op:(S.ElementType, S.ElementType) -> S.ElementType)
     -> Tensor<S>
@@ -671,7 +671,7 @@ func reduce<S:Storage>(_ tensor:Tensor<S>,
 }
 
 
-func reduce<StorageType:Storage>(_ tensor:Tensor<StorageType>,
+public func reduce<StorageType:Storage>(_ tensor:Tensor<StorageType>,
             op:(StorageType.ElementType, StorageType.ElementType) -> StorageType.ElementType)
     -> StorageType.ElementType
 {
@@ -796,7 +796,7 @@ public func pow<StorageType:Storage>
     }
 }
 
-func exp<StorageType:Storage>
+public func exp<StorageType:Storage>
     (_ tensor:Tensor<StorageType>) -> Tensor<StorageType> where StorageType.ElementType:FloatNumericType
 {
     let result = Tensor<StorageType>(tensor.shape)
@@ -812,7 +812,7 @@ func sqrt(_ tensor:TensorType) -> TensorType
     preconditionFailure()
 }
 
-func sqrt<StorageType:Storage>
+public func sqrt<StorageType:Storage>
     (_ tensor:Tensor<StorageType>) -> Tensor<StorageType> where StorageType.ElementType:FloatNumericType
 {
     let indices = tensor.indices()
@@ -830,7 +830,7 @@ func sqrt<StorageType:Storage>
 //    return TensorScalar<StorageType>(StorageType.ElementType.sqrt(scalar.value))
 //}
 
-func norm<StorageType:Storage>
+public func norm<StorageType:Storage>
     (_ tensor:Tensor<StorageType>, axis:Int) -> Tensor<StorageType> where StorageType.ElementType:FloatNumericType
 {
     let p = pow(tensor, StorageType.ElementType(2.0))
@@ -838,7 +838,7 @@ func norm<StorageType:Storage>
     return sqrt(s)
 }
 
-func sigmoid<S:Storage>
+public func sigmoid<S:Storage>
     (_ input:Tensor<S>, output:Tensor<S>) where S.ElementType:FloatNumericType
 {
     precondition(input.shape == output.shape)
@@ -847,7 +847,7 @@ func sigmoid<S:Storage>
     }
 }
 
-func sigmoid<S:Storage>
+public func sigmoid<S:Storage>
     (_ input:Tensor<S>) -> Tensor<S> where S.ElementType:FloatNumericType
 {
 //    precondition(input.shape == output.shape)
@@ -859,7 +859,7 @@ func sigmoid<S:Storage>
     return output
 }
 
-func tanh<S:Storage>
+public func tanh<S:Storage>
     (_ input:Tensor<S>, output:Tensor<S>) where S.ElementType:FloatNumericType
 {
     precondition(input.shape == output.shape)
@@ -869,7 +869,7 @@ func tanh<S:Storage>
 }
 
 
-func log<S:Storage>
+public func log<S:Storage>
     (_ input:Tensor<S>, result:Tensor<S>) where S.ElementType:FloatNumericType
 {
     for (i1, i2) in zip(input.indices(), result.indices()) {

@@ -7,7 +7,7 @@
 //
 
 import XCTest
-@testable import stem
+@testable import Tensor
 
 typealias CD = CBlasStorage<Double>
 typealias CF = CBlasStorage<Float>

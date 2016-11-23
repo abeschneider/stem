@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import Tensor
 
 protocol Optimizer {
     associatedtype StorageType:Storage

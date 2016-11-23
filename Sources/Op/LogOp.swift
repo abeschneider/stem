@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import Tensor
 
 open class LogOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
     var _input:Tensor<S> { return inputs[0].output() }

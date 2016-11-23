@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import Tensor
 
 // Op without associated type
 public protocol OpType {

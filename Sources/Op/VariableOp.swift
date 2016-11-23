@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import Tensor
 
 open class Variable<S:Storage>: Op<S> {
     open var _input:Tensor<S> { return inputs[0].output() }

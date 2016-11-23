@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import Tensor
 
 open class LinearOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
     public typealias OpType = LinearOp<S>
@@ -125,17 +126,8 @@ open class LinearGrad<S:Storage>: Op<S>, Gradient where S.ElementType:FloatNumer
     }
     
     public required init(op:LinearOp<S>, input:Op<S>, gradInput:Op<S>, weight:Tensor<S>?=nil, bias:Tensor<S>?=nil) {
-        if let w = weight {
-            self.weight = w
-        } else {
-            self.weight = zeros(op.weight.shape)
-        }
-        
-        if let b = bias {
-            self.bias = b
-        } else {
-            self.bias = zeros(Extent(op.weight.shape[0]))
-        }
+        self.weight = weight ?? zeros(op.weight.shape)
+        self.bias = bias ?? zeros(Extent(op.weight.shape[0]))
         
         super.init(inputs: ["op", "input", "gradOutput"], outputs: ["output"])
         connect(from: op, "output", to: self, "op")

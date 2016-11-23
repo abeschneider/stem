@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import Tensor
 
 /*
 open class DataSequence<S:Storage>: IteratorProtocol {

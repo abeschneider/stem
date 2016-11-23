@@ -16,29 +16,29 @@ import Foundation
 //    
 //}
 
-protocol Expression {
-    typealias StorageType:Storage
-    func eval() -> Tensor<StorageType>
-}
-
-class Variable<S:Storage>: Expression {
-    typealias StorageType = S
-    
-    var value:Tensor<StorageType>
-    
-    init(value:Tensor<StorageType>) {
-        self.value = value
-    }
-    
-    func eval() -> Tensor<StorageType> {
-        return value
-    }
-}
-
-class UnaryExpression<S:Storage>: Expression {
-    typealias StorageType = S
-    
-    func eval() -> Tensor<StorageType> {
-        
-    }
-}
+//protocol Expression {
+//    associatedtype StorageType:Storage
+//    func eval() -> Tensor<StorageType>
+//}
+//
+//class Variable<S:Storage>: Expression {
+//    typealias StorageType = S
+//    
+//    var value:Tensor<StorageType>
+//    
+//    init(value:Tensor<StorageType>) {
+//        self.value = value
+//    }
+//    
+//    func eval() -> Tensor<StorageType> {
+//        return value
+//    }
+//}
+//
+//class UnaryExpression<S:Storage>: Expression {
+//    typealias StorageType = S
+//    
+//    func eval() -> Tensor<StorageType> {
+//        
+//    }
+//}

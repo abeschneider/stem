@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import Tensor
 
 open class L2Loss<S:Storage>: Op<S>, Loss where S.ElementType:FloatNumericType {
     public typealias StorageType = S

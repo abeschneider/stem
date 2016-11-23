@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import Tensor
 
 open class MulOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
     open var _input:[Tensor<S>] {

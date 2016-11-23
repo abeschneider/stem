@@ -7,7 +7,8 @@
 //
 
 import XCTest
-@testable import stem
+@testable import Tensor
+@testable import Op
 
 class graphTests: XCTestCase {
 
@@ -42,10 +43,10 @@ class graphTests: XCTestCase {
 //        seq.update()
 //    }
     
-    func testExamples2() {
-        let v1 = Tensor<D>(Extent(1, 3))
-        let v2 = Tensor<D>(Extent(3, 1))
-        let result = Tensor<D>(Extent(1, 1))
-        dot(v1, v2, result: result)
-    }
+//    func testExamples2() {
+//        let v1 = Tensor<D>(Extent(1, 3))
+//        let v2 = Tensor<D>(Extent(3, 1))
+//        let result = Tensor<D>(Extent(1, 1))
+//        dot(v1, v2, result: result)
+//    }
 }

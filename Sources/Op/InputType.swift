@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import Tensor
 
 // contains selected output from a given op that
 // provides input to target op

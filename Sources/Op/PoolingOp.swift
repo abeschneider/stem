@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import Tensor
 
 public func max<S:Storage>(input:Tensor<S>) -> ([Int], S.ElementType) where S.ElementType:NumericType {
     var best = -S.ElementType.infinity

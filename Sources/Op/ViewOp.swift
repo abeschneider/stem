@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import Tensor
 
 open class ViewOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
     var ranges:[TensorIndex]

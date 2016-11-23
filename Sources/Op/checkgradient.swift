@@ -7,6 +7,8 @@
 //
 
 import Foundation
+import Tensor
+
 
 func calcForwardGrad<S:Storage>
     (_ op:Op<S>, params:Tensor<S>, eps:Double) -> Tensor<S> where S.ElementType:FloatNumericType
@@ -70,7 +72,7 @@ public func checkGradient<S:Storage>
     let fgrad = calcForwardGrad(op, params: ravel(params), eps: eps)
     let bgrad = calcBackwardGrad(op, grad, gradParams: ravel(gradParams))
     
-    let error = Tensor<S>(zeros(fgrad.shape))
+    let error:Tensor<S> = zeros(fgrad.shape)
     sub(fgrad, bgrad, result: error)
     return max(abs(error))
 }

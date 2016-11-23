@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import Tensor
 
 open class ConcatOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
     public init() {
