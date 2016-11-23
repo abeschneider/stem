@@ -294,7 +294,7 @@ extension CollectionOp:Differentiable {
 
 open class SequentialOp<S:Storage>: CollectionOp<S> {
     public init(_ ops:[Op<S>], modify:Bool=true) {
-        if modify {
+        if modify  {
             for i in 0..<ops.count-1 {
                 connect(from: ops[i], to: ops[i+1])
             }
@@ -311,12 +311,29 @@ open class SequentialOp<S:Storage>: CollectionOp<S> {
         self.init(ops)
     }
     
+    public  init() {
+        super.init(ops: [],
+                   inputs: [],
+                   outputs: [],
+                   ordering: SequentialOrdering())
+    }
+    
     // required for Copyable
     public required convenience init(op:Op<S>, shared:Bool) {
         let cop = op as! SequentialOp<S>
         let ops = cop.ops.map { copy(op: $0, shared: shared) }
         
         self.init(ops, modify: true)
+    }
+    
+    public func append(op:Op<S>) {
+//        if let last = ops.last! 
+        let last = ops.last
+        ops.append(op)
+        
+        if let l = last {
+            connect(from: l, to: op)
+        }
     }
 }
 

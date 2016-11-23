@@ -1,0 +1,17 @@
+
+syntax = "proto3";
+
+message header {
+    string type = 1;
+    int64 rows = 2;
+    int64 cols = 3;
+    repeated int64 stride = 4;
+    repeated int64 shape = 5;
+    repeated int64 dimIndex = 6;
+    repeated int64 offset = 7;
+}
+
+message tensor {
+  header properties = 1;
+  bytes storage = 2;
+}

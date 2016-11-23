@@ -26,6 +26,8 @@ public enum TensorType {
     case cube
 }
 
+// TensorIndex provides a mechanism to allow either an integer or a range
+// be used in a Tensor's subscript
 public protocol TensorIndex {
     var TensorRange: CountableRange<Int> { get }
 }
@@ -38,18 +40,14 @@ extension Int : TensorIndex {
 
 extension Range : TensorIndex {
     public var TensorRange: CountableRange<Int> {
+//        get { return self as! CountableRange<Int> }
         get {
-            // In theory we should be able to constrain Range.Element to
-            // Int, but currently Swift doesn't allow constraints to go
-            // down to a single type nor does it allow constraints for
-            // extensions conforming to a protocol. Thus, we need to
-            // manually cast to an Int here.
             return (self.lowerBound as! Int)..<(self.upperBound as! Int)
         }
     }
 }
 
-public let all:Range = 0..<0
+public let all:Range = Int(0)..<Int(0)
 
 public struct IndexGenerator: IteratorProtocol {
     var indices:[Int]
@@ -262,7 +260,7 @@ open class Tensor<StorageType:Storage> {
         self.init(Extent(0))
     }
     
-    init(_ shape:Extent, value:StorageType.ElementType=0, offset:Int=0) {
+    public init(_ shape:Extent, value:StorageType.ElementType=0, offset:Int=0) {
         storage = StorageType(size: shape.elements, value: value)
         internalShape = shape
         self.offset = offset
