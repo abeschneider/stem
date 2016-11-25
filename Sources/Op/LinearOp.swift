@@ -150,13 +150,13 @@ open class LinearGrad<S:Storage>: Op<S>, Gradient where S.ElementType:FloatNumer
             if bias.dims == 1 {
                 bias.shape = Extent(bias.shape[0], 1)
             }
-            matmul(_gradOutput, _input.transpose(), addTo: weight)
+            matmul(_gradOutput, _input.T, addTo: weight)
             bias += sum(_gradOutput, axis: 1)
         } else {
             assertionFailure()
         }
         
-        dot(linear.weight.transpose(), _gradOutput, addTo: output)
+        dot(linear.weight.T, _gradOutput, addTo: output)
     }
     
     open override func params() -> [Tensor<S>] {
