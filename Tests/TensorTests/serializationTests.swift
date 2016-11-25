@@ -24,4 +24,20 @@ class serializationTests: XCTestCase {
         
         XCTAssertTrue(isClose(a, b!, eps: 10e-8))
     }
+    
+    func testView() {
+        let a = Tensor<NativeStorage<Float>>(Extent(10, 10))
+        
+        for i in 0..<10 {
+            for j in 0..<10 {
+                a[i, j] = Float(i*j)
+            }
+        }
+        
+        let b = a[0..<5, 0..<5]
+        let bytes:[UInt8] = serialize(tensor: b)
+        let c:Tensor<NativeStorage<Float>>? = deserialize(data: bytes)
+        
+        XCTAssertTrue(isClose(b, c!, eps: 10e-8))
+    }
 }

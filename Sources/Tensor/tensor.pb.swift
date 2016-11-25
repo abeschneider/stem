@@ -10,54 +10,30 @@ import Foundation
 import SwiftProtobuf
 
 
-public struct Stem_Serialize_header: ProtobufGeneratedMessage {
-  public var swiftClassName: String {return "Stem_Serialize_header"}
-  public var protoMessageName: String {return "header"}
+public struct Stem_Serialize_View: ProtobufGeneratedMessage {
+  public var swiftClassName: String {return "Stem_Serialize_View"}
+  public var protoMessageName: String {return "View"}
   public var protoPackageName: String {return "stem.serialize"}
   public var jsonFieldNames: [String: Int] {return [
-    "type": 1,
-    "shape": 2,
-    "stride": 3,
-    "dimIndex": 4,
-    "offset": 5,
+    "shape": 1,
+    "offset": 2,
   ]}
   public var protoFieldNames: [String: Int] {return [
-    "type": 1,
-    "shape": 2,
-    "stride": 3,
-    "dimIndex": 4,
-    "offset": 5,
+    "shape": 1,
+    "offset": 2,
   ]}
 
-  public var type: String = ""
-
   public var shape: [Int64] = []
-
-  public var stride: [Int64] = []
-
-  public var dimIndex: [Int64] = []
 
   public var offset: [Int64] = []
 
   public init() {}
 
-  public init(type: String? = nil,
-    shape: [Int64] = [],
-    stride: [Int64] = [],
-    dimIndex: [Int64] = [],
+  public init(shape: [Int64] = [],
     offset: [Int64] = [])
   {
-    if let v = type {
-      self.type = v
-    }
     if !shape.isEmpty {
       self.shape = shape
-    }
-    if !stride.isEmpty {
-      self.stride = stride
-    }
-    if !dimIndex.isEmpty {
-      self.dimIndex = dimIndex
     }
     if !offset.isEmpty {
       self.offset = offset
@@ -67,11 +43,74 @@ public struct Stem_Serialize_header: ProtobufGeneratedMessage {
   public mutating func _protoc_generated_decodeField(setter: inout ProtobufFieldDecoder, protoFieldNumber: Int) throws -> Bool {
     let handled: Bool
     switch protoFieldNumber {
+    case 1: handled = try setter.decodePackedField(fieldType: ProtobufInt64.self, value: &shape)
+    case 2: handled = try setter.decodePackedField(fieldType: ProtobufInt64.self, value: &offset)
+    default:
+      handled = false
+    }
+    return handled
+  }
+
+  public func _protoc_generated_traverse(visitor: inout ProtobufVisitor) throws {
+    if !shape.isEmpty {
+      try visitor.visitPackedField(fieldType: ProtobufInt64.self, value: shape, protoFieldNumber: 1, protoFieldName: "shape", jsonFieldName: "shape", swiftFieldName: "shape")
+    }
+    if !offset.isEmpty {
+      try visitor.visitPackedField(fieldType: ProtobufInt64.self, value: offset, protoFieldNumber: 2, protoFieldName: "offset", jsonFieldName: "offset", swiftFieldName: "offset")
+    }
+  }
+
+  public func _protoc_generated_isEqualTo(other: Stem_Serialize_View) -> Bool {
+    if shape != other.shape {return false}
+    if offset != other.offset {return false}
+    return true
+  }
+}
+
+public struct Stem_Serialize_Properties: ProtobufGeneratedMessage {
+  public var swiftClassName: String {return "Stem_Serialize_Properties"}
+  public var protoMessageName: String {return "Properties"}
+  public var protoPackageName: String {return "stem.serialize"}
+  public var jsonFieldNames: [String: Int] {return [
+    "type": 1,
+    "dimIndex": 2,
+    "stride": 3,
+  ]}
+  public var protoFieldNames: [String: Int] {return [
+    "type": 1,
+    "dimIndex": 2,
+    "stride": 3,
+  ]}
+
+  public var type: String = ""
+
+  public var dimIndex: [Int64] = []
+
+  public var stride: [Int64] = []
+
+  public init() {}
+
+  public init(type: String? = nil,
+    dimIndex: [Int64] = [],
+    stride: [Int64] = [])
+  {
+    if let v = type {
+      self.type = v
+    }
+    if !dimIndex.isEmpty {
+      self.dimIndex = dimIndex
+    }
+    if !stride.isEmpty {
+      self.stride = stride
+    }
+  }
+
+  public mutating func _protoc_generated_decodeField(setter: inout ProtobufFieldDecoder, protoFieldNumber: Int) throws -> Bool {
+    let handled: Bool
+    switch protoFieldNumber {
     case 1: handled = try setter.decodeSingularField(fieldType: ProtobufString.self, value: &type)
-    case 2: handled = try setter.decodePackedField(fieldType: ProtobufInt64.self, value: &shape)
+    case 2: handled = try setter.decodePackedField(fieldType: ProtobufInt64.self, value: &dimIndex)
     case 3: handled = try setter.decodePackedField(fieldType: ProtobufInt64.self, value: &stride)
-    case 4: handled = try setter.decodePackedField(fieldType: ProtobufInt64.self, value: &dimIndex)
-    case 5: handled = try setter.decodePackedField(fieldType: ProtobufInt64.self, value: &offset)
     default:
       handled = false
     }
@@ -82,55 +121,108 @@ public struct Stem_Serialize_header: ProtobufGeneratedMessage {
     if type != "" {
       try visitor.visitSingularField(fieldType: ProtobufString.self, value: type, protoFieldNumber: 1, protoFieldName: "type", jsonFieldName: "type", swiftFieldName: "type")
     }
-    if !shape.isEmpty {
-      try visitor.visitPackedField(fieldType: ProtobufInt64.self, value: shape, protoFieldNumber: 2, protoFieldName: "shape", jsonFieldName: "shape", swiftFieldName: "shape")
+    if !dimIndex.isEmpty {
+      try visitor.visitPackedField(fieldType: ProtobufInt64.self, value: dimIndex, protoFieldNumber: 2, protoFieldName: "dimIndex", jsonFieldName: "dimIndex", swiftFieldName: "dimIndex")
     }
     if !stride.isEmpty {
       try visitor.visitPackedField(fieldType: ProtobufInt64.self, value: stride, protoFieldNumber: 3, protoFieldName: "stride", jsonFieldName: "stride", swiftFieldName: "stride")
     }
-    if !dimIndex.isEmpty {
-      try visitor.visitPackedField(fieldType: ProtobufInt64.self, value: dimIndex, protoFieldNumber: 4, protoFieldName: "dimIndex", jsonFieldName: "dimIndex", swiftFieldName: "dimIndex")
-    }
-    if !offset.isEmpty {
-      try visitor.visitPackedField(fieldType: ProtobufInt64.self, value: offset, protoFieldNumber: 5, protoFieldName: "offset", jsonFieldName: "offset", swiftFieldName: "offset")
-    }
   }
 
-  public func _protoc_generated_isEqualTo(other: Stem_Serialize_header) -> Bool {
+  public func _protoc_generated_isEqualTo(other: Stem_Serialize_Properties) -> Bool {
     if type != other.type {return false}
-    if shape != other.shape {return false}
-    if stride != other.stride {return false}
     if dimIndex != other.dimIndex {return false}
-    if offset != other.offset {return false}
+    if stride != other.stride {return false}
     return true
   }
 }
 
-public struct Stem_Serialize_tensor: ProtobufGeneratedMessage {
-  public var swiftClassName: String {return "Stem_Serialize_tensor"}
-  public var protoMessageName: String {return "tensor"}
+public struct Stem_Serialize_Storage: ProtobufGeneratedMessage {
+  public var swiftClassName: String {return "Stem_Serialize_Storage"}
+  public var protoMessageName: String {return "Storage"}
   public var protoPackageName: String {return "stem.serialize"}
   public var jsonFieldNames: [String: Int] {return [
-    "properties": 1,
+    "size": 1,
     "data": 2,
   ]}
   public var protoFieldNames: [String: Int] {return [
-    "properties": 1,
+    "size": 1,
     "data": 2,
   ]}
 
+  public var size: Int64 = 0
+
+  public var data: Data = Data()
+
+  public init() {}
+
+  public init(size: Int64? = nil,
+    data: Data? = nil)
+  {
+    if let v = size {
+      self.size = v
+    }
+    if let v = data {
+      self.data = v
+    }
+  }
+
+  public mutating func _protoc_generated_decodeField(setter: inout ProtobufFieldDecoder, protoFieldNumber: Int) throws -> Bool {
+    let handled: Bool
+    switch protoFieldNumber {
+    case 1: handled = try setter.decodeSingularField(fieldType: ProtobufInt64.self, value: &size)
+    case 2: handled = try setter.decodeSingularField(fieldType: ProtobufBytes.self, value: &data)
+    default:
+      handled = false
+    }
+    return handled
+  }
+
+  public func _protoc_generated_traverse(visitor: inout ProtobufVisitor) throws {
+    if size != 0 {
+      try visitor.visitSingularField(fieldType: ProtobufInt64.self, value: size, protoFieldNumber: 1, protoFieldName: "size", jsonFieldName: "size", swiftFieldName: "size")
+    }
+    if data != Data() {
+      try visitor.visitSingularField(fieldType: ProtobufBytes.self, value: data, protoFieldNumber: 2, protoFieldName: "data", jsonFieldName: "data", swiftFieldName: "data")
+    }
+  }
+
+  public func _protoc_generated_isEqualTo(other: Stem_Serialize_Storage) -> Bool {
+    if size != other.size {return false}
+    if data != other.data {return false}
+    return true
+  }
+}
+
+public struct Stem_Serialize_Tensor: ProtobufGeneratedMessage {
+  public var swiftClassName: String {return "Stem_Serialize_Tensor"}
+  public var protoMessageName: String {return "Tensor"}
+  public var protoPackageName: String {return "stem.serialize"}
+  public var jsonFieldNames: [String: Int] {return [
+    "properties": 1,
+    "view": 2,
+    "storage": 3,
+  ]}
+  public var protoFieldNames: [String: Int] {return [
+    "properties": 1,
+    "view": 2,
+    "storage_": 3,
+  ]}
+
   private class _StorageClass {
-    typealias ProtobufExtendedMessage = Stem_Serialize_tensor
-    var _properties: Stem_Serialize_header? = nil
-    var _data: Data = Data()
+    typealias ProtobufExtendedMessage = Stem_Serialize_Tensor
+    var _properties: Stem_Serialize_Properties? = nil
+    var _view: Stem_Serialize_View? = nil
+    var _storage_: Stem_Serialize_Storage? = nil
 
     init() {}
 
     func decodeField(setter: inout ProtobufFieldDecoder, protoFieldNumber: Int) throws -> Bool {
       let handled: Bool
       switch protoFieldNumber {
-      case 1: handled = try setter.decodeSingularMessageField(fieldType: Stem_Serialize_header.self, value: &_properties)
-      case 2: handled = try setter.decodeSingularField(fieldType: ProtobufBytes.self, value: &_data)
+      case 1: handled = try setter.decodeSingularMessageField(fieldType: Stem_Serialize_Properties.self, value: &_properties)
+      case 2: handled = try setter.decodeSingularMessageField(fieldType: Stem_Serialize_View.self, value: &_view)
+      case 3: handled = try setter.decodeSingularMessageField(fieldType: Stem_Serialize_Storage.self, value: &_storage_)
       default:
         handled = false
       }
@@ -141,47 +233,59 @@ public struct Stem_Serialize_tensor: ProtobufGeneratedMessage {
       if let v = _properties {
         try visitor.visitSingularMessageField(value: v, protoFieldNumber: 1, protoFieldName: "properties", jsonFieldName: "properties", swiftFieldName: "properties")
       }
-      if _data != Data() {
-        try visitor.visitSingularField(fieldType: ProtobufBytes.self, value: _data, protoFieldNumber: 2, protoFieldName: "data", jsonFieldName: "data", swiftFieldName: "data")
+      if let v = _view {
+        try visitor.visitSingularMessageField(value: v, protoFieldNumber: 2, protoFieldName: "view", jsonFieldName: "view", swiftFieldName: "view")
+      }
+      if let v = _storage_ {
+        try visitor.visitSingularMessageField(value: v, protoFieldNumber: 3, protoFieldName: "storage_", jsonFieldName: "storage", swiftFieldName: "storage_")
       }
     }
 
     func isEqualTo(other: _StorageClass) -> Bool {
       if _properties != other._properties {return false}
-      if _data != other._data {return false}
+      if _view != other._view {return false}
+      if _storage_ != other._storage_ {return false}
       return true
     }
 
     func copy() -> _StorageClass {
       let clone = _StorageClass()
       clone._properties = _properties
-      clone._data = _data
+      clone._view = _view
+      clone._storage_ = _storage_
       return clone
     }
   }
 
   private var _storage = _StorageClass()
 
-  public var properties: Stem_Serialize_header {
-    get {return _storage._properties ?? Stem_Serialize_header()}
+  public var properties: Stem_Serialize_Properties {
+    get {return _storage._properties ?? Stem_Serialize_Properties()}
     set {_uniqueStorage()._properties = newValue}
   }
 
-  public var data: Data {
-    get {return _storage._data}
-    set {_uniqueStorage()._data = newValue}
+  public var view: Stem_Serialize_View {
+    get {return _storage._view ?? Stem_Serialize_View()}
+    set {_uniqueStorage()._view = newValue}
+  }
+
+  ///   version 0.9.24 has a name conflict with any
+  ///   field named `storage`
+  public var storage_: Stem_Serialize_Storage {
+    get {return _storage._storage_ ?? Stem_Serialize_Storage()}
+    set {_uniqueStorage()._storage_ = newValue}
   }
 
   public init() {}
 
-  public init(properties: Stem_Serialize_header? = nil,
-    data: Data? = nil)
+  public init(properties: Stem_Serialize_Properties? = nil,
+    view: Stem_Serialize_View? = nil,
+    storage_: Stem_Serialize_Storage? = nil)
   {
     let storage = _uniqueStorage()
     storage._properties = properties
-    if let v = data {
-      storage._data = v
-    }
+    storage._view = view
+    storage._storage_ = storage_
   }
 
   public mutating func _protoc_generated_decodeField(setter: inout ProtobufFieldDecoder, protoFieldNumber: Int) throws -> Bool {
@@ -192,7 +296,7 @@ public struct Stem_Serialize_tensor: ProtobufGeneratedMessage {
     try _storage.traverse(visitor: &visitor)
   }
 
-  public func _protoc_generated_isEqualTo(other: Stem_Serialize_tensor) -> Bool {
+  public func _protoc_generated_isEqualTo(other: Stem_Serialize_Tensor) -> Bool {
     return _storage === other._storage || _storage.isEqualTo(other: other._storage)
   }
 
