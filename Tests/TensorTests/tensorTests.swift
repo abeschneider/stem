@@ -89,7 +89,7 @@ class stemTests: XCTestCase {
     func testTensorTranspose() {
         let array = (0..<10).map { Double($0) }
         let t1 = Tensor<D>(array: array, shape: Extent(2, 5))
-        let t2 = t1.transpose()
+        let t2 = t1.T
         
         // verify dimensions are correct
         XCTAssertEqual(t2.shape, Extent(5, 2))
@@ -103,7 +103,7 @@ class stemTests: XCTestCase {
         }
         
         // as a sanity check, try transposing back
-        let t3 = t2.transpose()
+        let t3 = t2.T
         XCTAssertEqual(t3.shape, Extent(2, 5))
         
         k = 0
@@ -128,7 +128,7 @@ class stemTests: XCTestCase {
             k += 1
         }
     }
-        
+    
     func testIndexGenerator1() {
         let shape = Extent(3, 2)
         
@@ -287,7 +287,7 @@ class stemTests: XCTestCase {
         }
         
         // verify transposition works on a vector created from a slice
-        let vector3 = vector2.transpose()
+        let vector3 = vector2.T
         
         k = 0
         for i in vector3.indices() {
@@ -323,7 +323,7 @@ class stemTests: XCTestCase {
             XCTAssertEqual(matrix2[index], expected2[index[0]][index[1]])
         }
         
-        let matrix3 = matrix2.transpose()
+        let matrix3 = matrix2.T
         let expected3:[[Double]] = [[6, 10],
                                     [7, 11]]
 
@@ -338,7 +338,7 @@ class stemTests: XCTestCase {
             [5, 6, 7, 8, 9]
         ]
         let matrix1 = Tensor<D>(array)
-        let matrix2 = matrix1.transpose()
+        let matrix2 = matrix1.T
         
         // verify dimensions are correct
         XCTAssertEqual(matrix2.shape, Extent(5, 2))
@@ -352,7 +352,7 @@ class stemTests: XCTestCase {
         }
         
         // as a sanity check, try transposing back
-        let matrix3 = matrix2.transpose()
+        let matrix3 = matrix2.T
         XCTAssertEqual(matrix3.shape, Extent(2, 5))
         
         let expected2 = (0..<10).map { Double($0) }
@@ -373,7 +373,7 @@ class stemTests: XCTestCase {
         
         let m = Tensor<D>(array)
         let ms = m.reshape(Extent(2,6))
-        let mt = ms.transpose()
+        let mt = ms.T
         
         XCTAssertEqual(mt.shape, Extent(6, 2))
 
@@ -632,7 +632,7 @@ class stemTests: XCTestCase {
     
     func testDotProductMatrixMatrix() {
         let m = Tensor<D>([[1, 2, 3], [3, 4, 5]])
-        let result:Tensor<D> = m ⊙ m.transpose()
+        let result:Tensor<D> = m ⊙ m.T
         
         let expected = Tensor<D>([[14, 26], [26, 50]])
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
@@ -742,7 +742,7 @@ class stemTests: XCTestCase {
         let result = concat(v1, v2, axis: 0)
         
         let expected = Tensor<D>([[1, 2, 3, 4, 5, 6, 7, 8]])
-        XCTAssert(isClose(result, expected.transpose(), eps: 10e-4), "Not close")
+        XCTAssert(isClose(result, expected.T, eps: 10e-4), "Not close")
     }
     
 //    func testConcat3() {

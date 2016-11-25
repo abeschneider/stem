@@ -108,7 +108,7 @@ class cblasTests: XCTestCase {
     func testCBlasTensorTranspose() {
         let array = asColumnMajor((0..<10).map { Double($0) }, rows: 2, cols: 5)
         let tensor1 = Tensor<CD>(array: array, shape: Extent(2, 5))
-        let tensor2 = tensor1.transpose()
+        let tensor2 = tensor1.T
         
         // verify dimensions are correct
         XCTAssertEqual(tensor2.shape, Extent(5, 2))

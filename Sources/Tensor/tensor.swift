@@ -190,10 +190,10 @@ open class Tensor<StorageType:Storage> {
         return .tensor
     }
     
-    // convenience accessor to generate a transposed view
-//    open var T:Tensor<StorageType> {
-//        get { return transpose() }
-//    }
+    // convenience variable to generate a transposed view
+    open var T:Tensor<StorageType> {
+        get { return transpose() }
+    }
     
     /**
      Creates a vector along a specified axis.
