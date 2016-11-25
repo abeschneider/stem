@@ -7,7 +7,12 @@
 //
 
 import Foundation
-import Accelerate
+
+#if os(OSX)
+    import Accelerate
+#else
+    // ?
+#endif
 
 open class CBlasStorage<T:NumericType>: Storage {
     public typealias ElementType = T
