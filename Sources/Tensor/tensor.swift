@@ -150,10 +150,15 @@ open class Tensor<StorageType:Storage> {
     
     open var storage:StorageType
     
-    // defined the bounds set within the storage
-    var internalShape:Extent
+    // convienence variable
+    open var dims:Int {
+        get { return view.shape.dims.count }
+    }
     
-    // external shape
+    // view into storage
+    open var view:ViewType
+    
+    // convenience variable to access the shape of the view
     open var shape:Extent {
         get { return view.shape }
         set {
@@ -161,14 +166,6 @@ open class Tensor<StorageType:Storage> {
             view.shape = newValue
         }
     }
-    
-    // convienence function
-    open var dims:Int {
-        get { return view.shape.dims.count }
-    }
-    
-    // view into storage
-    open var view:ViewType
     
     // order to traverse the dimensions
     open var dimIndex:[Int]
@@ -259,7 +256,6 @@ open class Tensor<StorageType:Storage> {
     
     public init(_ shape:Extent, value:StorageType.ElementType=0) {
         storage = StorageType(size: shape.elements, value: value)
-        internalShape = shape
         self.stride = calculateStride(Extent(storage.calculateOrder(shape.dims)))
         dimIndex = storage.calculateOrder(shape.count)
         
@@ -268,7 +264,6 @@ open class Tensor<StorageType:Storage> {
         
     init(array:[StorageType.ElementType], shape:Extent) {
         storage = StorageType(array: array)
-        internalShape = shape
         self.stride = calculateStride(Extent(storage.calculateOrder(shape.dims)))
         dimIndex = storage.calculateOrder(shape.count)
         view = ViewType(shape: shape, offset: Array<Int>(repeating: 0, count: shape.count))
@@ -276,7 +271,6 @@ open class Tensor<StorageType:Storage> {
     
     init(storage:StorageType, shape:Extent, view:StorageView<StorageType>?=nil) { //, offset:Int?=nil) {
         self.storage = storage
-        internalShape = shape
         self.stride = calculateStride(Extent(storage.calculateOrder(shape.dims)))
         dimIndex = storage.calculateOrder(shape.count)
         self.view = view ?? ViewType(shape: shape, offset: Array<Int>(repeating: 0, count: shape.count))
@@ -284,7 +278,6 @@ open class Tensor<StorageType:Storage> {
     
     init(_ tensor:Tensor, window:[CountableRange<Int>]) {
         storage = tensor.storage
-        internalShape = tensor.internalShape
         stride = tensor.stride
 
         let viewShape = Extent(window.enumerated().map {
@@ -312,7 +305,6 @@ open class Tensor<StorageType:Storage> {
             storage = tensor.storage
         }
         
-        internalShape = tensor.internalShape
         self.view = view ?? ViewType(shape: tensor.shape, offset: copy ? tensor.view.offset : Array<Int>(repeating: 0, count: tensor.dims))
         self.dimIndex = dimIndex ?? tensor.dimIndex
         self.stride = stride ?? tensor.stride
@@ -320,7 +312,6 @@ open class Tensor<StorageType:Storage> {
     
     init(tensor:Tensor, shape:Extent, stride:[Int]) {
         storage = tensor.storage
-        internalShape = shape
         self.stride = stride
         
         // check if we need to increase the size of tensor.view.offset
@@ -405,7 +396,6 @@ open class Tensor<StorageType:Storage> {
     open func resize(_ newShape:Extent) {
         if shape != newShape {
             storage = StorageType(size: newShape.elements, value: 0)
-            internalShape = newShape
             self.stride = calculateStride(Extent(storage.calculateOrder(newShape.dims)))
             dimIndex = storage.calculateOrder(newShape.count)
             
@@ -442,7 +432,7 @@ extension Tensor {
     fileprivate func convertToString(_ indices:[Int], dim:Int) -> String {
         var idx = indices
         
-        if dim == internalShape.count-1 {
+        if dim == shape.count-1 {
             // last dimension, convert values to string
             let values:[String] = (0..<shape[dim]).map({(i:Int) -> String in
                 idx[dim] = i
@@ -464,7 +454,7 @@ extension Tensor {
 extension Tensor: CustomStringConvertible {
     public var description: String {
         get {
-            let indices = (0..<internalShape.count).map { _ in 0 }
+            let indices = (0..<shape.count).map { _ in 0 }
             return convertToString(indices, dim: 0)
         }
     }
