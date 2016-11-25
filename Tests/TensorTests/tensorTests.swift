@@ -128,24 +128,7 @@ class stemTests: XCTestCase {
             k += 1
         }
     }
-    
-    func testTensorExternalStorage() {
-        let array = (0..<100).map { Double($0) }
-        let tensor1 = Tensor<D>(array: array, shape: Extent(5, 10), offset: 0)
-        let tensor2 = Tensor<D>(array: array, shape: Extent(5, 10), offset: 50)
         
-        var k = 0
-        for i in tensor1.indices() {
-            XCTAssertEqual(tensor1[i], array[k])
-            k += 1
-        }
-        
-        for i in tensor2.indices() {
-            XCTAssertEqual(tensor2[i], array[k])
-            k += 1
-        }
-    }
-    
     func testIndexGenerator1() {
         let shape = Extent(3, 2)
         

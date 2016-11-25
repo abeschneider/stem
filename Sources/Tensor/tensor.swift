@@ -153,9 +153,6 @@ open class Tensor<StorageType:Storage> {
     // defined the bounds set within the storage
     var internalShape:Extent
     
-    // offset within storage
-    var offset:Int
-    
     // external shape
     open var shape:Extent {
         get { return view.shape }
@@ -260,40 +257,34 @@ open class Tensor<StorageType:Storage> {
         self.init(Extent(0))
     }
     
-    public init(_ shape:Extent, value:StorageType.ElementType=0, offset:Int=0) {
+    public init(_ shape:Extent, value:StorageType.ElementType=0) {
         storage = StorageType(size: shape.elements, value: value)
         internalShape = shape
-        self.offset = offset
         self.stride = calculateStride(Extent(storage.calculateOrder(shape.dims)))
         dimIndex = storage.calculateOrder(shape.count)
         
         view = ViewType(shape: shape, offset: Array<Int>(repeating: 0, count: shape.count))
     }
         
-    init(array:[StorageType.ElementType], shape:Extent, offset:Int?=nil) {
+    init(array:[StorageType.ElementType], shape:Extent) {
         storage = StorageType(array: array)
         internalShape = shape
         self.stride = calculateStride(Extent(storage.calculateOrder(shape.dims)))
         dimIndex = storage.calculateOrder(shape.count)
-
-        self.offset = offset ?? 0
         view = ViewType(shape: shape, offset: Array<Int>(repeating: 0, count: shape.count))
     }
     
-    init(storage:StorageType, shape:Extent, view:StorageView<StorageType>?=nil, offset:Int?=nil) {
+    init(storage:StorageType, shape:Extent, view:StorageView<StorageType>?=nil) { //, offset:Int?=nil) {
         self.storage = storage
         internalShape = shape
         self.stride = calculateStride(Extent(storage.calculateOrder(shape.dims)))
         dimIndex = storage.calculateOrder(shape.count)
-        
-        self.offset = offset ?? 0
         self.view = view ?? ViewType(shape: shape, offset: Array<Int>(repeating: 0, count: shape.count))
     }
     
     init(_ tensor:Tensor, window:[CountableRange<Int>]) {
         storage = tensor.storage
         internalShape = tensor.internalShape
-        offset = 0
         stride = tensor.stride
 
         let viewShape = Extent(window.enumerated().map {
@@ -321,7 +312,6 @@ open class Tensor<StorageType:Storage> {
             storage = tensor.storage
         }
         
-        offset = 0
         internalShape = tensor.internalShape
         self.view = view ?? ViewType(shape: tensor.shape, offset: copy ? tensor.view.offset : Array<Int>(repeating: 0, count: tensor.dims))
         self.dimIndex = dimIndex ?? tensor.dimIndex
@@ -331,7 +321,6 @@ open class Tensor<StorageType:Storage> {
     init(tensor:Tensor, shape:Extent, stride:[Int]) {
         storage = tensor.storage
         internalShape = shape
-        offset = 0
         self.stride = stride
         
         // check if we need to increase the size of tensor.view.offset
@@ -347,7 +336,7 @@ open class Tensor<StorageType:Storage> {
     }    
 
     open func calculateOffset() -> Int {
-        var pos = offset
+        var pos = 0 //offset
         for i in 0..<shape.count {
             let di = dimIndex[i]
             pos += view.offset[di]*stride[i]
@@ -357,7 +346,7 @@ open class Tensor<StorageType:Storage> {
     }
 
     open func calculateOffset(_ indices:[Int]) -> Int {
-        var pos = offset
+        var pos = 0
         let size = min(indices.count, dimIndex.count)
         for i in 0..<size {
             let di = dimIndex[i] // + start
@@ -417,7 +406,6 @@ open class Tensor<StorageType:Storage> {
         if shape != newShape {
             storage = StorageType(size: newShape.elements, value: 0)
             internalShape = newShape
-            offset = 0
             self.stride = calculateStride(Extent(storage.calculateOrder(newShape.dims)))
             dimIndex = storage.calculateOrder(newShape.count)
             
