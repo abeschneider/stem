@@ -16,67 +16,51 @@ public struct Stem_Serialize_header: ProtobufGeneratedMessage {
   public var protoPackageName: String {return "stem.serialize"}
   public var jsonFieldNames: [String: Int] {return [
     "type": 1,
-    "rows": 2,
-    "cols": 3,
-    "stride": 4,
-    "shape": 5,
-    "dimIndex": 6,
-    "offset": 7,
+    "shape": 2,
+    "stride": 3,
+    "dimIndex": 4,
+    "offset": 5,
   ]}
   public var protoFieldNames: [String: Int] {return [
     "type": 1,
-    "rows": 2,
-    "cols": 3,
-    "stride": 4,
-    "shape": 5,
-    "dimIndex": 6,
-    "offset": 7,
+    "shape": 2,
+    "stride": 3,
+    "dimIndex": 4,
+    "offset": 5,
   ]}
 
   public var type: String = ""
 
-  public var rows: Int64 = 0
+  public var shape: [Int64] = []
 
-  public var cols: Int64 = 0
+  public var stride: [Int64] = []
 
-  public var stride: Int64 = 0
+  public var dimIndex: [Int64] = []
 
-  public var shape: Int64 = 0
-
-  public var dimIndex: Int64 = 0
-
-  public var offset: Int64 = 0
+  public var offset: [Int64] = []
 
   public init() {}
 
   public init(type: String? = nil,
-    rows: Int64? = nil,
-    cols: Int64? = nil,
-    stride: Int64? = nil,
-    shape: Int64? = nil,
-    dimIndex: Int64? = nil,
-    offset: Int64? = nil)
+    shape: [Int64] = [],
+    stride: [Int64] = [],
+    dimIndex: [Int64] = [],
+    offset: [Int64] = [])
   {
     if let v = type {
       self.type = v
     }
-    if let v = rows {
-      self.rows = v
+    if !shape.isEmpty {
+      self.shape = shape
     }
-    if let v = cols {
-      self.cols = v
+    if !stride.isEmpty {
+      self.stride = stride
     }
-    if let v = stride {
-      self.stride = v
+    if !dimIndex.isEmpty {
+      self.dimIndex = dimIndex
     }
-    if let v = shape {
-      self.shape = v
-    }
-    if let v = dimIndex {
-      self.dimIndex = v
-    }
-    if let v = offset {
-      self.offset = v
+    if !offset.isEmpty {
+      self.offset = offset
     }
   }
 
@@ -84,12 +68,10 @@ public struct Stem_Serialize_header: ProtobufGeneratedMessage {
     let handled: Bool
     switch protoFieldNumber {
     case 1: handled = try setter.decodeSingularField(fieldType: ProtobufString.self, value: &type)
-    case 2: handled = try setter.decodeSingularField(fieldType: ProtobufInt64.self, value: &rows)
-    case 3: handled = try setter.decodeSingularField(fieldType: ProtobufInt64.self, value: &cols)
-    case 4: handled = try setter.decodeSingularField(fieldType: ProtobufInt64.self, value: &stride)
-    case 5: handled = try setter.decodeSingularField(fieldType: ProtobufInt64.self, value: &shape)
-    case 6: handled = try setter.decodeSingularField(fieldType: ProtobufInt64.self, value: &dimIndex)
-    case 7: handled = try setter.decodeSingularField(fieldType: ProtobufInt64.self, value: &offset)
+    case 2: handled = try setter.decodePackedField(fieldType: ProtobufInt64.self, value: &shape)
+    case 3: handled = try setter.decodePackedField(fieldType: ProtobufInt64.self, value: &stride)
+    case 4: handled = try setter.decodePackedField(fieldType: ProtobufInt64.self, value: &dimIndex)
+    case 5: handled = try setter.decodePackedField(fieldType: ProtobufInt64.self, value: &offset)
     default:
       handled = false
     }
@@ -100,32 +82,24 @@ public struct Stem_Serialize_header: ProtobufGeneratedMessage {
     if type != "" {
       try visitor.visitSingularField(fieldType: ProtobufString.self, value: type, protoFieldNumber: 1, protoFieldName: "type", jsonFieldName: "type", swiftFieldName: "type")
     }
-    if rows != 0 {
-      try visitor.visitSingularField(fieldType: ProtobufInt64.self, value: rows, protoFieldNumber: 2, protoFieldName: "rows", jsonFieldName: "rows", swiftFieldName: "rows")
+    if !shape.isEmpty {
+      try visitor.visitPackedField(fieldType: ProtobufInt64.self, value: shape, protoFieldNumber: 2, protoFieldName: "shape", jsonFieldName: "shape", swiftFieldName: "shape")
     }
-    if cols != 0 {
-      try visitor.visitSingularField(fieldType: ProtobufInt64.self, value: cols, protoFieldNumber: 3, protoFieldName: "cols", jsonFieldName: "cols", swiftFieldName: "cols")
+    if !stride.isEmpty {
+      try visitor.visitPackedField(fieldType: ProtobufInt64.self, value: stride, protoFieldNumber: 3, protoFieldName: "stride", jsonFieldName: "stride", swiftFieldName: "stride")
     }
-    if stride != 0 {
-      try visitor.visitSingularField(fieldType: ProtobufInt64.self, value: stride, protoFieldNumber: 4, protoFieldName: "stride", jsonFieldName: "stride", swiftFieldName: "stride")
+    if !dimIndex.isEmpty {
+      try visitor.visitPackedField(fieldType: ProtobufInt64.self, value: dimIndex, protoFieldNumber: 4, protoFieldName: "dimIndex", jsonFieldName: "dimIndex", swiftFieldName: "dimIndex")
     }
-    if shape != 0 {
-      try visitor.visitSingularField(fieldType: ProtobufInt64.self, value: shape, protoFieldNumber: 5, protoFieldName: "shape", jsonFieldName: "shape", swiftFieldName: "shape")
-    }
-    if dimIndex != 0 {
-      try visitor.visitSingularField(fieldType: ProtobufInt64.self, value: dimIndex, protoFieldNumber: 6, protoFieldName: "dimIndex", jsonFieldName: "dimIndex", swiftFieldName: "dimIndex")
-    }
-    if offset != 0 {
-      try visitor.visitSingularField(fieldType: ProtobufInt64.self, value: offset, protoFieldNumber: 7, protoFieldName: "offset", jsonFieldName: "offset", swiftFieldName: "offset")
+    if !offset.isEmpty {
+      try visitor.visitPackedField(fieldType: ProtobufInt64.self, value: offset, protoFieldNumber: 5, protoFieldName: "offset", jsonFieldName: "offset", swiftFieldName: "offset")
     }
   }
 
   public func _protoc_generated_isEqualTo(other: Stem_Serialize_header) -> Bool {
     if type != other.type {return false}
-    if rows != other.rows {return false}
-    if cols != other.cols {return false}
-    if stride != other.stride {return false}
     if shape != other.shape {return false}
+    if stride != other.stride {return false}
     if dimIndex != other.dimIndex {return false}
     if offset != other.offset {return false}
     return true

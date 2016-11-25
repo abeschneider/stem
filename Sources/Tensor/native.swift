@@ -8,10 +8,10 @@
 
 import Foundation
 
-open class NativeStorage<T:NumericType>: Storage {
-    public typealias ElementType = T
+open class NativeStorage<ElementType:NumericType>: Storage {
+//    public typealias ElementType = T
     
-    open var array:SharedArray<T>
+    open var array:SharedArray<ElementType>
     open var offset:Int
     
     open var size:Int { return array.memory.count }
@@ -22,8 +22,8 @@ open class NativeStorage<T:NumericType>: Storage {
         offset = 0
     }
     
-    public required init(array:[T]) {
-        self.array = SharedArray<T>(array)
+    public required init(array:[ElementType]) {
+        self.array = SharedArray<ElementType>(array)
         offset = 0
     }
     
@@ -47,7 +47,7 @@ open class NativeStorage<T:NumericType>: Storage {
         return NewStorageType(array:value)
     }
     
-    open subscript(index:Int) -> T {
+    open subscript(index:Int) -> ElementType {
         get { return array[index+offset] }
         set { array[index+offset] = newValue }
     }
