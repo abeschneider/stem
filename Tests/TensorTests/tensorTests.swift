@@ -149,10 +149,7 @@ class stemTests: XCTestCase {
     func testTensorIndex() {
         let tensor = Tensor<D>([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
         let tensor_raveled = ravel(tensor)
-//        print(tensor_raveled)
-        for i in 0..<tensor_raveled.shape.elements {
-            print(tensor_raveled[i])
-        }
+
         var j = 0
         for i in tensor.indices() {
             XCTAssertEqual(tensor_raveled[j], tensor[i])
