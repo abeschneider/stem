@@ -40,4 +40,19 @@ class serializationTests: XCTestCase {
         
         XCTAssertTrue(isClose(b, c!, eps: 10e-8))
     }
+    
+    func testDictionary() {
+        let a = Tensor<NativeStorage<Float>>(Extent(5, 5))
+        fill(a, value: 1)
+        let b = Tensor<NativeStorage<Float>>(Extent(3, 3))
+        fill(b, value: 2)
+        
+        let dict:[String:Tensor<NativeStorage<Float>>] = ["a":a, "b":b]
+        let data:Data? = serialize(tensors: dict)
+        
+        let dict2:[String:Tensor<NativeStorage<Float>>] = deserialize(data: data!)
+        
+        XCTAssertTrue(isClose(a, dict2["a"]!, eps: 10e-8))
+        XCTAssertTrue(isClose(b, dict2["b"]!, eps: 10e-8))
+    }
 }

@@ -307,3 +307,47 @@ public struct Stem_Serialize_Tensor: ProtobufGeneratedMessage {
     return _storage
   }
 }
+
+public struct Stem_Serialize_Dictionary: ProtobufGeneratedMessage {
+  public var swiftClassName: String {return "Stem_Serialize_Dictionary"}
+  public var protoMessageName: String {return "Dictionary"}
+  public var protoPackageName: String {return "stem.serialize"}
+  public var jsonFieldNames: [String: Int] {return [
+    "items": 1,
+  ]}
+  public var protoFieldNames: [String: Int] {return [
+    "items": 1,
+  ]}
+
+  public var items: Dictionary<String,Stem_Serialize_Tensor> = [:]
+
+  public init() {}
+
+  public init(items: Dictionary<String,Stem_Serialize_Tensor> = [:])
+  {
+    if !items.isEmpty {
+      self.items = items
+    }
+  }
+
+  public mutating func _protoc_generated_decodeField(setter: inout ProtobufFieldDecoder, protoFieldNumber: Int) throws -> Bool {
+    let handled: Bool
+    switch protoFieldNumber {
+    case 1: handled = try setter.decodeMapField(fieldType: ProtobufMap<ProtobufString,Stem_Serialize_Tensor>.self, value: &items)
+    default:
+      handled = false
+    }
+    return handled
+  }
+
+  public func _protoc_generated_traverse(visitor: inout ProtobufVisitor) throws {
+    if !items.isEmpty {
+      try visitor.visitMapField(fieldType: ProtobufMap<ProtobufString,Stem_Serialize_Tensor>.self, value: items, protoFieldNumber: 1, protoFieldName: "items", jsonFieldName: "items", swiftFieldName: "items")
+    }
+  }
+
+  public func _protoc_generated_isEqualTo(other: Stem_Serialize_Dictionary) -> Bool {
+    if items != other.items {return false}
+    return true
+  }
+}
