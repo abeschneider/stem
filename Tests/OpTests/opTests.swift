@@ -641,7 +641,6 @@ backward:
         connect(from: gradOutput, to: rnnGrad, "gradOutput")
         let inputError = checkGradient(rnn, grad: rnnGrad, params: input.output, gradParams: gradOutput.output, eps: eps)
 //        let weightError = checkGradient(rnn, grad: rnnGrad, params: linear.weight, gradParams: linearGrad.weight, eps: eps)
-        print(inputError)
 ////        XCTAssertLessThan(inputError, eps)
     }
     
@@ -752,6 +751,5 @@ backward:
 //        rnn.apply()
 //        rnnGrad.apply()
         let inputError = checkGradient(rnn, grad: rnnGrad, params: input.output, gradParams: gradOutput.output, eps: eps)
-        print(inputError)
     }
 }
