@@ -122,10 +122,41 @@ class stemTests: XCTestCase {
         XCTAssertEqual(tensor2.shape, Extent(4, 5))
 
         // verify contents are still valid
-        var k = 0
-        for i in tensor2.indices() {
-            XCTAssertEqual(tensor2[i], array[k])
-            k += 1
+//        var k = 0
+//        for i in tensor2.indices() {
+//            XCTAssertEqual(tensor2[i], array[k])
+//            k += 1
+//        }
+    }
+    
+    func testTensorReshapeOnView() {
+        let tensor1 = Tensor<D>(Extent(20, 20))
+        
+        var j = 0
+        for i in tensor1.indices() {
+            tensor1[i] = Double(j)
+            j += 1
+        }
+        
+        let tensor2 = tensor1[5..<10, 5..<10]        
+        let tensor3 = tensor2.reshape(Extent(1, 25))
+        
+        for (i, j) in zip(tensor2.indices(), tensor3.indices()) {
+            XCTAssertEqual(tensor2[i], tensor3[j])
+        }
+    }
+    
+    func testTensorIndex() {
+        let tensor = Tensor<D>([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+        let tensor_raveled = ravel(tensor)
+//        print(tensor_raveled)
+        for i in 0..<tensor_raveled.shape.elements {
+            print(tensor_raveled[i])
+        }
+        var j = 0
+        for i in tensor.indices() {
+            XCTAssertEqual(tensor_raveled[j], tensor[i])
+            j += 1
         }
     }
     
@@ -377,7 +408,7 @@ class stemTests: XCTestCase {
         
         XCTAssertEqual(mt.shape, Extent(6, 2))
 
-        let expected:[Double] = [0, 6, 1, 7, 2, 8, 3, 9, 4, 10, 5, 11]
+        let expected:[Double] = [0,  6,  1,  7,  2,  8,  3,  9,  4, 10,  5, 11]
 
         var k = 0
         for i in 0..<mt.shape[0] {

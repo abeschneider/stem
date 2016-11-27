@@ -15,8 +15,8 @@ public struct StorageView<StorageType:Storage> {
     // offset within storage
     public var offset:[Int]
     
-    public init(shape:Extent, offset:[Int]) {
+    public init(shape:Extent, offset:[Int]?=nil) {
         self.shape = shape
-        self.offset = offset
+        self.offset = offset ?? [Int](repeating: 0, count: shape.count)
     }
 }

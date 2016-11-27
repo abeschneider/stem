@@ -256,11 +256,11 @@ open class Tensor<StorageType:Storage> {
         self.init(Extent(0))
     }
     
-    init(storage:StorageType, view:StorageView<StorageType>, dimIndex:[Int], stride:[Int]) {
+    public init(storage:StorageType, shape:Extent, offset:[Int]?=nil, dimIndex:[Int]?=nil, stride:[Int]?=nil) {
         self.storage = storage
-        self.dimIndex = dimIndex
-        self.stride = stride
-        self.view = view
+        self.view = StorageView(shape: shape, offset: offset)
+        self.stride = stride ?? calculateStride(Extent(storage.calculateOrder(shape.dims)))
+        self.dimIndex = dimIndex ?? storage.calculateOrder(shape.count)
     }
     
     public init(_ shape:Extent, value:StorageType.ElementType=0) {
@@ -272,13 +272,6 @@ open class Tensor<StorageType:Storage> {
         
     init(array:[StorageType.ElementType], shape:Extent, view:StorageView<StorageType>?=nil) {
         storage = StorageType(array: array)
-        self.stride = calculateStride(Extent(storage.calculateOrder(shape.dims)))
-        dimIndex = storage.calculateOrder(shape.count)
-        self.view = view ?? ViewType(shape: shape, offset: Array<Int>(repeating: 0, count: shape.count))
-    }
-    
-    init(storage:StorageType, shape:Extent, view:StorageView<StorageType>?=nil) {
-        self.storage = storage
         self.stride = calculateStride(Extent(storage.calculateOrder(shape.dims)))
         dimIndex = storage.calculateOrder(shape.count)
         self.view = view ?? ViewType(shape: shape, offset: Array<Int>(repeating: 0, count: shape.count))
@@ -302,26 +295,27 @@ open class Tensor<StorageType:Storage> {
     
     init(_ tensor:Tensor, view:StorageView<StorageType>?=nil, dimIndex:[Int]?=nil, stride:[Int]?=nil, copy:Bool=false) {
         if copy {
-            self.view = view ?? ViewType(shape: tensor.shape, offset: tensor.view.offset)
             storage = StorageType(size: tensor.shape.elements, value: 0)
-            for i in 0..<tensor.shape.elements {
-                storage[i] = tensor.storage[i]
+            var j = 0
+            for i in tensor.indices() {
+                storage[j] = tensor[i]
+                j += 1
             }
-        } else {
+            
             // NB: If making a copy, previously defined offset is no longer valid
-            self.view = view ?? ViewType(shape: tensor.shape, offset: Array<Int>(repeating: 0, count: tensor.dims))
+            self.view = ViewType(shape: view == nil ? tensor.shape : view!.shape)
+        } else {
+            self.view = view ?? ViewType(shape: tensor.shape, offset: tensor.view.offset)
             storage = tensor.storage
         }
         
         self.dimIndex = dimIndex ?? tensor.dimIndex
         self.stride = stride ?? tensor.stride
-        self.view = view ??
-            ViewType(shape: tensor.shape, offset: copy ? tensor.view.offset : Array<Int>(repeating: 0, count: tensor.dims))
     }
     
-    init(tensor:Tensor, shape:Extent, stride:[Int]) {
+    init(tensor:Tensor, shape:Extent, stride:[Int]?=nil) {
         storage = tensor.storage
-        self.stride = stride
+        self.stride = stride ?? calculateStride(shape)
         
         // check if we need to increase the size of tensor.view.offset
         if tensor.view.offset.count < shape.count {
@@ -396,10 +390,18 @@ open class Tensor<StorageType:Storage> {
         return Tensor(self, view: newView, dimIndex: newDimIndex, stride: stride)
     }
     
+    // NB: For now reshape always makes a copy. Most of the time a view can be created instead. However,
+    // it cannot be guaranteed a view can always be created (see Numpy documentation).
     open func reshape(_ newShape:Extent) -> Tensor {
         precondition(newShape.elements == shape.elements, "Cannot change number of elements in Tensor.")
         
-        return Tensor(storage: storage, shape: newShape)
+        let copy = Tensor(self, view: view, copy: true)
+        copy.shape = newShape
+        copy.dimIndex = storage.calculateOrder(newShape.count)
+        copy.stride = calculateStride(Extent(storage.calculateOrder(newShape.dims)))
+        
+        return copy
+//        return Tensor(storage: storage, shape: newShape)
     }
     
     open func resize(_ newShape:Extent) {
