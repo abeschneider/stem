@@ -55,29 +55,29 @@ class opTests: XCTestCase {
         XCTAssert(isClose(linear.output, expected, eps: 10e-4), "Not close")
     }
     
-    func testLinearOpCopy() {
-        let linear = LinearOp<D>(inputSize: 10, outputSize: 5)
-        let linear2 = copy(op: linear, shared: true)
-        let linear3 = copy(op: linear, shared: false)
-
-        let w = ravel(linear.weight)
-        let w2 = ravel(linear2.weight)
-        let w3 = ravel(linear3.weight)
-        for i in 0..<w.shape.elements {
-            w[i] = 0
-            XCTAssertEqualWithAccuracy(w2[i], 0, accuracy: 1e-6)
-            XCTAssertNotEqualWithAccuracy(w3[i], 0, 1e-6)
-        }
-        
-        let b = ravel(linear.bias)
-        let b2 = ravel(linear2.bias)
-        let b3 = ravel(linear3.bias)
-        for i in 0..<b.shape.elements {
-            b[i] = 1
-            XCTAssertEqualWithAccuracy(b2[i], 1, accuracy: 1e-6)
-            XCTAssertNotEqualWithAccuracy(b3[i], 1, 1e-6)
-        }
-    }
+//    func testLinearOpCopy() {
+//        let linear = LinearOp<D>(inputSize: 10, outputSize: 5)
+//        let linear2 = copy(op: linear, shared: true)
+//        let linear3 = copy(op: linear, shared: false)
+//
+//        let w = ravel(linear.weight)
+//        let w2 = ravel(linear2.weight)
+//        let w3 = ravel(linear3.weight)
+//        for i in 0..<w.shape.elements {
+//            w[i] = 0
+//            XCTAssertEqualWithAccuracy(w2[i], 0, accuracy: 1e-6)
+//            XCTAssertNotEqualWithAccuracy(w3[i], 0, 1e-6)
+//        }
+//        
+//        let b = ravel(linear.bias)
+//        let b2 = ravel(linear2.bias)
+//        let b3 = ravel(linear3.bias)
+//        for i in 0..<b.shape.elements {
+//            b[i] = 1
+//            XCTAssertEqualWithAccuracy(b2[i], 1, accuracy: 1e-6)
+//            XCTAssertNotEqualWithAccuracy(b3[i], 1, 1e-6)
+//        }
+//    }
     
     func testLinearOpGradient() {
         let eps:Double = 10e-6
