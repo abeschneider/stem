@@ -71,10 +71,7 @@ open class ConcatGrad<S:Storage>: Op<S>, Gradient where S.ElementType:FloatNumer
         for output in outputs["output"]! {
             let first = index
             let last = output.shape[0]+index
-            copy(from: _gradOutput[first..<last], to: output)
-            
-            print("concat: \(output)")
-            
+            copy(from: _gradOutput[first..<last], to: output)            
             index = last
         }
     }

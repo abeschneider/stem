@@ -58,7 +58,6 @@ open class VariableGrad<S:Storage>: Op<S>, Gradient {
     }
     
     open override func apply() {
-        print("var: \(_gradOutput)")
         copy(from: _gradOutput, to: output)
     }
     
