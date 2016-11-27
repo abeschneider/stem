@@ -41,6 +41,10 @@ public func **(lhs:Int, rhs:Int) -> Int {
     return Int(pow(Float(lhs), Float(rhs)))
 }
 
+public func **(lhs:UInt8, rhs:UInt8) -> UInt8 {
+    return UInt8(pow(Float(lhs), Float(rhs)))
+}
+
 public func **(lhs:Float, rhs:Float) -> Float {
     return pow(lhs, rhs)
 }
@@ -74,6 +78,33 @@ extension Int: NumericType {
     }
     
     public static var infinity:Int{ return Int.infinity }
+}
+
+extension UInt8: AbsoluteValuable {
+    public static func abs(_ x:UInt8) -> UInt8 {
+        return UInt8.abs(x)
+    }
+}
+
+extension UInt8: NumericType {
+    init<StorageType:Storage>
+        (_ tensor:Tensor<StorageType>) where StorageType.ElementType == UInt8
+    {
+        precondition(tensor.shape.elements == 1, "Can only convert tensors with a single element to a Int")
+        
+        self.init(tensor.storage[0])
+        
+    }
+    
+    static public func max(_ lhs:UInt8, _ rhs:UInt8) -> UInt8 {
+        return lhs > rhs ? lhs : rhs
+    }
+    
+    static public func min(_ lhs:UInt8, _ rhs:UInt8) -> UInt8 {
+        return lhs < rhs ? lhs : rhs
+    }
+    
+    public static var infinity:UInt8{ return UInt8.infinity }
 }
 
 extension Float: FloatNumericType {
