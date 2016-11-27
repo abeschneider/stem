@@ -21,7 +21,7 @@ public func fromProto<S:Storage>(msg:TensorMessage) -> Tensor<S> {
     let view:TensorView = msg.view
     let shape = Extent(view.shape.map { Int($0) })
     let offset = view.offset.map { Int($0) }
-    let storageView = StorageView<S>(shape: Extent(shape), offset: offset)
+//    let storageView = StorageView<S>(shape: Extent(shape), offset: offset)
     
     let size = msg.storage_.size
     
@@ -32,7 +32,7 @@ public func fromProto<S:Storage>(msg:TensorMessage) -> Tensor<S> {
         }
     }
     
-    return Tensor<S>(storage: storage, view: storageView, dimIndex: dimIndex, stride: stride)
+    return Tensor<S>(storage: storage, shape: shape, dimIndex: dimIndex, stride: stride)
 }
 
 public func deserialize<S:Storage>(data:[UInt8]) -> Tensor<S>? {
