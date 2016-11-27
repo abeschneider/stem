@@ -11,6 +11,7 @@
 import Foundation
 import AppKit
 import Tensor
+import Gzip
 
 typealias D = NativeStorage<Float>
 typealias I = NativeStorage<UInt8>
@@ -34,27 +35,59 @@ func fromByteArray<T>(_ value: [UInt8], _: T.Type) -> T {
     }
 }
 
-func loadData(filename:String) -> Tensor<I>? {
-    let data = NSData(contentsOfFile: filename)
+func readImageData(url:URL) -> Tensor<I>? {
+    let zippedData = try! Data(contentsOf: url)
+    print("read in \(zippedData.count) bytes")
     
-    let header = [UInt32](repeating: 0, count: 4)
-    data?.getBytes(UnsafeMutableRawPointer(mutating: header), length: 16)
+    let data = try! zippedData.gunzipped()
+    print("uncompressed to \(data.count) bytes")
+    
+    let headerCount = 4
+    let headerSize = headerCount*MemoryLayout<UInt32>.size
+    let header = [UInt32](repeating: 0, count: headerCount)
+    let headerPtr:UnsafeMutablePointer<UInt32> = UnsafeMutablePointer(mutating: header)
+    let _ = data.copyBytes(to: UnsafeMutableBufferPointer(start: headerPtr, count: headerCount), from: 0..<headerSize)
     
     let magic = Int32(bigEndian: Int32(header[0]))
-    let num_images = Int(Int32(bigEndian: Int32(header[1])))
-    let num_rows = Int(Int32(bigEndian: Int32(header[2])))
-    let num_cols = Int(Int32(bigEndian: Int32(header[3])))
+    let numImages = Int(Int32(bigEndian: Int32(header[1])))
+    let numRows = Int(Int32(bigEndian: Int32(header[2])))
+    let numCols = Int(Int32(bigEndian: Int32(header[3])))
     
     if magic != 2051 { return nil }
+    print("found \(numImages) images at resolution (\(numRows), \(numCols))")
     
-    let num_bytes = num_rows*num_cols*num_images
-    let buffer = [UInt8](repeating: 0, count: Int(num_bytes))
+    let numBytes = numRows*numCols*numImages
+    let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: Int(numBytes))
+    data.copyBytes(to: buffer, from: headerSize..<numBytes)
+    let array = Array<UInt8>(UnsafeMutableRawBufferPointer(start: buffer, count: numBytes))
+    let storage = I(array: array)
+    return Tensor<I>(storage: storage, shape: Extent(numImages, numRows, numCols))
+}
+
+func readLabelData(url:URL) -> Tensor<I>? {
+    let zippedData = try! Data(contentsOf: url)
+    print("read in \(zippedData.count) bytes")
     
-    let ptr = UnsafeMutableRawPointer(mutating: buffer)
-    data?.getBytes(ptr, range: NSRange(location: 16, length: num_bytes))
+    let data = try! zippedData.gunzipped()
+    print("uncompressed to \(data.count) bytes")
+
+    let headerCount = 2
+    let headerSize = headerCount*MemoryLayout<UInt32>.size
+    let header = [UInt32](repeating: 0, count: headerCount)
+    let headerPtr:UnsafeMutablePointer<UInt32> = UnsafeMutablePointer(mutating: header)
+    let _ = data.copyBytes(to: UnsafeMutableBufferPointer(start: headerPtr, count: headerCount), from: 0..<headerSize)
+
+    let magic = Int32(bigEndian: Int32(header[0]))
+    let numLabels = Int(Int32(bigEndian: Int32(header[1])))
     
-    let storage = I(array: buffer)
-    return Tensor<I>(storage: storage, shape: Extent(num_images, num_rows, num_cols))
+    if magic != 2049 { return nil }
+    print("found \(numLabels) labels")
+    
+    let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: Int(numLabels))
+    data.copyBytes(to: buffer, from: headerSize..<numLabels)
+    let array = Array<UInt8>(UnsafeMutableRawBufferPointer(start: buffer, count: numLabels))
+    let storage = I(array: array)
+    return Tensor<I>(storage: storage, shape: Extent(numLabels))
 }
 
 // TODO: get rid of index .. just do a subview of the tensor
@@ -89,34 +122,70 @@ func toImage(_ tensor:Tensor<NativeStorage<UInt8>>) -> NSImage {
 }
 
 func saveData(filename:String, images:Tensor<I>) throws {
-//    let image_filename = "/Users/ars3432/Downloads/train-images-idx3-ubyte"
-//    let images = loadData(filename: input)
     let data:Data = serialize(tensor: images)!
     try data.write(to: URL(fileURLWithPath: filename))
+    print("wrote \(data.count) bytes to \"\(filename)\"")
 }
 
-
-func parseOptions(args:[String], options:Dictionary<String, String>) {
-    for arg in args {
-        arg.self
-        if (options[arg] != nil) {
-            
+extension String {
+    subscript (r: CountableRange<Int>) -> String {
+        get {
+            let startIndex =  self.index(self.startIndex, offsetBy: r.lowerBound)
+            let endIndex = self.index(startIndex, offsetBy: r.upperBound - r.lowerBound)
+            return self[startIndex..<endIndex]
         }
     }
 }
 
-let data = try Data(contentsOf: URL(fileURLWithPath: "mnist.bin"))
-let images:Tensor<I> = deserialize(data: data)!
+func parseOptions(args:[String]) -> [String:String] {
+    var options = [String:String]()
 
-for i in 0..<10 {
-    var imageTensor = images[i, all, all]
-    imageTensor = imageTensor.reshape(Extent(imageTensor.shape[1], imageTensor.shape[2]))
+    var i = 1
+    while i < args.count-1 {
+        let option = String(args[i].characters.dropFirst())
+        let value = args[i+1]
+        options[option] = value
+        i += 2
+    }
     
-    // NB: Bug here .. reshape causes the view to get reset
-    print(imageTensor)
-    let image = toImage(imageTensor)
-    let data = image.tiffRepresentation!
-    try data.write(to: URL(fileURLWithPath: "image_\(i).tiff"))
+    return options
 }
 
-//if CommandLine.arguments[0] == "generated"
+let options = parseOptions(args: CommandLine.arguments)
+
+if options["mode"] == "display" {
+    let data = try Data(contentsOf: URL(fileURLWithPath: "mnist.bin"))
+    let images:Tensor<I> = deserialize(data: data)!
+
+    for i in 0..<10 {
+        var imageTensor = images[i, all, all]
+        imageTensor = imageTensor.reshape(Extent(imageTensor.shape[1], imageTensor.shape[2]))
+        
+        let image = toImage(imageTensor)
+        let data = image.tiffRepresentation!
+        try data.write(to: URL(fileURLWithPath: "image_\(i).tiff"))
+    }
+} else {
+    print("loading training images")
+    let trainImages = readImageData(url: URL(string: "http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz")!)!
+    
+    print("loading training labels")
+    let trainLabels = readLabelData(url: URL(string: "http://yann.lecun.com/exdb/mnist/train-labels-idx1-ubyte.gz")!)!
+    
+    print("loading testing images")
+    let testImages = readImageData(url: URL(string: "http://yann.lecun.com/exdb/mnist/t10k-images-idx3-ubyte.gz")!)!
+    
+    print("loading testing labels")
+    let testLabels = readLabelData(url: URL(string: "http://yann.lecun.com/exdb/mnist/t10k-labels-idx1-ubyte.gz")!)!
+    
+    let data:Data? = serialize(tensors:[
+        "train_images": trainImages,
+        "train_labels": trainLabels,
+        "test_images":  testImages,
+        "test_labels":  testLabels])
+    
+    print("saving to \"\(options["out"])\"")
+    try data!.write(to: URL(fileURLWithPath: options["out"]!))
+}
+
+
