@@ -13,7 +13,7 @@ STEM is split into multiple sections (similar to Torch). Currently it consists o
 
 1. A Tensor library allowing for multiple storage backings. Swift's ability to define new operators makes writing out equations simple and intuitive.
 2. A random library for generating random Tensors
-3. A network library for composing operations
+3. A computational graph library for composing operations
 4. Optimization using gradient descent
 
 For more information, please visit the documentation: 
