@@ -166,6 +166,41 @@ public func uniform() -> Int {
     return Int(globalRng.next())
 }
 
+public func randint(range:Range<Int>) -> Int {
+    let width = range.upperBound - range.lowerBound
+    let value = (Int(globalRng.next()) / width) + range.lowerBound
+    return value
+}
+
+public func randint(range:ClosedRange<Int>) -> Int {
+    let width = range.upperBound - range.lowerBound + 1
+    let value = (Int(globalRng.next()) / width) + range.lowerBound
+    return value
+}
+
+extension Array where Element:ExpressibleByIntegerLiteral {
+    // inside-out algorithm (in-place Fisher-Yates)
+    public func shuffle() -> Array<Element> {
+        var result = Array<Element>(repeating: 0, count: self.count)
+        for i in 0..<self.count-1 {
+            let j = randint(range: 0...i)
+            if j != i { result[i] = result[j] }
+
+            result[i] = self[i]
+        }
+        
+        return result
+    }
+    
+    // Fisher-Yates shuffle
+    public mutating func shuffled() {
+        for i in 0..<self.count-2 {
+            let j = randint(range: i..<self.count)
+            swap(&self[i], &self[j])
+        }
+    }
+}
+
 
 //extension Tensor where StorageType.ElementType == Int {
 //    func uniform(rng:RandomNumberGenerator, first:Int, last:Int, closed:Bool=false) {
