@@ -426,7 +426,7 @@ public func matmul<S:Storage>
     for i in 0..<lhs.shape[0] {
         for j in 0..<rhs.shape[1] {
             for k in 0..<lhs.shape[1] {
-                result[i, j] += lhs[i, k]*rhs[k, j]
+                result[i, j] = result[i, j] + lhs[i, k]*rhs[k, j]
             }
         }
     }
@@ -607,6 +607,19 @@ public func isClose<StorageType:Storage>
     return true
 }
 
+public func isClose<StorageType:Storage>
+    (_ lhs:Tensor<StorageType>, _ rhs:Array<StorageType.ElementType>, eps: StorageType.ElementType) -> Bool where StorageType.ElementType:NumericType
+{
+    var k = 0
+    for i in lhs.indices() {
+        let diff = abs(lhs[i] - rhs[k])
+        if diff > eps { return false }
+        
+        k += 1
+    }
+    
+    return true
+}
 
 public func hist<StorageType:Storage>
     (_ t:Tensor<StorageType>, bins:Int) -> Tensor<StorageType> where StorageType.ElementType == Double
@@ -706,24 +719,34 @@ public func sum<StorageType:Storage>(_ tensor:Tensor<StorageType>) -> StorageTyp
  w0=(w+2pW−kW)/sX+1
  */
 // currently only supports 'valid' mode; the kernel cannot exceed the bounds of the image
+public func calculateConv2DSize<S:Storage>(input:Tensor<S>, kernel:Tensor<S>, stride:[Int], padding:[Int]) -> Extent {
+    var rows = (input.shape[0] - kernel.shape[0] + 2*padding[0]) + 1
+    rows /= stride[0]
+    var cols = (input.shape[1] - kernel.shape[1] + 2*padding[1]) + 1
+    cols /= stride[1]
+    return Extent(rows, cols)
+}
+
 public func conv2d<S:Storage>(_ input:Tensor<S>,
                                 kernel:Tensor<S>,
                                 stride:[Int]=[1, 1],
                                 padding:[Int]=[0, 0],
                                 paddingValue:S.ElementType=0,
-                                flip:Bool=true) -> Tensor<S>
+                                flip:Bool=true,
+                                addTo:Tensor<S>)
 {
     let centerX = kernel.shape[1] / 2
     let centerY = kernel.shape[0] / 2
     
-    var rows = (input.shape[0] - kernel.shape[0] + 2*padding[0]) + 1
-    rows /= stride[0]
-    var cols = (input.shape[1] - kernel.shape[1] + 2*padding[1]) + 1
-    cols /= stride[1]
+//    var rows = (input.shape[0] - kernel.shape[0] + 2*padding[0]) + 1
+//    rows /= stride[0]
+//    var cols = (input.shape[1] - kernel.shape[1] + 2*padding[1]) + 1
+//    cols /= stride[1]
+    let outputShape = calculateConv2DSize(input: input, kernel: kernel, stride: stride, padding: padding)
     
-    let outputShape = Extent(rows, cols)
-    let out = Tensor<S>(outputShape)
-        
+//    let outputShape = Extent(rows, cols)
+//    let out = Tensor<S>(outputShape)
+    
     for i in 0..<outputShape[0] {
         for j in 0..<outputShape[1] {
             for k in 0..<kernel.shape[0] {                
@@ -738,17 +761,37 @@ public func conv2d<S:Storage>(_ input:Tensor<S>,
                     let p = j+padding[1]/2
                     
                     if (m >= 0 && m < input.shape[0] && n >= 0 && n < input.shape[1]) {
-                        out[o, p] += input[m, n] * kernel[kflipped, lflipped]
+                        let input_mn:S.ElementType = input[m, n]
+                        let kernel_kl:S.ElementType = kernel[kflipped, lflipped]
+
+                        // FIXME: addTo.+= dispatches incorrectly .. this is caused by an unknown
+                        // interaction of the generics and the dispatch system (needs investigation)
+                        addTo[o, p] = addTo[o, p] + input_mn*kernel_kl
                     } else {
-                        out[o, p] += paddingValue * kernel[kflipped, lflipped]
+                        addTo[o, p] = addTo[o, p] + paddingValue * kernel[kflipped, lflipped]
                     }
                 }
             }
         }
     }
     
+//    return out
+}
+
+public func conv2d<S:Storage>(_ input:Tensor<S>,
+                   kernel:Tensor<S>,
+                   stride:[Int]=[1, 1],
+                   padding:[Int]=[0, 0],
+                   paddingValue:S.ElementType=0,
+                   flip:Bool=true) -> Tensor<S> where S.ElementType:NumericType
+{
+    let outputShape = calculateConv2DSize(input: input, kernel: kernel, stride: stride, padding: padding)
+    let out = Tensor<S>(outputShape)
+    
+    conv2d(input, kernel:kernel, stride:stride, padding:padding, paddingValue:paddingValue, flip:flip, addTo:out)
     return out
 }
+
 
 public func max<StorageType:Storage>
     (_ tensor:Tensor<StorageType>, axis:Int) -> Tensor<StorageType> where StorageType.ElementType:NumericType
@@ -802,6 +845,17 @@ public func exp<StorageType:Storage>
     let result = Tensor<StorageType>(tensor.shape)
     for i in result.indices() {
         result[i] = StorageType.ElementType.exp(tensor[i])
+    }
+    
+    return result
+}
+
+public func log<StorageType:Storage>
+    (_ tensor:Tensor<StorageType>) -> Tensor<StorageType> where StorageType.ElementType:FloatNumericType
+{
+    let result = Tensor<StorageType>(tensor.shape)
+    for i in result.indices() {
+        result[i] = StorageType.ElementType.log(tensor[i])
     }
     
     return result

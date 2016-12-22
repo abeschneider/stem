@@ -159,6 +159,7 @@ open class Tensor<StorageType:Storage> {
     // step size to increment within storage for each dimension
     open var stride:[Int]
 
+    open var fixedDims:[Int]
     
     // convenience variable to access the shape of the view
     open var shape:Extent {
@@ -256,11 +257,14 @@ open class Tensor<StorageType:Storage> {
         self.init(Extent(0))
     }
     
-    public init(storage:StorageType, shape:Extent, offset:[Int]?=nil, dimIndex:[Int]?=nil, stride:[Int]?=nil) {
+    public init(storage:StorageType, shape:Extent, offset:[Int]?=nil, dimIndex:[Int]?=nil, stride:[Int]?=nil, fixedDims:[Int]?=nil) {
         self.storage = storage
         self.view = StorageView(shape: shape, offset: offset)
-        self.stride = stride ?? calculateStride(Extent(storage.calculateOrder(shape.dims)))
+        let stride = stride ?? calculateStride(Extent(storage.calculateOrder(shape.dims)))
         self.dimIndex = dimIndex ?? storage.calculateOrder(shape.count)
+//        self.singletons = [Int](repeating: 0, count: shape.count)
+        self.fixedDims = fixedDims ?? [Int](repeating: -1, count: stride.count)
+        self.stride = stride
     }
     
     public init(_ shape:Extent, value:StorageType.ElementType=0) {
@@ -268,6 +272,8 @@ open class Tensor<StorageType:Storage> {
         self.stride = calculateStride(Extent(storage.calculateOrder(shape.dims)))
         dimIndex = storage.calculateOrder(shape.count)
         view = ViewType(shape: shape, offset: Array<Int>(repeating: 0, count: shape.count))
+//        self.singletons = [Int](repeating: 0, count: shape.count)
+        self.fixedDims = [Int](repeating: -1, count: stride.count)
     }
         
     init(array:[StorageType.ElementType], shape:Extent, view:StorageView<StorageType>?=nil) {
@@ -275,6 +281,8 @@ open class Tensor<StorageType:Storage> {
         self.stride = calculateStride(Extent(storage.calculateOrder(shape.dims)))
         dimIndex = storage.calculateOrder(shape.count)
         self.view = view ?? ViewType(shape: shape, offset: Array<Int>(repeating: 0, count: shape.count))
+//        self.singletons = [Int](repeating: 0, count: shape.count)
+        self.fixedDims = [Int](repeating: -1, count: stride.count)
     }
     
     init(_ tensor:Tensor, window:[CountableRange<Int>]) {
@@ -287,13 +295,20 @@ open class Tensor<StorageType:Storage> {
             }
             
             return $0.1.last! - $0.1.first! + 1
+        }.filter {
+            return $0 > 1
         })
         
-        dimIndex = tensor.storage.calculateOrder(viewShape.count)
+        fixedDims = window.enumerated().map {
+            let singleton = Bool($0.1.first == $0.1.last && $0.1.first != nil)
+            return singleton ? Int($0.element.lowerBound) : -1
+        }
+                
+        dimIndex = tensor.storage.calculateOrder(stride.count)
         view = ViewType(shape: viewShape, offset: window.map { $0.first != nil ? $0.first! : 0})
     }
     
-    init(_ tensor:Tensor, view:StorageView<StorageType>?=nil, dimIndex:[Int]?=nil, stride:[Int]?=nil, copy:Bool=false) {
+    init(_ tensor:Tensor, view:StorageView<StorageType>?=nil, dimIndex:[Int]?=nil, stride:[Int]?=nil, fixedDims:[Int]?=nil, copy:Bool=false) {
         if copy {
             storage = StorageType(size: tensor.shape.elements, value: 0)
             var j = 0
@@ -308,6 +323,9 @@ open class Tensor<StorageType:Storage> {
             self.view = view ?? ViewType(shape: tensor.shape, offset: tensor.view.offset)
             storage = tensor.storage
         }
+        
+//        singletons = self.view.shape.map { Int($0 == 1) }
+        self.fixedDims = fixedDims ?? tensor.fixedDims
         
         self.dimIndex = dimIndex ?? tensor.dimIndex
         self.stride = stride ?? tensor.stride
@@ -325,6 +343,11 @@ open class Tensor<StorageType:Storage> {
             }
         }
         
+//        singletons = shape.map { Int($0 == 1) }
+//        fixedDims = tensor.fixedDims
+        
+        self.fixedDims = [Int](repeating: -1, count: self.stride.count)
+        
         dimIndex = storage.calculateOrder(shape.count)
         self.view = ViewType(shape: shape, offset: tensor.view.offset)
     }
@@ -340,11 +363,15 @@ open class Tensor<StorageType:Storage> {
     }
 
     open func calculateOffset(_ indices:[Int]) -> Int {
+        var indexPos = indices.makeIterator()
+        let expandedIndices = (0..<stride.count).map {
+            return fixedDims[$0] == -1 ? (indexPos.next()! + view.offset[$0]) : fixedDims[$0]
+        }
+        
         var pos = 0
-        let size = min(indices.count, dimIndex.count)
-        for i in 0..<size {
-            let di = dimIndex[i]
-            pos += (indices[di]+view.offset[di])*stride[i]
+        for i in 0..<stride.count {
+            let j = dimIndex[i]
+            pos += expandedIndices[j]*stride[i]
         }
         
         return pos
@@ -369,8 +396,7 @@ open class Tensor<StorageType:Storage> {
             let bvalue = broadcast(newValue, shape: view.shape)
             copy(from: bvalue, to: view)
         }
-    }
-    
+    }    
     open subscript(ranges:TensorIndex...) -> Tensor {
         get {
             return self[ranges]
@@ -383,22 +409,33 @@ open class Tensor<StorageType:Storage> {
     }
     
     open func transpose() -> Tensor<StorageType> {
-        let newDimIndex = Array(dimIndex.reversed())
-        let newShape = Extent(view.shape.reversed())
-        let newOffset = Array(view.offset.reversed())
-        let newView = StorageView<StorageType>(shape: newShape, offset: newOffset)
-        return Tensor(self, view: newView, dimIndex: newDimIndex, stride: stride)
+        if view.shape.count > 1 {
+            let newDimIndex = Array(dimIndex.reversed())
+            let newFixedDims = Array(fixedDims.reversed())
+            let newShape = Extent(view.shape.reversed())
+            let newOffset = Array(view.offset.reversed())
+            let newView = StorageView<StorageType>(shape: newShape, offset: newOffset)
+
+            return Tensor(self, view: newView, dimIndex: newDimIndex, stride: stride, fixedDims: newFixedDims)
+        } else {
+            return self
+        }
     }
     
+    // TODO: move outside of class
     // NB: For now reshape always makes a copy. Most of the time a view can be created instead. However,
     // it cannot be guaranteed a view can always be created (see Numpy documentation).
     open func reshape(_ newShape:Extent) -> Tensor {
         precondition(newShape.elements == shape.elements, "Cannot change number of elements in Tensor.")
         
         let copy = Tensor(self, view: view, copy: true)
-        copy.shape = newShape
-        copy.dimIndex = storage.calculateOrder(newShape.count)
+//        copy.shape = newShape
         copy.stride = calculateStride(Extent(storage.calculateOrder(newShape.dims)))
+
+        copy.view = StorageView<StorageType>(shape: newShape, offset:[Int](repeating: 0, count: copy.stride.count))
+        copy.dimIndex = storage.calculateOrder(copy.stride.count)
+
+        copy.fixedDims = [Int](repeating: -1, count: copy.stride.count)
         
         return copy
 //        return Tensor(storage: storage, shape: newShape)
@@ -409,6 +446,7 @@ open class Tensor<StorageType:Storage> {
             storage = StorageType(size: newShape.elements, value: 0)
             self.stride = calculateStride(Extent(storage.calculateOrder(newShape.dims)))
             dimIndex = storage.calculateOrder(newShape.count)
+            fixedDims = [Int](repeating: -1, count: stride.count)
             
             view = ViewType(shape: newShape, offset: Array<Int>(repeating: 0, count: newShape.count))
         }

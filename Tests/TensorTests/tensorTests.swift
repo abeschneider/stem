@@ -54,20 +54,33 @@ class stemTests: XCTestCase {
     }
     
     func testTensorView2() {
-        let t1 = Tensor<D>(Extent(3, 5))
+        let array = (0..<100).map { Double($0) }
+        let t1 = Tensor<D>(array: array, shape: Extent(10, 10))
+        let t2 = t1[5..<8, 8..<10]
 
+        
+        let expected:[Double] = [58.0, 59.0, 68.0, 69.0, 78.0, 79.0]
+        
+        var k = 0
+        for i in t2.indices() {
+            XCTAssertEqual(t2[i], expected[k])
+            k += 1
+        }
+    }
+    
+    func testTensorView3() {
+        let t1 = Tensor<D>(Extent(3, 5))
         // top row
         let t2 = t1[0, 0..<5]
         for i in t2.indices() {
             t2[i] = 1
         }
-        
         // second column
         let t3 = t1[0..<3, 1]
         for i in t3.indices() {
             t3[i] = 2
         }
-        
+
         // lower right area
         let t4 = t1[1..<3, 2..<5]
         for i in t4.indices() {
@@ -77,13 +90,22 @@ class stemTests: XCTestCase {
         let expected:[Double] = [
             1, 2, 1, 1, 1,
             0, 2, 3, 3, 3,
-            0, 2, 3, 3, 3]
+            0, 2, 3, 3, 3
+        ]
         
         var k = 0
         for i in t1.indices() {
             XCTAssertEqual(t1[i], expected[k])
             k += 1
         }
+    }
+    
+    func testTensorSingletons1() {
+        let t1 = Tensor<D>(Extent(3, 5))
+        let t2 = t1[0, 0..<5]
+        
+        XCTAssertEqual(t1.shape, Extent(3, 5))
+        XCTAssertEqual(t2.shape, Extent(5))
     }
     
     func testTensorTranspose() {
@@ -243,7 +265,7 @@ class stemTests: XCTestCase {
         let array = (0..<15).map { Double($0) }
         let tensor = Tensor<D>(array: array, shape: Extent(3, 5))
         let subtensor = tensor[0, 0..<5]
-        XCTAssertEqual(subtensor.shape.dims, [1, 5])
+        XCTAssertEqual(subtensor.shape.dims, [5])
     }
     
     func testStorageIndex4() {
@@ -251,20 +273,11 @@ class stemTests: XCTestCase {
         let sub1 = t[0, all]
         let sub2 = t[all, 0]
         
-        XCTAssertEqual(sub1.shape[1], 3)
-        XCTAssertEqual(sub2.shape[0], 2)
+        XCTAssertEqual(sub1.shape.dims, [3])
+        XCTAssertEqual(sub2.shape.dims, [2])
     }
     
     func testStorageIndex5() {
-        let m = Tensor<D>(Extent(2, 3))
-        let sub1 = m[0, all]
-        let sub2 = m[all, 0]
-        
-        XCTAssertEqual(sub1.shape[1], 3)
-        XCTAssertEqual(sub2.shape[0], 2)
-    }
-    
-    func testStorageIndex6() {
         let cube = Tensor<D>(Extent(3, 4, 5))
         let expected = (0..<cube.shape.elements).map { $0 }
         
@@ -304,7 +317,7 @@ class stemTests: XCTestCase {
             XCTAssertEqual(vector1[i], expected1[k])
             k += 1
         }
-
+        
         let vector2 = t[0..<3, 1]
         let expected2:[Double] = [1, 6, 11]
 
@@ -313,14 +326,28 @@ class stemTests: XCTestCase {
             XCTAssertEqual(vector2[i], expected2[k])
             k += 1
         }
-        
-        // verify transposition works on a vector created from a slice
+
+        // transpose of our slice will be the same because it
+        // only occupies a single dimension
         let vector3 = vector2.T
+        XCTAssertEqual(vector3.shape, vector2.shape)
         
         k = 0
         for i in vector3.indices() {
             // NB: expected value should not change from vector2
             XCTAssertEqual(vector3[i], expected2[k])
+            k += 1
+        }
+        
+        // if we add another dimension, transpose now has meaning
+        let vector4 = vector2.reshape(Extent(1, 3))
+        let vector5 = vector4.T
+        XCTAssertEqual(vector5.shape, Extent(3, 1))
+        
+        k = 0
+        for i in vector5.indices() {
+            // NB: expected value should not change from vector2
+            XCTAssertEqual(vector5[i], expected2[k])
             k += 1
         }
     }
@@ -354,6 +381,9 @@ class stemTests: XCTestCase {
         let matrix3 = matrix2.T
         let expected3:[[Double]] = [[6, 10],
                                     [7, 11]]
+        
+        print(matrix2)
+        print(matrix3)
 
         for index in matrix3.indices() {
             XCTAssertEqual(matrix3[index], expected3[index[0]][index[1]])
@@ -967,12 +997,36 @@ class stemTests: XCTestCase {
 ////        let v3:Double = b[1, 0]
 //    }
     
+    func testSliceAddition1() {
+        let eps:Double = 10e-6
+        let m = Tensor<D>([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+        let v1 = m[0, all]
+        let v2 = m[1, all]
+        
+        XCTAssertTrue(isClose(v1, [1, 2, 3], eps: eps))
+        XCTAssertTrue(isClose(v2, [4, 5, 6], eps: eps))
+        let v3 = v1 + v2
+        XCTAssertTrue(isClose(v3, [5, 7, 9], eps: eps))
+    }
+    
+    func testSliceAddition2() {
+        let m = Tensor<D>([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+        let r:Tensor<D> = zeros(Extent(3, 3))
+        
+        for i in m.indices() {
+            r[i] += m[i]
+        }
+        
+        print(r)
+    }
+    
     func testConv2D() {
-        let image = Tensor<F>([[0, 0, 0, 0, 0], [0, 1, 2, 3, 0], [0, 4, 5, 6, 0], [0, 7, 8, 9, 0], [0, 0, 0, 0, 0]])
-        let kernel = Tensor<F>([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
+        let image = Tensor<D>([[0, 0, 0, 0, 0], [0, 1, 2, 3, 0], [0, 4, 5, 6, 0], [0, 7, 8, 9, 0], [0, 0, 0, 0, 0]])
+        let kernel = Tensor<D>([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
+        
         let result = conv2d(image, kernel: kernel)
 
-        let expected = Tensor<F>([[-13, -20, -17], [-18, -24, -18], [13, 20, 17]])
+        let expected = Tensor<D>([[-13, -20, -17], [-18, -24, -18], [13, 20, 17]])
         XCTAssert(isClose(result, expected, eps: 10e-4))
     }
     
