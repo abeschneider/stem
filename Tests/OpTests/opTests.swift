@@ -323,8 +323,8 @@ class opTests: XCTestCase {
     func testConvOp() {
         let input = Constant(Tensor<D>([[1, 2, 3], [4, 5, 6], [7, 8, 9]]))
         
-        let convOp = Conv2dOp<D>(input: input, filterSize: Extent(3, 3))
-        convOp.filter = Tensor<D>([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
+        let convOp = Conv2dOp<D>(input: input, numFilters: 1, filterSize: Extent(3, 3))
+        convOp.kernels[0, all, all] = Tensor<D>([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
         convOp.apply()
         
         let expected = Tensor<D>([[-13, -20, -17], [-18, -24, -18], [13, 20, 17]])
@@ -336,7 +336,7 @@ class opTests: XCTestCase {
         let values = Tensor<D>([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
         let input = Constant(values)
         
-        let convOp = Conv2dOp<D>(input: input, filterSize: Extent(3, 3))
+        let convOp = Conv2dOp<D>(input: input, numFilters: 1, filterSize: Extent(3, 3))
         let convOpGrad = convOp.gradient() as! Conv2dGrad<D>
         
         let gradOutput = Constant<D>(zeros(Extent(3, 3)))
