@@ -36,11 +36,9 @@ public func calculateStride(_ shape:Extent) -> [Int] {
     var mult = 1
     stride[0] = 1
     
-    var j = 0
     for i in 1..<shape.count {
         stride[i] = shape[i-1]*mult
         mult *= shape[i-1]
-        j += 1
     }
     
     return stride
