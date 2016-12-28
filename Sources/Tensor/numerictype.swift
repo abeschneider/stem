@@ -77,7 +77,7 @@ extension Int: NumericType {
         return lhs < rhs ? lhs : rhs
     }
     
-    public static var infinity:Int{ return Int.infinity }
+    public static var infinity:Int{ return Int.infinity }    
 }
 
 extension UInt8: AbsoluteValuable {
