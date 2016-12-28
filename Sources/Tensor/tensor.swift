@@ -40,7 +40,6 @@ extension Int : TensorIndex {
 
 extension Range : TensorIndex {
     public var TensorRange: CountableRange<Int> {
-//        get { return self as! CountableRange<Int> }
         get {
             return (self.lowerBound as! Int)..<(self.upperBound as! Int)
         }
@@ -164,6 +163,8 @@ open class Tensor<StorageType:Storage> {
     // convenience variable to access the shape of the view
     open var shape:Extent {
         get { return view.shape }
+        
+        // TODO: check, this may be a bad thing to do.. call reshape here? or get rid of.
         set {
             precondition(view.shape.elements == newValue.elements, "Number of elements must match")
             view.shape = newValue
@@ -324,7 +325,6 @@ open class Tensor<StorageType:Storage> {
             storage = tensor.storage
         }
         
-//        singletons = self.view.shape.map { Int($0 == 1) }
         self.fixedDims = fixedDims ?? tensor.fixedDims
         
         self.dimIndex = dimIndex ?? tensor.dimIndex
@@ -343,15 +343,13 @@ open class Tensor<StorageType:Storage> {
             }
         }
         
-//        singletons = shape.map { Int($0 == 1) }
-//        fixedDims = tensor.fixedDims
-        
         self.fixedDims = [Int](repeating: -1, count: self.stride.count)
         
         dimIndex = storage.calculateOrder(shape.count)
         self.view = ViewType(shape: shape, offset: tensor.view.offset)
     }
 
+    // FIXME: currently does not match other version of calculateOffset
     open func calculateOffset() -> Int {
         var pos = 0
         for i in 0..<shape.count {
@@ -396,7 +394,8 @@ open class Tensor<StorageType:Storage> {
             let bvalue = broadcast(newValue, shape: view.shape)
             copy(from: bvalue, to: view)
         }
-    }    
+    }
+    
     open subscript(ranges:TensorIndex...) -> Tensor {
         get {
             return self[ranges]
@@ -507,6 +506,29 @@ extension Tensor: CustomStringConvertible {
             return convertToString(indices, dim: 0)
         }
     }
+}
+
+
+// TODO: there is a lot to fill in here ..
+// In theory there should be better ways of doing this. However, how Integer
+// protocols are defined, it doesn't look currently possible (though it looks
+// like proposals are in place to make this less painful)
+public func asType<S1:Storage, S2:Storage>(_ from:Tensor<S1>) -> Tensor<S2> where S1.ElementType == Int, S2.ElementType == Int {
+    let result = Tensor<S2>(from.shape)
+    for i in 0..<result.shape.elements {
+        result.storage[i] = Int(from.storage[i])
+    }
+    
+    return result
+}
+
+public func asType<S1:Storage, S2:Storage>(_ from:Tensor<S1>) -> Tensor<S2> where S1.ElementType == UInt8, S2.ElementType == Float {
+    let result = Tensor<S2>(from.shape)
+    for i in 0..<result.shape.elements {
+        result.storage[i] = Float(from.storage[i])
+    }
+    
+    return result
 }
 
 public func ones<S:Storage>(_ shape:Extent) -> Tensor<S> {
