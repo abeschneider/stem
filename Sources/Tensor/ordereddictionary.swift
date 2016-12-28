@@ -14,7 +14,7 @@ import Foundation
  */
 
 
-public struct OrderedDictionary<T>: Swift.Collection {
+public class OrderedDictionary<T>: Swift.Collection {
     public typealias Index = Array<T>.Index
     public typealias _Element = [T]
     
@@ -35,23 +35,23 @@ public struct OrderedDictionary<T>: Swift.Collection {
         add(values)
     }
     
-    public mutating func add(_ values:[(String, T)]) {
+    public func add(_ values:[(String, T)]) {
         for (key, value) in values {
             self[key] = [value]
         }
     }
     
-    public mutating func add(_ values:[(String, _Element)]) {
+    public func add(_ values:[(String, _Element)]) {
         for (key, value) in values {
             self[key] = value
         }
     }
     
-    public mutating func add(_ key:String, values:[T]) {
+    public func add(_ key:String, values:[T]) {
         self[key] = values
     }
     
-    mutating func setValue(_ key:String, _ value:T) {
+    func setValue(_ key:String, _ value:T) {
         if values[key] == nil {
             // if key is new, insert it into our indices
             keys.append(key)
@@ -65,7 +65,7 @@ public struct OrderedDictionary<T>: Swift.Collection {
         values[key] = [value]
     }
     
-    mutating func setValue(_ key:String, _ value:_Element) {
+    func setValue(_ key:String, _ value:_Element) {
         if values[key] == nil {
             // if key is new, insert it into our indices
             keys.append(key)
