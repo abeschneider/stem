@@ -58,6 +58,31 @@ open class PoolingOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
         super.init(inputs: ["input"], outputs: ["output"])
         
         outputs["output"] = Tensor<S>()
+        setAction("input", action: self.inputSet)
+    }
+    
+    func inputSet(_ label:String, input:[Op<S>]) {
+        let shape = input[0].output.shape
+        
+        var depth:Int
+        var width:Int
+        var height:Int
+        
+        // TODO: currently following Torch conventions
+        if shape.count == 2 {
+            depth = 1
+            width = (shape[0] - poolingSize[0])/stride[0] + 1
+            height = (shape[1] - poolingSize[1])/stride[1] + 1
+        } else {
+            depth = shape[0]
+            width = (shape[1] - poolingSize[0])/stride[0] + 1
+            height = (shape[2] - poolingSize[1])/stride[1] + 1
+        }
+        
+        let reducedShape = Extent(depth, width, height)
+                                  
+        _output.resize(reducedShape)
+        indices.resize(Extent(2, reducedShape[0], reducedShape[1], reducedShape[2]))
     }
     
     // required for copying
@@ -65,26 +90,46 @@ open class PoolingOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
         fatalError("init(op:shared:) has not been implemented")
     }
 
+    // TODO: figure out a more compact way to write this that allows
+    // the same for-loop to be used for differently dimensioned inputs
     open override func apply() {
-        let width = _input.shape[0] / stride[0]
-        let height = _input.shape[0] / stride[1]
-        
-        if indices.shape != Extent(width, height) {
-            indices.resize(Extent(2, width, height))
-            _output.resize(Extent(width, height))
-        }
-        
-        for i in 0..<width {
-            for j in 0..<height {
-                let row_start = i*stride[0]
-                let row_end = row_start + stride[0]
-                let col_start = j*stride[1]
-                let col_end = col_start + stride[1]
-                let view = _input[row_start..<row_end, col_start..<col_end]
-                let (index, value) = evalFn(view)
-                indices[0, i, j] = index[0]
-                indices[1, i, j] = index[1]
-                _output[i, j] = value
+        if _input.shape.count == 2 {
+            let d = 0
+            let width = _output.shape[1]
+            let height = _output.shape[2]
+
+            for i in 0..<width {
+                for j in 0..<height {
+                    let row_start = i*stride[0]
+                    let row_end = row_start + stride[0]
+                    let col_start = j*stride[1]
+                    let col_end = col_start + stride[1]
+                    let view = _input[row_start..<row_end, col_start..<col_end]
+                    let (index, value) = evalFn(view)
+                    indices[0, d, i, j] = index[0]
+                    indices[1, d, i, j] = index[1]
+                    _output[d, i, j] = value
+                }
+            }
+        } else {
+            let depth = _output.shape[0]
+            let width = _output.shape[1]
+            let height = _output.shape[2]
+            
+            for d in 0..<depth {
+                for i in 0..<width {
+                    for j in 0..<height {
+                        let row_start = i*stride[0]
+                        let row_end = row_start + stride[0]
+                        let col_start = j*stride[1]
+                        let col_end = col_start + stride[1]
+                        let view = _input[d, row_start..<row_end, col_start..<col_end]
+                        let (index, value) = evalFn(view)
+                        indices[0, d, i, j] = index[0]
+                        indices[1, d, i, j] = index[1]
+                        _output[d, i, j] = value
+                    }
+                }
             }
         }
     }
@@ -117,13 +162,16 @@ open class PoolingGrad<S:Storage>: Op<S>, Gradient where S.ElementType:FloatNume
             output.resize(_input.shape)
         }
         
-        let width = _input.shape[0] / pooling.stride[0]
-        let height = _input.shape[0] / pooling.stride[1]
+        let depth = _input.shape[0]
+        let width = _input.shape[1] / pooling.stride[0]
+        let height = _input.shape[2] / pooling.stride[1]
         
         fill(output, value: 0)
-        for i in 0..<width {
-            for j in 0..<height {
-                output[i*pooling.stride[0] + pooling.indices[0, i, j], j*pooling.stride[1] + pooling.indices[1, i, j]] = _gradOutput[i, j]
+        for d in 0..<depth {
+            for i in 0..<width {
+                for j in 0..<height {
+                    output[i*pooling.stride[0] + pooling.indices[0, d, i, j], j*pooling.stride[1] + pooling.indices[1, d, i, j]] = _gradOutput[i, j]
+                }
             }
         }
     }

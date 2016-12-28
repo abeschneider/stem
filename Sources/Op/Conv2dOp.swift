@@ -25,9 +25,11 @@ open class Conv2dOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
         self.stride = stride
         self.padding = padding
         super.init(inputs: ["input"], outputs: ["output"])
-        connect(from: input, "output", to: self, "input")
         
         outputs["output"] = Tensor<S>()
+        setAction("input", action: self.inputSet)
+        
+        connect(from: input, "output", to: self, "input")
     }
     
     public init(numFilters:Int, filterSize:Extent, stride:[Int]=[1, 1], padding:[Int]=[1, 1]) {
@@ -38,11 +40,26 @@ open class Conv2dOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
         self.padding = padding
         super.init(inputs: ["input"], outputs: ["output"])
         outputs["output"] = Tensor<S>()
+        setAction("input", action: self.inputSet)
     }
-
     
     required public init(op: Op<S>, shared: Bool) {
         fatalError("init(op:shared:) has not been implemented")
+    }
+    
+    func inputSet(_ label:String, input:[Op<S>]) {
+        // Currently follows Torch convention
+        var shape:Extent
+        
+        if input[0].output.shape.count == 2 {
+            shape = calculateConv2DSize(input: input[0].output, kernel: kernels[0, all, all], stride: stride, padding: padding)
+        } else {
+            shape = calculateConv2DSize(input: input[0].output[0, all, all], kernel: kernels[0, all, all], stride: stride, padding: padding)
+        }
+        
+        if output.shape != shape {
+            output.resize(shape)
+        }
     }
     
     open override func apply() {
@@ -50,16 +67,27 @@ open class Conv2dOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
 //            output.resize(_input.shape)
 //        }
         
-        let kernel = kernels[0, all, all]
-        let outputShape = calculateConv2DSize(input: _input, kernel: kernel, stride: stride, padding: padding)
+//        let kernel = kernels[0, all, all]
+//        let outputShape = calculateConv2DSize(input: _input, kernel: kernel, stride: stride, padding: padding)
 //        let result = Tensor<S>(outputShape)
-        output.resize(outputShape)
+//        output.resize(outputShape)
         
         // TODO: conv2d should take a Tensor to store results
 //        let result = conv2d(_input, kernel: filter, padding: [1, 1])
-        for i in 0..<kernels.shape[0] {
-            let kernel = kernels[i, all, all]
-            conv2d(_input, kernel: kernel, padding: [1, 1], addTo: output)
+        
+        // TODO: need to allow for batch mode
+        if _input.shape.count == 2 {
+            for i in 0..<kernels.shape[0] {
+                let kernel = kernels[i, all, all]
+                conv2d(_input, kernel: kernel, padding: [1, 1], addTo: output)
+            }
+        } else {
+            for d in 0..<_input.shape[0] {
+                for i in 0..<kernels.shape[0] {
+                    let kernel = kernels[i, all, all]
+                    conv2d(_input[d, all, all], kernel: kernel, padding: [1, 1], addTo: output)
+                }
+            }
         }
 //        copy(from: result, to: output)
     }
