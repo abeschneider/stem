@@ -30,6 +30,7 @@ public protocol Storage {
     func calculateOrder(_ values:[Int]) -> [Int]
 }
 
+// TODO: move into Tensor.swift
 public func calculateStride(_ shape:Extent) -> [Int] {
     var stride = Array<Int>(repeating: 0, count: shape.count)
     
