@@ -9,8 +9,6 @@
 import Foundation
 
 open class NativeStorage<ElementType:NumericType>: Storage {
-//    public typealias ElementType = T
-    
     open var array:SharedArray<ElementType>
     open var offset:Int
     
