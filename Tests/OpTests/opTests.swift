@@ -320,7 +320,7 @@ class opTests: XCTestCase {
         XCTAssertLessThan(inputError, eps)
     }
     
-    func testConvOp() {
+    func testConvOp1() {
         let input = Constant(Tensor<D>([[1, 2, 3], [4, 5, 6], [7, 8, 9]]))
         
         let convOp = Conv2dOp<D>(input: input, numFilters: 1, filterSize: Extent(3, 3))
@@ -331,12 +331,39 @@ class opTests: XCTestCase {
         XCTAssert(isClose(convOp.output, expected, eps:10e-4))
     }
     
-    func testConvOpGradient() {
+    func testConvOp2() {
+        let input = Constant(Tensor<D>([[1, 2, 3], [4, 5, 6], [7, 8, 9]]))
+        
+        let convOp = Conv2dOp<D>(input: input, numFilters: 2, filterSize: Extent(3, 3))
+        convOp.kernels[0, all, all] = Tensor<D>([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
+        convOp.kernels[1, all, all] = Tensor<D>([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
+        convOp.apply()
+        
+        let expected = 2*Tensor<D>([[-13, -20, -17], [-18, -24, -18], [13, 20, 17]])
+        XCTAssert(isClose(convOp.output, expected, eps:10e-4))
+    }
+    
+    func testConvOpGradient1() {
         let eps = 10e-6
         let values = Tensor<D>([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
         let input = Constant(values)
         
         let convOp = Conv2dOp<D>(input: input, numFilters: 1, filterSize: Extent(3, 3))
+        let convOpGrad = convOp.gradient() as! Conv2dGrad<D>
+        
+        let gradOutput = Constant<D>(zeros(Extent(3, 3)))
+        connect(from: gradOutput, to: convOpGrad, "gradOutput")
+        
+        let inputError = checkGradient(convOp, grad: convOpGrad, params: values, gradParams: convOpGrad.output, eps: eps)
+        XCTAssertLessThan(inputError, eps)
+    }
+    
+    func testConvOpGradient2() {
+        let eps = 10e-6
+        let values = Tensor<D>([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+        let input = Constant(values)
+        
+        let convOp = Conv2dOp<D>(input: input, numFilters: 2, filterSize: Extent(3, 3))
         let convOpGrad = convOp.gradient() as! Conv2dGrad<D>
         
         let gradOutput = Constant<D>(zeros(Extent(3, 3)))
@@ -356,7 +383,7 @@ class opTests: XCTestCase {
             }
         }
         
-        let input = Constant(data)
+        let input = Constant(data)        
         connect(from: input, to: poolingOp)
         poolingOp.apply()
         
