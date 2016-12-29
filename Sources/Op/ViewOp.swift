@@ -33,8 +33,9 @@ open class ViewOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
         fatalError("init(op:shared:) has not been implemented")
     }
     
-    func inputSet(_ label:String, inputs:[Op<S>]) {
-        outputs[0] = [inputs[0].outputs["output"]![0][ranges]]
+    func inputSet(_ label:String, input:[Source<S>]) {
+//        outputs[0] = [inputs[0].outputs["output"]![0][ranges]]
+        outputs[0] = input[0].output[ranges]
     }
     
     open override func apply() {}

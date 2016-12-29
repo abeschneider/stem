@@ -15,7 +15,7 @@ protocol Optimizer {
 }
 
 open class GradientDescentOptimizer<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
-    var alpha:Constant<S>
+    var alpha:ConstantOp<S>
     var forward:Op<S>
     var backward:Op<S>
     var params:[Tensor<S>]
@@ -24,7 +24,7 @@ open class GradientDescentOptimizer<S:Storage>: Op<S> where S.ElementType:FloatN
     // NB: With current version of swift, constraints cannot be placed on
     // Op s.t. its differentiable. Until this is changed, this code can fail a
     // at runtime if non-differentiable op is used
-    public init(_ op:Op<S>, alpha:Constant<S>) {
+    public init(_ op:Op<S>, alpha:ConstantOp<S>) {
         self.alpha = alpha
         forward = op
         backward = (op as! Differentiable).gradient() as! Op<S>

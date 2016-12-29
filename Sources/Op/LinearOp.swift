@@ -75,7 +75,7 @@ open class LinearOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
         setAction("input", action: self.inputSet)
     }
     
-    func inputSet(_ label:String, input:[Op<S>]) {
+    func inputSet(_ label:String, input:[Source<S>]) {
         let newShape = Extent(output.shape[0], input[0].output.shape[0])
         if weight.shape != newShape {
             weight.resize(newShape)

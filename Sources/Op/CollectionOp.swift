@@ -65,7 +65,7 @@ open class CollectionOp<S:Storage>: Op<S>, Sequence {
         let inputShapes = inputs["input"]!.map {
             let output:Tensor<S> = $0.output()
             return String(describing: output.shape.dims)
-            }.joined(separator: ", ")
+        }.joined(separator: ", ")
         
         let value = ops.map { String(describing: $0) }.joined(separator: "\n\t")
         return "<\(className): inputs:\(inputShapes), outputs:\(output.shape.dims)> {\n\t\(value)\n}"
@@ -74,7 +74,7 @@ open class CollectionOp<S:Storage>: Op<S>, Sequence {
 
 open class CollectionGradient<S:Storage>: Op<S>, Gradient {
     public typealias StorageType = S
-    open var ops:[Op<StorageType>] = []
+    open var ops:[Op<S>] = []
     var ordering:AnyOrdering<S>
     
     open var _input:Tensor<S> { return inputs[1].output() }
@@ -136,8 +136,13 @@ open class CollectionGradient<S:Storage>: Op<S>, Gradient {
         }
     }
     
-    func gradOutputSet(_ key:String, value:[Op<S>]) {
-        connect(from: value, "output", to: ops.first!, "gradOutput")
+    func gradOutputSet(_ key:String, value:[Source<S>]) {
+//        connect(from: value, "output", to: ops.first!, "gradOutput")
+        let sourceOps:[Op<S>] = value.map { $0.op }
+        connect(from: sourceOps, "output", to: ops.first!, "gradOutput")
+//        let target = Target<S>(op: op, label: "gradOutput")
+//        connect(from: value, to)
+//        connect(from: value, to: Target<S>(op: [op], label: "gradOutput"))
     }
     
     open override func apply() {

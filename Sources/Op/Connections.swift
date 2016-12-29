@@ -9,11 +9,20 @@
 import Foundation
 import Tensor
 
+// TODO: can InputType be replaced by Source?
 // source for a connection
 public struct Source<S:Storage> {
     public var op:Op<S>
     public var label:String
     public var index:Int?
+    
+    public var output:Tensor<S> {
+        return op.outputs[label]![index!]
+    }
+    
+    public var outputs:[Tensor<S>] {
+        return op.outputs[label]!
+    }
     
     public init(op:Op<S>, label:String="output", index:Int?=0) {
         self.op = op

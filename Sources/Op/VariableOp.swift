@@ -9,7 +9,7 @@
 import Foundation
 import Tensor
 
-open class Variable<S:Storage>: Op<S> {
+open class VariableOp<S:Storage>: Op<S> {
     open var _input:Tensor<S> { return inputs[0].output() }
     
     public init() {
@@ -21,16 +21,17 @@ open class Variable<S:Storage>: Op<S> {
         super.init(inputs: ["input"], outputs: ["output"])
         setAction("input", action: inputSet)
         
-        let constant = Constant<S>(size)
-        connect(from: constant, to: self, "input")
+//        let constant = ConstantOp<S>(size)
+//        connect(from: constant, to: self, "input")
+        output.resize(size)
     }
     
     required public init(op: Op<S>, shared: Bool) {
         fatalError("init(op:shared:) has not been implemented")
     }
     
-    func inputSet(_ label:String, ops:[Op<S>]) {
-        outputs["output"] = [Tensor<S>(ops[0].output.shape)]
+    func inputSet(_ label:String, input:[Source<S>]) {
+        outputs["output"] = [Tensor<S>(input[0].output.shape)]
     }
     
     open override func apply() {
@@ -44,7 +45,7 @@ open class VariableGrad<S:Storage>: Op<S>, Gradient {
     open var _gradOutput:Tensor<S> { return inputs[2].output() }
     
     
-    public required init(op:Variable<S>) {
+    public required init(op:VariableOp<S>) {
         super.init(inputs: ["op", "input", "gradOutput"], outputs: ["output"])
         
         let v:InputType<S> = op.inputs[0]
@@ -66,7 +67,7 @@ open class VariableGrad<S:Storage>: Op<S>, Gradient {
     }
 }
 
-extension Variable: Differentiable {
+extension VariableOp: Differentiable {
     public func gradient() -> GradientType {
         return VariableGrad<S>(op: self)
     }

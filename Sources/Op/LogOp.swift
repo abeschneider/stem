@@ -28,8 +28,8 @@ open class LogOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
         fatalError("init(op:shared:) has not been implemented")
     }
     
-    func inputSet(_ label:String, input:[Op<S>]) {
-        output.resize(_input[0].shape)
+    func inputSet(_ label:String, input:[Source<S>]) {
+        output.resize(input[0].output.shape)
     }
     
     open override func apply() {

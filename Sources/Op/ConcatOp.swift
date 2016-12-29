@@ -32,10 +32,11 @@ open class ConcatOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
         fatalError("init(op:shared:) has not been implemented")
     }
     
-    func inputSet(_ label:String, inputs:[Op<S>]) {
+    func inputSet(_ label:String, input:[Source<S>]) {
         // TODO: to make more efficient, calculate size of concat first
         // so no temporary is required
-        let result = concat(inputs.map { $0.output })
+//        let result = concat(input[0].outputs.map { $0 })
+        let result = concat(input.map { $0.output })
         output.resize(result.shape)
         copy(from: result, to: output)
     }

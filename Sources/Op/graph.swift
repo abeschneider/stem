@@ -126,13 +126,13 @@ protocol Collection: OpType {
 }
 
 open class RecurrentCollectionOp<S:Storage>: CollectionOp<S> {
-    var recurrentVars:[Variable<S>]
+    var recurrentVars:[VariableOp<S>]
     
     public init<T:Ordering>(
         ops:[Op<S>],
         inputs:[Op<S>],
         outputs:[Op<S>],
-        recurrentVars:[Variable<S>], // inputs get copied to these
+        recurrentVars:[VariableOp<S>], // inputs get copied to these
         ordering:T) where T.StorageType==S
     {
         self.recurrentVars = recurrentVars
@@ -200,7 +200,7 @@ open class RecurrentCollectionGrad<S:Storage>: CollectionGradient<S> {
         fill(output, value: 0)
     }
     
-    override func gradOutputSet(_ key:String, value:[Op<S>]) {
+    override func gradOutputSet(_ key:String, value:[Source<S>]) {
         // do nothing
     }
 }

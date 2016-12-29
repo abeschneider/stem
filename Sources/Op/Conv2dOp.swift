@@ -47,7 +47,7 @@ open class Conv2dOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
         fatalError("init(op:shared:) has not been implemented")
     }
     
-    func inputSet(_ label:String, input:[Op<S>]) {
+    func inputSet(_ label:String, input:[Source<S>]) {
         // Currently follows Torch convention
         var shape:Extent
         

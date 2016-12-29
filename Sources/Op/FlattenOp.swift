@@ -30,7 +30,7 @@ open class FlattenOp<S:Storage>: Op<S> {
         fatalError("init(op:shared:) has not been implemented")
     }
     
-    func inputSet(_ label:String, input:[Op<S>]) {
+    func inputSet(_ label:String, input:[Source<S>]) {
         let inputShape = input[0].output.shape
         output.resize(Extent(inputShape.elements))
     }

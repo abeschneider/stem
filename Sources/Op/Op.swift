@@ -29,7 +29,7 @@ func createUID() -> Int {
 }
 
 open class Op<S:Storage>: OpType, Copyable, Hashable, CustomStringConvertible {
-    public typealias InputAction = (String, [Op<S>]) -> ()
+    public typealias InputAction = (String, [Source<S>]) -> ()
     
     open var id:Int = createUID()
     open var inputs:OrderedDictionary<InputType<S>>
@@ -58,7 +58,7 @@ open class Op<S:Storage>: OpType, Copyable, Hashable, CustomStringConvertible {
     open func apply() { assertionFailure() }
     open func reset() { fill(output, value: 0) }
     
-    open func setAction(_ key:String, action:@escaping (String, [Op<S>]) -> ()) { inputActions[key] = action }
+    open func setAction(_ key:String, action:@escaping (String, [Source<S>]) -> ()) { inputActions[key] = action }
     open func params() -> [Tensor<S>] { return [] }
     open var hashValue: Int { return id }
     
@@ -84,11 +84,11 @@ open class Op<S:Storage>: OpType, Copyable, Hashable, CustomStringConvertible {
         return outputs.map { String(describing: $0[0].shape.dims) }.joined(separator: ", ")
     }
     
-    func setInput(_ inputLabel:String, to:InputType<S>) {
-        inputs[inputLabel] = [to]
+    func setInput(_ inputLabel:String, to:[Source<S>]) {
+        inputs[inputLabel]![0] = InputType(to[0].op, to[0].label)
         
         if let action = inputActions[inputLabel] {
-            action(inputLabel, [to.op!])
+            action(inputLabel, to)
         }
     }
     
@@ -96,7 +96,7 @@ open class Op<S:Storage>: OpType, Copyable, Hashable, CustomStringConvertible {
         inputs[inputLabel]![0] = InputType(to, outputLabel)
         
         if let action = inputActions[inputLabel] {
-            action(inputLabel, [to])
+            action(inputLabel, [Source(op: to, label: outputLabel)])
         }
     }
     
@@ -104,7 +104,7 @@ open class Op<S:Storage>: OpType, Copyable, Hashable, CustomStringConvertible {
         inputs[inputLabel] = to.map { InputType($0, outputLabel) }
         
         if let action = inputActions[inputLabel] {
-            action(inputLabel, to)
+            action(inputLabel, to.map { Source(op: $0, label: outputLabel) })
         }
     }
     

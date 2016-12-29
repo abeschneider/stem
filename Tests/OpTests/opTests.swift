@@ -33,7 +33,7 @@ class opTests: XCTestCase {
         let w = Tensor<D>([[1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 0, 0]])
         let b:Tensor<D> = zeros(Extent(4))
         
-        let input = Constant<D>(Tensor<D>([1, 2, 3]))
+        let input = ConstantOp<D>(Tensor<D>([1, 2, 3]))
         let linear = LinearOp<D>(weight: w, bias: b)
         connect(from: input, to: linear)
         linear.apply()
@@ -46,7 +46,7 @@ class opTests: XCTestCase {
         let w = Tensor<D>([[1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 0, 0]])
         let b:Tensor<D> = zeros(Extent(4))
         
-        let input = Constant<D>(Tensor<D>([[1, 2, 3], [4, 5, 6], [7, 8, 9]]))
+        let input = ConstantOp<D>(Tensor<D>([[1, 2, 3], [4, 5, 6], [7, 8, 9]]))
         let linear = LinearOp<D>(weight: w, bias: b)
         connect(from: input, to: linear)
         linear.apply()
@@ -81,9 +81,9 @@ class opTests: XCTestCase {
     
     func testLinearOpGradient() {
         let eps:Double = 10e-6
-        let input = Constant<D>(uniform(Extent(10)))
+        let input = ConstantOp<D>(uniform(Extent(10)))
         
-        let gradOutput = Constant<D>(zeros(Extent(5)))
+        let gradOutput = ConstantOp<D>(zeros(Extent(5)))
         
         let linear = LinearOp<D>(outputSize: 5)
         linear.bias.uniform()
@@ -106,9 +106,9 @@ class opTests: XCTestCase {
     
     func testLinearOpGradient2() {
         let eps:Double = 10e-6
-        let input = Constant<D>(uniform(Extent(10, 3)))
+        let input = ConstantOp<D>(uniform(Extent(10, 3)))
         
-        let gradOutput = Constant<D>(zeros(Extent(5, 3)))
+        let gradOutput = ConstantOp<D>(zeros(Extent(5, 3)))
         
         let linear = LinearOp<D>(outputSize: 5)
         linear.bias.uniform()
@@ -131,8 +131,8 @@ class opTests: XCTestCase {
     
     func testSigmoidGradient() {
         let eps:Double = 10e-6
-        let input = Constant<D>(uniform(Extent(10)))
-        let gradOutput = Constant<D>(zeros(Extent(10)))
+        let input = ConstantOp<D>(uniform(Extent(10)))
+        let gradOutput = ConstantOp<D>(zeros(Extent(10)))
         
         let sigmoid = SigmoidOp<D>()
         connect(from: input, to: sigmoid)
@@ -147,8 +147,8 @@ class opTests: XCTestCase {
     
     func testTanhGradient() {
         let eps:Double = 10e-6
-        let input = Constant<D>(uniform(Extent(10)))
-        let gradOutput = Constant<D>(zeros(Extent(10)))
+        let input = ConstantOp<D>(uniform(Extent(10)))
+        let gradOutput = ConstantOp<D>(zeros(Extent(10)))
         
         let tanh = TanhOp<D>()
         connect(from: input, to: tanh)
@@ -163,8 +163,8 @@ class opTests: XCTestCase {
     
     func testLossGradient() {
         let eps:Double = 10e-6
-        let input = Constant<D>(uniform(Extent(10)))
-        let target = Constant<D>(uniform(Extent(10)))
+        let input = ConstantOp<D>(uniform(Extent(10)))
+        let target = ConstantOp<D>(uniform(Extent(10)))
         
         let loss = L2Loss<D>()
         connect(from: input, to: loss, "input")
@@ -183,7 +183,7 @@ class opTests: XCTestCase {
     
     func testConcatOp() {
         let inputValues:[Tensor<D>] = [uniform(Extent(5)), uniform(Extent(5)), uniform(Extent(5))]
-        let inputs = inputValues.map { Constant<D>($0) }
+        let inputs = inputValues.map { ConstantOp<D>($0) }
         let concatOp = ConcatOp<D>(inputs)
         
         concatOp.apply()
@@ -198,8 +198,8 @@ class opTests: XCTestCase {
         // make checking gradient easier by storing all inputs
         // as a single parameter
         let input:Tensor<D> = uniform(Extent(15))
-        let inputs = [Constant<D>(input[0..<5]), Constant<D>(input[5..<10]), Constant<D>(input[10..<15])]
-        let gradOutput = Constant<D>(zeros(Extent(15)))
+        let inputs = [ConstantOp<D>(input[0..<5]), ConstantOp<D>(input[5..<10]), ConstantOp<D>(input[10..<15])]
+        let gradOutput = ConstantOp<D>(zeros(Extent(15)))
         
         let concat = ConcatOp<D>()
         connect(from: inputs, to: concat)
@@ -218,7 +218,7 @@ class opTests: XCTestCase {
     }
     
     func testViewOp() {
-        let input = Constant<D>(Extent(5, 5))
+        let input = ConstantOp<D>(Extent(5, 5))
         let view = ViewOp(input: input, ranges: [1..<4, 1..<4])
         fill(view.output, value: 1)
         
@@ -238,8 +238,8 @@ class opTests: XCTestCase {
         let eps = 10e-6
 
         let inputValue:Tensor<D> = uniform(Extent(5, 5))
-        let input = Constant<D>(inputValue)
-        let gradOutput = Constant<D>(zeros(Extent(3, 2)))
+        let input = ConstantOp<D>(inputValue)
+        let gradOutput = ConstantOp<D>(zeros(Extent(3, 2)))
         
         
         let view = ViewOp<D>(input: input, ranges: [1..<4, 2..<4])
@@ -255,9 +255,9 @@ class opTests: XCTestCase {
     }
     
     func testAddOp() {
-        let v1 = Constant<D>(2*ones(Extent(5)))
-        let v2 = Constant<D>(3*ones(Extent(5)))
-        let v3 = Constant<D>(5*ones(Extent(5)))
+        let v1 = ConstantOp<D>(2*ones(Extent(5)))
+        let v2 = ConstantOp<D>(3*ones(Extent(5)))
+        let v3 = ConstantOp<D>(5*ones(Extent(5)))
 
         let addOp = AddOp<D>(v1, v2, v3)
         addOp.apply()
@@ -270,14 +270,14 @@ class opTests: XCTestCase {
         let eps = 10e-6
         let values:Tensor<D> = Tensor<D>([5, 5, 5, 5, 5, 2, 2, 2, 2, 2])
         
-        let v1 = Constant<D>(values[0..<5])
-        let v2 = Constant<D>(values[5..<10])
+        let v1 = ConstantOp<D>(values[0..<5])
+        let v2 = ConstantOp<D>(values[5..<10])
 
         let addOp = AddOp<D>(v1, v2)
         
         let addOpGrad = addOp.gradient() as! AddOpGrad<D>
         
-        let gradOutput = Constant<D>(zeros(Extent(5)))
+        let gradOutput = ConstantOp<D>(zeros(Extent(5)))
         connect(from: gradOutput, to: addOpGrad, "gradOutput")
         
         let gradInput:Tensor<D> = zeros(Extent(10))
@@ -288,9 +288,9 @@ class opTests: XCTestCase {
     }
     
     func testMulOp() {
-        let v1 = Constant<D>(2*ones(Extent(5)))
-        let v2 = Constant<D>(3*ones(Extent(5)))
-        let v3 = Constant<D>(5*ones(Extent(5)))
+        let v1 = ConstantOp<D>(2*ones(Extent(5)))
+        let v2 = ConstantOp<D>(3*ones(Extent(5)))
+        let v3 = ConstantOp<D>(5*ones(Extent(5)))
         
         let mulOp = MulOp<D>(v1, v2, v3)
         mulOp.apply()
@@ -303,14 +303,14 @@ class opTests: XCTestCase {
         let eps = 10e-6
         let values:Tensor<D> = Tensor<D>([5, 5, 5, 5, 5, 2, 2, 2, 2, 2])
         
-        let v1 = Constant<D>(values[0..<5])
-        let v2 = Constant<D>(values[5..<10])
+        let v1 = ConstantOp<D>(values[0..<5])
+        let v2 = ConstantOp<D>(values[5..<10])
         
         let mulOp = MulOp<D>(v1, v2)
         
         let mulOpGrad = mulOp.gradient() as! MulOpGrad<D>
         
-        let gradOutput = Constant<D>(zeros(Extent(5)))
+        let gradOutput = ConstantOp<D>(zeros(Extent(5)))
         connect(from: gradOutput, to: mulOpGrad, "gradOutput")
         
         let gradInput:Tensor<D> = zeros(Extent(10))
@@ -321,7 +321,7 @@ class opTests: XCTestCase {
     }
     
     func testConvOp1() {
-        let input = Constant(Tensor<D>([[1, 2, 3], [4, 5, 6], [7, 8, 9]]))
+        let input = ConstantOp(Tensor<D>([[1, 2, 3], [4, 5, 6], [7, 8, 9]]))
         
         let convOp = Conv2dOp<D>(input: input, numFilters: 1, filterSize: Extent(3, 3))
         convOp.kernels[0, all, all] = Tensor<D>([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
@@ -332,7 +332,7 @@ class opTests: XCTestCase {
     }
     
     func testConvOp2() {
-        let input = Constant(Tensor<D>([[1, 2, 3], [4, 5, 6], [7, 8, 9]]))
+        let input = ConstantOp(Tensor<D>([[1, 2, 3], [4, 5, 6], [7, 8, 9]]))
         
         let convOp = Conv2dOp<D>(input: input, numFilters: 2, filterSize: Extent(3, 3))
         convOp.kernels[0, all, all] = Tensor<D>([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
@@ -346,12 +346,12 @@ class opTests: XCTestCase {
     func testConvOpGradient1() {
         let eps = 10e-6
         let values = Tensor<D>([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
-        let input = Constant(values)
+        let input = ConstantOp(values)
         
         let convOp = Conv2dOp<D>(input: input, numFilters: 1, filterSize: Extent(3, 3))
         let convOpGrad = convOp.gradient() as! Conv2dGrad<D>
         
-        let gradOutput = Constant<D>(zeros(Extent(3, 3)))
+        let gradOutput = ConstantOp<D>(zeros(Extent(3, 3)))
         connect(from: gradOutput, to: convOpGrad, "gradOutput")
         
         let inputError = checkGradient(convOp, grad: convOpGrad, params: values, gradParams: convOpGrad.output, eps: eps)
@@ -361,12 +361,12 @@ class opTests: XCTestCase {
     func testConvOpGradient2() {
         let eps = 10e-6
         let values = Tensor<D>([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
-        let input = Constant(values)
+        let input = ConstantOp(values)
         
         let convOp = Conv2dOp<D>(input: input, numFilters: 2, filterSize: Extent(3, 3))
         let convOpGrad = convOp.gradient() as! Conv2dGrad<D>
         
-        let gradOutput = Constant<D>(zeros(Extent(3, 3)))
+        let gradOutput = ConstantOp<D>(zeros(Extent(3, 3)))
         connect(from: gradOutput, to: convOpGrad, "gradOutput")
         
         let inputError = checkGradient(convOp, grad: convOpGrad, params: values, gradParams: convOpGrad.output, eps: eps)
@@ -383,7 +383,7 @@ class opTests: XCTestCase {
             }
         }
         
-        let input = Constant(data)        
+        let input = ConstantOp(data)
         connect(from: input, to: poolingOp)
         poolingOp.apply()
         
@@ -402,12 +402,12 @@ class opTests: XCTestCase {
             }
         }
         
-        let input = Constant(data)
+        let input = ConstantOp(data)
         connect(from: input, to: poolingOp)
 
         let poolingGrad = poolingOp.gradient() as! PoolingGrad<D>
         
-        let gradOutput = Constant<D>(zeros(Extent(5, 5)))
+        let gradOutput = ConstantOp<D>(zeros(Extent(5, 5)))
         connect(from: gradOutput, to: poolingGrad, "gradOutput")
         
         let inputError = checkGradient(poolingOp, grad: poolingGrad, params: data, gradParams: poolingGrad.output, eps: eps)
@@ -416,8 +416,8 @@ class opTests: XCTestCase {
     
     func testCollection() {
         let eps = 10e-6
-        let input = Constant<D>(uniform(Extent(5)))
-        let gradOutput = Constant<D>(zeros(Extent(5)))
+        let input = ConstantOp<D>(uniform(Extent(5)))
+        let gradOutput = ConstantOp<D>(zeros(Extent(5)))
 
         let linear = LinearOp<D>(outputSize: 5)
         let sigmoid = SigmoidOp<D>()
@@ -440,8 +440,8 @@ class opTests: XCTestCase {
     
     func testSequentialOp() {
         let eps = 10e-6
-        let input = Constant<D>(uniform(Extent(5)))
-        let gradOutput = Constant<D>(zeros(Extent(5)))
+        let input = ConstantOp<D>(uniform(Extent(5)))
+        let gradOutput = ConstantOp<D>(zeros(Extent(5)))
         
         let linear = LinearOp<D>(outputSize: 5)
         let sigmoid = SigmoidOp<D>()
@@ -458,8 +458,8 @@ class opTests: XCTestCase {
     
     func testSequentialOp2() {
         let eps = 10e-6
-        let input = Constant<D>(uniform(Extent(5)))
-        let gradOutput = Constant<D>(zeros(Extent(5)))
+        let input = ConstantOp<D>(uniform(Extent(5)))
+        let gradOutput = ConstantOp<D>(zeros(Extent(5)))
         
         let linear = LinearOp<D>(outputSize: 5)
         let linear2 = LinearOp<D>(outputSize: 5)
@@ -482,13 +482,13 @@ class opTests: XCTestCase {
         let eps = 10e-6
         
         let size = 10
-        let input = Constant<D>(uniform(Extent(size)))
-        let gradOutput = Constant<D>(zeros(Extent(size)))
+        let input = ConstantOp<D>(uniform(Extent(size)))
+        let gradOutput = ConstantOp<D>(zeros(Extent(size)))
         
         let concat = ConcatOp<D>()
         let linear = LinearOp<D>(outputSize: size)
         let sigmoid = SigmoidOp<D>(size: size)
-        let prevOutput = Constant<D>(sigmoid.output)
+        let prevOutput = ConstantOp<D>(sigmoid.output)
 
         connect(from: [input, prevOutput], to: concat)
         connect(from: concat, to: linear)
@@ -522,13 +522,13 @@ class opTests: XCTestCase {
         let eps = 10e-6
         
         let size = 10
-        let input = Constant<D>(uniform(Extent(size)))
-        let gradOutput = Constant<D>(zeros(Extent(size)))
+        let input = ConstantOp<D>(uniform(Extent(size)))
+        let gradOutput = ConstantOp<D>(zeros(Extent(size)))
         
         let concat = ConcatOp<D>()
         let linear = LinearOp<D>(outputSize: size)
         let sigmoid = SigmoidOp<D>(size: size)
-        let prevOutput = Constant<D>(sigmoid.output)
+        let prevOutput = ConstantOp<D>(sigmoid.output)
         
         connect(from: [input, prevOutput], to: concat)
         connect(from: concat, to: linear)
@@ -599,17 +599,17 @@ backward:
         let eps = 10e-3
         
         let size = 5
-        let input = Constant<D>(uniform(Extent(size)))
-//        let gradOutput = Constant<D>(zeros(Extent(size)))
-//        let gradOutput = Constant<D>(Tensor<D>([0.5, 0.5, 0.5, 0.5, 0.5]))
+        let input = ConstantOp<D>(uniform(Extent(size)))
+//        let gradOutput = ConstantOp<D>(zeros(Extent(size)))
+//        let gradOutput = ConstantOp<D>(Tensor<D>([0.5, 0.5, 0.5, 0.5, 0.5]))
         
         let concat = ConcatOp<D>()
         let linear = LinearOp<D>(inputSize: 2*size, outputSize: size)
         let sigmoid = SigmoidOp<D>(size: size)
         
         // is a Variable in order to allow connections to have an effect
-        let prevOutput = Variable<D>(Extent(size))
-//        let prevOutput = Constant<D>(zeros(Extent(size)))
+        let prevOutput = VariableOp<D>(Extent(size))
+//        let prevOutput = ConstantOp<D>(zeros(Extent(size)))
         
         connect(from: [input, prevOutput], to: concat)
         connect(from: concat, to: linear)
@@ -628,7 +628,7 @@ backward:
         // manually build backwards graph
         //let prevOutputGrad = prevOutput.gradient() as! VariableGradient<D>
         // for now try not using Gradient version (should be the same?)
-//        let prevOutputGrad = Variable<D>(Extent(size))
+//        let prevOutputGrad = VariableOp<D>(Extent(size))
         let prevOutputGrad = prevOutput.gradient() as! VariableGrad<D>
         let concatGrad = concat.gradient() as! ConcatGrad<D>
         let linearGrad = linear.gradient() as! LinearGrad<D>
@@ -649,7 +649,7 @@ backward:
 
         // ops: [prevOutputGrad, sigmoidGrad, linearGrad, concatGrad],
         // outputs: [concatGrad],
-        let gradOutput = Constant<D>(Extent(size))
+        let gradOutput = ConstantOp<D>(Extent(size))
         let rnnGrad = CollectionGradient<D>(ops: [sigmoidGrad, linearGrad, concatGrad, prevOutputGrad],
                                             inputs: [],
                                             outputs: [concatGrad],
@@ -677,9 +677,9 @@ backward:
 //        // [mul, (input (+) out)] -> T -> sigmoid] -> sum
 //        // sum -> state -> out
 //        
-//        let input = Constant<D>(zeros(Extent(size)))
-//        let output = Constant<D>(zeros(Extent(size)))
-//        let prevOutput = Constant<D>(zeros(Extent(size)))
+//        let input = ConstantOp<D>(zeros(Extent(size)))
+//        let output = ConstantOp<D>(zeros(Extent(size)))
+//        let prevOutput = ConstantOp<D>(zeros(Extent(size)))
 //        
 //        let inputTransform = Sequence<D>(
 //            ConcatOp<D>(input, prevOutput),
@@ -731,15 +731,15 @@ backward:
         
         let size = 5
         
-        let initial = Constant<D>(zeros(Extent(size)))
-        let input = Constant<D>(uniform(Extent(size)))
+        let initial = ConstantOp<D>(zeros(Extent(size)))
+        let input = ConstantOp<D>(uniform(Extent(size)))
         let concat = ConcatOp<D>()
         let linear = LinearOp<D>(inputSize: 2*size, outputSize: size)
         let sigmoid = SigmoidOp<D>(size: size)
         
         // is a Variable in order to allow connections to have an effect
-        let prevOutput = Variable<D>(Extent(size))
-        //        let prevOutput = Constant<D>(zeros(Extent(size)))
+        let prevOutput = VariableOp<D>(Extent(size))
+        //        let prevOutput = ConstantOp<D>(zeros(Extent(size)))
         
         connect(from: [input, prevOutput], to: concat)
         connect(from: concat, to: linear)
@@ -766,7 +766,7 @@ backward:
         connect(Source(op: concatGrad, label: "output", index: 0),
                 Target(op: prevOutputGrad, label: "gradOutput"))
 
-        let gradOutput = Constant<D>(zeros(Extent(size)))
+        let gradOutput = ConstantOp<D>(zeros(Extent(size)))
         let rnnGrad = RecurrentCollectionGrad<D>(ops: [sigmoidGrad, linearGrad, concatGrad, prevOutputGrad],
                                                  inputs: [],
                                                  outputs: [concatGrad],

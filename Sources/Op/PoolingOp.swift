@@ -61,7 +61,7 @@ open class PoolingOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
         setAction("input", action: self.inputSet)
     }
     
-    func inputSet(_ label:String, input:[Op<S>]) {
+    func inputSet(_ label:String, input:[Source<S>]) {
         let shape = input[0].output.shape
         
         var depth:Int

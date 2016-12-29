@@ -48,7 +48,11 @@ open class SequentialOp<S:Storage>: CollectionOp<S> {
         self.init(ops, modify: true)
     }
     
-    func inputSet(_ label:String, input:[Op<S>]) {
+    public subscript(index:Int) -> Op<S> {
+        get { return ops[index] }
+    }
+    
+    func inputSet(_ label:String, input:[Source<S>]) {
 //        for op in ops {
 //            if let action = op.inputActions[label] {
 //                action(label, input)

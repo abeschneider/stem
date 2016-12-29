@@ -25,9 +25,9 @@ class graphTests: XCTestCase {
 //    func testExample() {
 //        typealias D = NativeStorage<Double>
 //        
-//        let W = Variable<D>(value: Matrix<D>(rows: 3, cols: 3))
-//        let bias = Variable<D>(value: Vector<D>(rows: 3))
-//        let input = Variable<D>(value: Vector<D>(cols: 3))
+//        let W = VariableOp<D>(value: Matrix<D>(rows: 3, cols: 3))
+//        let bias = VariableOp<D>(value: Vector<D>(rows: 3))
+//        let input = VariableOp<D>(value: Vector<D>(cols: 3))
 //        
 //        // TODO: Provide method to construct that doesn't require input. This
 //        // will allow convenience methods of construction like:

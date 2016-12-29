@@ -9,7 +9,7 @@
 import Foundation
 import Tensor
 
-open class Constant<S:Storage>: Op<S> {
+open class ConstantOp<S:Storage>: Op<S> {
     public init(_ value:S.ElementType) {
         super.init(inputs: [], outputs: ["output"])
         outputs["output"] = [Tensor<S>([value])]

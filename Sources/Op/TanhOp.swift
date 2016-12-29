@@ -32,8 +32,8 @@ open class TanhOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
         outputs["output"] = [Tensor<S>(op.output.shape)]
     }
     
-    func inputSet(_ label:String, input:[Op<S>]) {
-        output.resize(_input.shape)
+    func inputSet(_ label:String, input:[Source<S>]) {
+        output.resize(input[0].output.shape)
     }
     
     open override func apply() {
