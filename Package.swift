@@ -5,7 +5,6 @@ let package = Package(
   targets: [
     Target(name: "Tensor", dependencies: []),
     Target(name: "Op", dependencies: ["Tensor"]),
-    Target(name: "MNIST", dependencies: ["Tensor", "DataLoader"]),
     Target(name: "DataLoader", dependencies: ["Tensor", "Op"]),
     Target(name: "CNNExample", dependencies: ["Tensor", "Op", "DataLoader"])
   ],
