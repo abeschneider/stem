@@ -5,7 +5,9 @@ let package = Package(
   targets: [
     Target(name: "Tensor", dependencies: []),
     Target(name: "Op", dependencies: ["Tensor"]),
-    Target(name: "MNIST", dependencies: ["Tensor"])
+    Target(name: "MNIST", dependencies: ["Tensor", "DataLoader"]),
+    Target(name: "DataLoader", dependencies: ["Tensor", "Op"]),
+    Target(name: "CNNExample", dependencies: ["Tensor", "Op", "DataLoader"])
   ],
   dependencies: [
     .Package(url: "https://github.com/apple/swift-protobuf.git", Version(0,9,24)),
