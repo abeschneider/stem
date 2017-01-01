@@ -1049,6 +1049,17 @@ class stemTests: XCTestCase {
         XCTAssert(isClose(result, expected, eps: 10e-4))
     }
     
+    func testRavel() {
+        let data = Tensor<F>([[1, 2, 3, 4, 5], [6, 7, 8, 9, 10], [11, 12, 13, 14, 15]])
+        let raveledData = ravel(data)
+        
+        XCTAssertEqual(raveledData.shape.count, 1)
+        XCTAssertEqual(raveledData.shape.dims, [15])
+        XCTAssertEqual(raveledData.dimIndex, [0])
+        XCTAssertEqual(raveledData.stride, [1])
+        XCTAssertEqual(raveledData.fixedDims, [-1])
+    }
+    
 //    func testConv2DWithStride() {
 //        let image = Tensor<F>([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
 //        let kernel = Tensor<F>([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
