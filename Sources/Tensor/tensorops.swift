@@ -12,6 +12,14 @@ infix operator ** { associativity left precedence 200 }
 infix operator ⊗ {associativity left precedence 100 }
 infix operator ⊙ {associativity left precedence 100 }
 
+/**
+ Performs binary operation on `lhs` and `rhs`, storing results in `result`.
+ 
+ - Parameter lhs: Tensor
+ - Parameter rhs: Tensor
+ - Parameter result: Tensor to place results of addition
+ - Parameter op: Operation to perform
+ */
 func elementwiseBinaryOp<S:Storage>
     (_ left:Tensor<S>, _ right:Tensor<S>, result:Tensor<S>,
     op:(_ left:S.ElementType, _ right:S.ElementType) -> S.ElementType)
@@ -28,6 +36,14 @@ func elementwiseBinaryOp<S:Storage>
     }
 }
 
+/**
+ Performs binary operation on `lhs` and `rhs`, storing results in `result`.
+     
+ - Parameter lhs: Tensor
+ - Parameter rhs: NumericType
+ - Parameter result: Tensor to place results of addition
+ - Parameter op: Operation to perform
+ */
 func elementwiseBinaryOp<S:Storage>
     (_ left:Tensor<S>, _ right:S.ElementType, result:Tensor<S>,
     op:(_ left:S.ElementType, _ right:S.ElementType) -> S.ElementType)
@@ -41,6 +57,14 @@ func elementwiseBinaryOp<S:Storage>
     }
 }
 
+/**
+ Performs binary operation on `lhs` and `rhs`, storing results in `result`.
+
+ - Parameter lhs: NumericType
+ - Parameter rhs: Tensor
+ - Parameter result: Tensor to place results of addition
+ - Parameter op: Operation to perform
+ */
 func elementwiseBinaryOp<StorageType:Storage>
     (_ left:StorageType.ElementType, _ right:Tensor<StorageType>, result:Tensor<StorageType>,
     op:(_ left:StorageType.ElementType, _ right:StorageType.ElementType) -> StorageType.ElementType)
@@ -55,15 +79,15 @@ func elementwiseBinaryOp<StorageType:Storage>
 }
 
 //
-// addition
+// Addition
 //
 
 /**
-    Adds `lhs` to `rhs` and puts resulting value in `result`. If their shapes don't match, calls `broadcast`.
+ Adds `lhs` to `rhs` and puts resulting value in `result`. If their shapes don't match, calls `broadcast`.
  
-    - Parameter lhs: Tensor
-    - Parameter rhs: Tensor
-    - Parameter result: Tensor to place results of addition
+ - Parameter lhs: Tensor
+ - Parameter rhs: Tensor
+ - Parameter result: Tensor to place results of addition
  */
 public func add<S:Storage>
     (_ lhs:Tensor<S>, _ rhs:Tensor<S>, result:Tensor<S>) where S.ElementType:NumericType
@@ -77,10 +101,10 @@ public func add<S:Storage>
 }
 
 /**
- Adds `lhs` to `rhs` and puts resulting value in `result`. If their shapes don't match, calls `broadcast`.
+ Adds `lhs` to `rhs` and puts resulting value in `result`.
  
  - Parameter lhs: Tensor
- - Parameter rhs: Scalar
+ - Parameter rhs: NumericType
  - Parameter result: Tensor to place results of addition
  */
 public func add<S:Storage>
@@ -90,9 +114,9 @@ public func add<S:Storage>
 }
 
 /**
- Adds `lhs` to `rhs` and puts resulting value in `result`. If their shapes don't match, calls `broadcast`.
+ Adds `lhs` to `rhs` and puts resulting value in `result`.
  
- - Parameter lhs: Scalar
+ - Parameter lhs: NumericType
  - Parameter rhs: Tensor
  - Parameter result: Tensor to place results of addition
  */
@@ -107,7 +131,7 @@ public func add<S:Storage>
  Adds `rhs` to `lhs` in-place. If their shapes don't match, calls `broadcast`.
  
  - Parameter lhs: Tensor
- - Parameter rhs: Scalar
+ - Parameter rhs: Tensor
  */
 public func iadd<S:Storage>
     (_ lhs:Tensor<S>, _ rhs:Tensor<S>) where S.ElementType:NumericType
@@ -121,10 +145,10 @@ public func iadd<S:Storage>
 }
 
 /**
- Adds `rhs` to `lhs` in-place. If their shapes don't match, calls `broadcast`.
+ Adds `rhs` to `lhs` in-place.
  
  - Parameter lhs: Tensor
- - Parameter rhs: Scalar
+ - Parameter rhs: NumericType
  */
 public func iadd<S:Storage>
     (_ lhs:Tensor<S>, _ rhs:S.ElementType) where S.ElementType:NumericType
@@ -152,7 +176,7 @@ public func +<S:Storage>
  Returns the addition of `lhs` to `rhs`. If their shapes don't match, calls broadcast.
  
  - Parameter lhs: Tensor
- - Parameter rhs: Scalar
+ - Parameter rhs: NumericType
  - Returns: Results of `lhs` + `rhs`
  */
 public func +<S:Storage>
@@ -168,7 +192,7 @@ public func +<S:Storage>
  Returns the addition of `lhs` to `rhs`. If their shapes don't match, calls broadcast.
  
  - Parameter lhs: Tensor
- - Parameter rhs: Scalar
+ - Parameter rhs: NumericType
  - Returns: Results of `lhs` + `rhs`
  */
 public func +<S:Storage>
@@ -205,9 +229,15 @@ public func +=<S:Storage>
 }
 
 //
-// subtraction
+// Subtraction
 //
 
+/**
+ Subtracts `rhs` to `lhs` in-place. If their shapes don't match, calls `broadcast`.
+ 
+ - Parameter lhs: Tensor
+ - Parameter rhs: Tensor
+ */
 public func sub<StorageType:Storage>
     (_ lhs:Tensor<StorageType>, _ rhs:Tensor<StorageType>, result:Tensor<StorageType>) where StorageType.ElementType:NumericType
 {
