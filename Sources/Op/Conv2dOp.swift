@@ -82,10 +82,10 @@ open class Conv2dOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
                 conv2d(_input, kernel: kernel, padding: [1, 1], addTo: output)
             }
         } else {
-            for d in 0..<_input.shape[0] {
+            for batch in 0..<_input.shape[0] {
                 for i in 0..<kernels.shape[0] {
                     let kernel = kernels[i, all, all]
-                    conv2d(_input[d, all, all], kernel: kernel, padding: [1, 1], addTo: output)
+                    conv2d(_input[batch, all, all], kernel: kernel, padding: [1, 1], addTo: output)
                 }
             }
         }
@@ -111,7 +111,7 @@ open class Conv2dGrad<S:Storage>: Op<S>, Gradient where S.ElementType:FloatNumer
         let opInputs:[InputType<S>] = op.inputs[0]
         connect(from: op, "output", to: self, "op")
         connect(from: opInputs.map { $0.op! }, "output", to: self, "input")
-        outputs["output"] = [Tensor<S>()]
+        output = Tensor<S>(_input.shape)
     }
     
     // required for copying
@@ -120,23 +120,18 @@ open class Conv2dGrad<S:Storage>: Op<S>, Gradient where S.ElementType:FloatNumer
     }
     
     open override func apply() {
-        if output.shape != _input.shape {
-            output.resize(_input.shape)
-        }
-        
-        for i in 0..<kernels.shape[0] {
-            let result = conv2d(_gradOutput, kernel: conv.kernels[i, all, all], padding: [1, 1], flip: false)
-            iadd(kernels[i, all, all], result)
-            iadd(output, result)
+        for i in 0..<kernels.shape[0] {            
+            let grad_wrt_kernel = conv2d(_gradOutput, kernel: _input, padding: [1, 1], flip: false)
+            iadd(kernels[i, all, all], grad_wrt_kernel)
+            
+            let grad_wrt_output = conv2d(_gradOutput, kernel: conv.kernels[i, all, all], padding: [1, 1], flip: false)
+            iadd(output, grad_wrt_output)
         }
     }
     
     open override func reset() {
-        for out in outputs["output"]! {
-            fill(out, value: 0)
-        }
-        
         fill(kernels, value: 0)
+        fill(output, value: 0)
     }
 }
 
