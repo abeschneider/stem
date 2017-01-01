@@ -68,14 +68,15 @@ open class L2LossGrad<S:Storage>: Op<S>, Gradient where S.ElementType:FloatNumer
     open var _target:Tensor<S> { return inputs[2].output() }
     
     public required init(op:L2Loss<S>) {
-        let l:InputType<S> = op.inputs[0]
-        let t:InputType<S> = op.inputs[1]
+        let loss:InputType<S> = op.inputs[0]
+        let target:InputType<S> = op.inputs[1]
         
         super.init(inputs: ["op", "input", "target"], outputs: ["output"])
         connect(from: op, "output", to: self, "op")
-        connect(Source(op: l.op!), Target(op: self, label: "input"))
-        connect(Source(op: t.op!), Target(op: self, label: "target"))
-        outputs["output"] = [Tensor<S>(Extent(op._target.shape))]
+        connect(Source(op: loss.op!), Target(op: self, label: "input"))
+        
+        connect(Source(op: target.op!, label: target.label), Target(op: self, label: "target"))
+        outputs["output"] = [Tensor<S>(Extent(op._input.shape))]
     }
     
     public init(size:Int) {
