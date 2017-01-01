@@ -50,7 +50,7 @@ open class ConcatOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
 
 open class ConcatGrad<S:Storage>: Op<S>, Gradient where S.ElementType:FloatNumericType {
     var _op:Tensor<S> { return inputs[0].output() }
-    var _input:[Tensor<S>] { return inputs[1].output() }
+    var _input:[Tensor<S>] { return inputs[1].outputs() }
     open var _gradOutput:Tensor<S> { return inputs[2].output() }
     
     public required init(op:ConcatOp<S>) {

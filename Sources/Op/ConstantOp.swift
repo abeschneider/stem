@@ -12,12 +12,14 @@ import Tensor
 open class ConstantOp<S:Storage>: Op<S> {
     public init(_ value:S.ElementType) {
         super.init(inputs: [], outputs: ["output"])
-        outputs["output"] = [Tensor<S>([value])]
+        //outputs["output"] = [Tensor<S>([value])]
+        output = Tensor<S>([value])
     }
     
     public init(_ value:Tensor<S>) {
         super.init(inputs: [], outputs: ["output"])
-        outputs["output"] = [value]
+//        outputs["output"] = [value]
+        output = value
     }
     
     public init(_ shape:Extent) {
@@ -33,7 +35,8 @@ open class ConstantOp<S:Storage>: Op<S> {
     // required for Copyable
     public required init(op:Op<S>, shared:Bool) {
         super.init(inputs: [], outputs: ["output"])
-        outputs["output"] = [Tensor<S>(op.output.shape)]
+//        outputs["output"] = [Tensor<S>(op.output.shape)]
+        output = Tensor<S>(op.output.shape)
     }
     
     open func set(_ input:Tensor<S>, copy makeCopy:Bool=true) {
