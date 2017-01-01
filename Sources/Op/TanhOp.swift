@@ -50,25 +50,26 @@ open class TanhGrad<S:Storage>: Op<S>, Gradient where S.ElementType:FloatNumeric
     open var _gradOutput:Tensor<S> { return inputs[2].output() }
     
     public required init(op:TanhOp<S>) {
-        let s:InputType<S> = op.inputs[0]
+        let input:InputType<S> = op.inputs[0]
         super.init(inputs: ["op", "input", "gradOutput"], outputs: ["output"])
+        
         connect(from: op, "output", to: self, "op")
-        connect(from: s.op!, "output", to: self, "input")
-        outputs["output"] = [Tensor<S>(op.output.shape)]
+        connect(from: input.op!, "output", to: self, "input")
+        output = Tensor<S>(op.output.shape)
     }
     
     public init(size:Int) {
         super.init(inputs: ["op", "input", "gradOutput"], outputs: ["output"])
-        outputs["output"] = [Tensor<S>(Extent(size))]
+        output = Tensor<S>(Extent(size))
         
     }
     
-    public init(op:SigmoidOp<S>, input:Op<S>, gradInput:Op<S>) {
+    public init(op:TanhOp<S>, input:Op<S>, gradInput:Op<S>) {
         super.init(inputs: ["op", "input", "gradOutput"], outputs: ["output"])
         connect(from: op, "output", to: self, "op")
         connect(from: input, "output", to: self, "input")
         connect(from: gradInput, to: self, "gradOutput")
-        outputs["output"] = [Tensor<S>(op.output.shape)]
+        output = Tensor<S>(op.output.shape)
     }
     
     required public init(op: Op<S>, shared: Bool) {
