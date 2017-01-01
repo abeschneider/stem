@@ -55,7 +55,7 @@ func calcBackwardGrad<S:Storage>
         
         (backward as! GradientType).reset()
         backward.apply()
-        let din = ravel(gradParams) // .reshape(Extent(gradParams.shape[0], 1))
+        let din = ravel(gradParams)
         jacobian[all, i] = din
     }
     
