@@ -150,18 +150,20 @@ open class PoolingGrad<S:Storage>: Op<S>, Gradient where S.ElementType:FloatNume
         let opInputs:[InputType<S>] = op.inputs[0]
         connect(from: op, "output", to: self, "op")
         connect(from: opInputs.map { $0.op! }, "output", to: self, "input")
-        outputs["output"] = [Tensor<S>()]
+        outputs["output"] = [Tensor<S>(_input.shape)]
+        
+        setAction("input", action: self.inputSet)
     }
     
     required public init(op: Op<S>, shared: Bool) {
         fatalError("init(op:shared:) has not been implemented")
     }
     
+    func inputSet(_ label:String, input:[Source<S>]) {
+        // TODO
+    }
+    
     open override func apply() {
-        if output.shape != _input.shape {
-            output.resize(_input.shape)
-        }
-        
         let depth = _input.shape[0]
         let width = _input.shape[1] / pooling.stride[0]
         let height = _input.shape[2] / pooling.stride[1]
@@ -170,7 +172,9 @@ open class PoolingGrad<S:Storage>: Op<S>, Gradient where S.ElementType:FloatNume
         for d in 0..<depth {
             for i in 0..<width {
                 for j in 0..<height {
-                    output[i*pooling.stride[0] + pooling.indices[0, d, i, j], j*pooling.stride[1] + pooling.indices[1, d, i, j]] = _gradOutput[i, j]
+                    let ii = i*pooling.stride[0] + pooling.indices[0, d, i, j]
+                    let jj = j*pooling.stride[1] + pooling.indices[1, d, i, j]
+                    output[ii, jj] = _gradOutput[i, j]
                 }
             }
         }
