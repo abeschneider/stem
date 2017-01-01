@@ -15,32 +15,34 @@ public struct InputType<S:Storage> {
     public var op:Op<S>?
     
     // outputs of op
-    public var outputs:[Tensor<S>]
+    public var _outputs:[Tensor<S>]
     
     public var index:Int?
+    public var label:String = "output"
     
     public init() {
-        outputs = []
+        _outputs = []
         index = 0
     }
     
     public init(_ op:Op<S>, _ label:String) {
         self.op = op
-        outputs = op.outputs[label]!
+        self.label = label
+        _outputs = op.outputs[label]!
         index = 0
     }
     
     public init(_ op:Op<S>) {
         self.op = op
-        outputs = op.outputs["output"]!
+        _outputs = op.outputs["output"]!
         index = 0
     }
     
     public func output() -> Tensor<S> {
-        return outputs[index!]
+        return _outputs[index!]
     }
     
-    public func output() -> [Tensor<S>] {
-        return outputs
+    public func outputs() -> [Tensor<S>] {
+        return _outputs
     }
 }
