@@ -146,7 +146,7 @@ class opTests: XCTestCase {
     }
     
     func testTanhGradient() {
-        let eps:Double = 10e-6
+        let eps:Double = 10e-8
         let input = ConstantOp<D>(uniform(Extent(10)))
         let gradOutput = ConstantOp<D>(zeros(Extent(10)))
         
@@ -155,6 +155,8 @@ class opTests: XCTestCase {
         
         let tanhGrad = tanh.gradient() as! TanhGrad<D>
         connect(from: gradOutput, to: tanhGrad, "gradOutput")
+        
+        calcForwardGrad(tanh, params: input.output, eps: eps)
         
         // test gradient wrt the input
         let inputError = checkGradient(tanh, grad: tanhGrad, params: input.output, gradParams: tanhGrad.output, eps: eps)
@@ -343,14 +345,35 @@ class opTests: XCTestCase {
         XCTAssert(isClose(convOp.output, expected, eps:10e-4))
     }
     
+    // test basic functionality
     func testConvOpGradient1() {
         let eps = 10e-6
         let values = Tensor<D>([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
         let input = ConstantOp(values)
         
         let convOp = Conv2dOp<D>(input: input, numFilters: 1, filterSize: Extent(3, 3))
+        connect(from: input, to: convOp)
+        
         let convOpGrad = convOp.gradient() as! Conv2dGrad<D>
         
+        let gradOutput = ConstantOp<D>(zeros(Extent(3, 3)))
+        connect(from: gradOutput, to: convOpGrad, "gradOutput")
+        
+        let inputError = checkGradient(convOp, grad: convOpGrad, params: input.output, gradParams: convOpGrad.output, eps: eps)
+        XCTAssertLessThan(inputError, eps)
+    }
+    
+    // test with more than one filter
+    func testConvOpGradient2() {
+        let eps = 10e-6
+        let values = Tensor<D>([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+        let input = ConstantOp(values)
+        
+        let convOp = Conv2dOp<D>(input: input, numFilters: 2, filterSize: Extent(3, 3))
+        connect(from: input, to: convOp)
+
+        let convOpGrad = convOp.gradient() as! Conv2dGrad<D>
+
         let gradOutput = ConstantOp<D>(zeros(Extent(3, 3)))
         connect(from: gradOutput, to: convOpGrad, "gradOutput")
         
@@ -358,19 +381,31 @@ class opTests: XCTestCase {
         XCTAssertLessThan(inputError, eps)
     }
     
-    func testConvOpGradient2() {
+    // test with an image size larger than the kernel
+    func testConvOpGradient3() {
         let eps = 10e-6
-        let values = Tensor<D>([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+        let values = Tensor<D>([[1, 2, 3, 4, 5], [6, 7, 8, 9, 10], [11, 12, 13, 14, 15], [2, 2, 2, 2, 2], [3, 3, 3, 3, 3]])
         let input = ConstantOp(values)
         
-        let convOp = Conv2dOp<D>(input: input, numFilters: 2, filterSize: Extent(3, 3))
+        let convOp = Conv2dOp<D>(input: input, numFilters: 1, filterSize: Extent(3, 3))
+        connect(from: input, to: convOp)
+        
         let convOpGrad = convOp.gradient() as! Conv2dGrad<D>
         
-        let gradOutput = ConstantOp<D>(zeros(Extent(3, 3)))
+        let gradOutput = ConstantOp<D>(zeros(Extent(5, 5)))
         connect(from: gradOutput, to: convOpGrad, "gradOutput")
         
+        // test gradient wrt the input
         let inputError = checkGradient(convOp, grad: convOpGrad, params: values, gradParams: convOpGrad.output, eps: eps)
         XCTAssertLessThan(inputError, eps)
+        
+        // test gradient wrt the parameters
+        let kernelError = checkGradient(convOp, grad: convOpGrad, params: convOp.kernels[0, all, all], gradParams: convOpGrad.kernels[0, all, all], eps: eps)
+        XCTAssertLessThan(kernelError, eps)
+//
+//        // test gradient wrt the parameters
+//        let weightError = checkGradient(linear, grad: linearGrad, params: linear.weight, gradParams: linearGrad.weight, eps: eps)
+//        XCTAssertLessThan(weightError, eps)
     }
     
     func testMaxPoolingOp() {
@@ -404,6 +439,8 @@ class opTests: XCTestCase {
         
         let input = ConstantOp(data)
         connect(from: input, to: poolingOp)
+        
+        XCTAssertEqual(poolingOp.output.shape, Extent(1, 5, 5))
 
         let poolingGrad = poolingOp.gradient() as! PoolingGrad<D>
         
