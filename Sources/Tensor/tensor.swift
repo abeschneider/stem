@@ -428,7 +428,6 @@ open class Tensor<StorageType:Storage> {
         precondition(newShape.elements == shape.elements, "Cannot change number of elements in Tensor.")
         
         let copy = Tensor(self, view: view, copy: true)
-//        copy.shape = newShape
         copy.stride = calculateStride(Extent(storage.calculateOrder(newShape.dims)))
 
         copy.view = StorageView<StorageType>(shape: newShape, offset:[Int](repeating: 0, count: copy.stride.count))
@@ -513,6 +512,8 @@ extension Tensor: CustomStringConvertible {
 // In theory there should be better ways of doing this. However, how Integer
 // protocols are defined, it doesn't look currently possible (though it looks
 // like proposals are in place to make this less painful)
+
+// TODO: also rename from `asType`
 public func asType<S1:Storage, S2:Storage>(_ from:Tensor<S1>) -> Tensor<S2> where S1.ElementType == Int, S2.ElementType == Int {
     let result = Tensor<S2>(from.shape)
     for i in 0..<result.shape.elements {
@@ -699,5 +700,17 @@ public func map<StorageType:Storage>(
 }
 
 public func ravel<StorageType:Storage>(_ tensor:Tensor<StorageType>) -> Tensor<StorageType> {
-    return tensor.reshape(Extent(tensor.shape.elements))
+    // FIXME: using reshape is causing all the problems right now because checkgradient relies on
+    // the old behavior of reshape (which pointed to the same storage)
+//    return tensor.reshape(Extent(tensor.shape.elements))
+    let newShape = Extent(tensor.shape.elements)
+    let stride = calculateStride(Extent(tensor.storage.calculateOrder(newShape.dims)))
+    let view = StorageView<StorageType>(shape: newShape, offset:[Int](repeating: 0, count: stride.count))
+    
+    let copy = Tensor(tensor, view: view, copy: false)
+    copy.stride = stride
+    copy.dimIndex = tensor.storage.calculateOrder(copy.stride.count)
+    copy.fixedDims = [Int](repeating: -1, count: copy.stride.count)
+    
+    return copy
 }
