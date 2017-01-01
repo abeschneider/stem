@@ -145,8 +145,12 @@ open class CollectionGradient<S:Storage>: Op<S>, Gradient {
 //        connect(from: value, to: Target<S>(op: [op], label: "gradOutput"))
     }
     
+    open subscript(index:Int) -> Op<S> {
+        return ops[index]
+    }
+    
     open override func apply() {
-        print("CollectionGrad: \(_gradOutput)")
+//        print("CollectionGrad: \(_gradOutput)")
         
         var lastOp:Op<S>?
         for op in ordering.traversal(ops) {
