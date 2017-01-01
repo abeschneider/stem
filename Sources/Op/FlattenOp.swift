@@ -36,7 +36,12 @@ open class FlattenOp<S:Storage>: Op<S> {
     }
     
     open override func apply() {
-        copy(from: _input, to: output)
+//        copy(from: _input, to: output)
+        var k = 0
+        for i in _input.indices() {
+            output[k] = _input[i]
+            k += 1
+        }
     }
 }
 
