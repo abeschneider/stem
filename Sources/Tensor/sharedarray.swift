@@ -8,25 +8,27 @@
 
 import Foundation
 
+// should add @_specialize for all NativeStorage types
+// (other storage won't use SharedArray)
 open class SharedArray<T>: Swift.Collection where T:Equatable {
-    open var memory:[T]
+    open var memory:Array<T>
     open var offset:Int
     
     open var startIndex:Int { return offset }
     open var endIndex:Int { return memory.count + offset }
     
     init(_ values:T...) {
-        memory = values
+        memory = Array<T>(values)
         offset = 0
     }
     
     init(_ values:[T], offset:Int=0) {
-        memory = values
+        memory = Array<T>(values)
         self.offset = offset
     }
     
     init(count:Int, repeatedValue:T) {
-        memory = [T](repeating: repeatedValue, count: count)
+        memory = Array<T>(repeating: repeatedValue, count: count)
         offset = 0
     }
     
