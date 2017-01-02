@@ -23,7 +23,7 @@ Some ``Op`` s, like ``Sequence`` are collections of other ``Op`` s, and will inv
 .. code:: swift
 
   let net = Sequence<D>(
-    Variable<D>(zeros(Extent(5))),
+    VariableOp<D>(zeros(Extent(5))),
     Linear<D>(inputSize: 5, outputSize: 3),
     Sigmoid<D>(size: 3),
     L2Loss<D>(size: 3))
@@ -65,7 +65,7 @@ However, this code can be simplified using an ``Optimizer``:
 
 .. code::
 
-  let alpha = Variable<D>(0.01)
+  let alpha = VariableOp<D>(0.01)
   let opt = GradientDescentOptimizer(net, alpha: alpha)
 
   for i in 0..<iterations {
@@ -201,7 +201,7 @@ We can change the construction of our network by adding ``Log`` into the sequenc
 .. code:: swift
 
   let net = Sequence<D>(
-    Variable<D>(zeros(Extent(5))),
+    VariableOp<D>(zeros(Extent(5))),
     Log<D>(size: 5)
     Linear<D>(inputSize: 5, outputSize: 3),
     Sigmoid<D>(size: 3),
@@ -224,8 +224,8 @@ It is always a good idea to do a gradient check on a newly created ``Op``. You c
 
   func testLogOpGradient() {
     let eps = 10e-6
-    let input = Variable<S>(uniform(Extent(10)))
-    let gradOutput = Variable<S>(zeros(Extent(10)))
+    let input = VariableOp<S>(uniform(Extent(10)))
+    let gradOutput = VariableOp<S>(zeros(Extent(10)))
 
     let log = Log<S>(size: 10)
     log.setInput("input", to: input)
