@@ -1,48 +1,60 @@
 //
-//  l2loss.swift
+//  CrossEntropyLoss.swift
 //  stem
 //
-//  Created by Schneider, Abraham R. on 11/12/16.
-//  Copyright © 2016 none. All rights reserved.
+//  Created by Abraham Schneider on 1/1/17.
+//
 //
 
 import Foundation
 import Tensor
 
-open class L2Loss<S:Storage>: Op<S>, Loss where S.ElementType:FloatNumericType {
+open class CrossEntropyLoss<S:Storage>: Op<S>, Loss where S.ElementType:FloatNumericType {
     public typealias StorageType = S
     
     open var value:S.ElementType = 0
+    
+    open var softmax:LogSoftMaxOp<S> = LogSoftMaxOp<S>()
     
     open var _input:Tensor<S> { return inputs[0].output }
     open var _target:Tensor<S> { return inputs[1].output }
     
     public init() {
         super.init(inputs: ["input", "target"], outputs: ["output"])
-        outputs["output"] = [Tensor<S>()]
+        output = Tensor<S>()
+        setAction("input", action: self.inputSet)
     }
     
     public init(size:Int) {
         super.init(inputs: ["input", "target"], outputs: ["output"])
         outputs["output"] = [zeros(Extent(size))]
+        setAction("input", action: self.inputSet)
     }
     
     public init(target t:Op<S>) {
         super.init(inputs: ["input", "target"], outputs: ["output"])
         connect(from: t, "output", to: self, "target")
-        outputs["output"] = [zeros(t.output.shape)]
+        output = zeros(t.output.shape)
+        setAction("input", action: self.inputSet)
     }
     
     public init(value:Op<S>, target t:Op<S>) {
         super.init(inputs: ["input", "target"], outputs: ["output"])
         connect(from: value, "output", to: self, "input")
         connect(from: t, "output", to: self, "target")
-        outputs["output"] = [Tensor<S>(value.output.shape)]
+        output = Tensor<S>(value.output.shape)
+        setAction("input", action: self.inputSet)
     }
     
     public required init(op:Op<S>, shared:Bool) {
         super.init(inputs: ["input", "target"], outputs: ["output"])
-        outputs["output"] = [Tensor<S>(op.output.shape)]
+        output = Tensor<S>(op.output.shape)
+        setAction("input", action: self.inputSet)
+    }
+    
+    func inputSet(_ label:String, input:[Source<S>]) {
+        // connect input to softmax
+        // (use softmax output as input)
     }
     
     open override func apply() {
@@ -51,23 +63,19 @@ open class L2Loss<S:Storage>: Op<S>, Loss where S.ElementType:FloatNumericType {
             output.resize(_input.shape)
         }
         
-        sub(_input, _target, result: output)
-        pow(output, 2, result: output)
-        value = sum(output)
+//        sub(_input, _target, result: output)
+//        pow(output, 2, result: output)
+//        value = sum(output)
     }
 }
 
-open class L2LossGrad<S:Storage>: Op<S>, Gradient where S.ElementType:FloatNumericType {
-    public typealias OpType = L2Loss<S>
+open class CrossEntropyLossGrad<S:Storage>: Op<S>, Gradient where S.ElementType:FloatNumericType {
+    public typealias OpType = CrossEntropyLoss<S>
     
-    open var linear:LinearOp<S> {
-        let input:Source<S> = inputs[0]
-        return input.op as! LinearOp<S>
-    }
     open var _input:Tensor<S> { return inputs[1].output }
     open var _target:Tensor<S> { return inputs[2].output }
     
-    public required init(op:L2Loss<S>) {
+    public required init(op:CrossEntropyLoss<S>) {
         let loss:Source<S> = op.inputs[0]
         let target:Source<S> = op.inputs[1]
         
@@ -98,8 +106,8 @@ open class L2LossGrad<S:Storage>: Op<S>, Gradient where S.ElementType:FloatNumer
     }
 }
 
-extension L2Loss: Differentiable {
+extension CrossEntropyLoss: Differentiable {
     public func gradient() -> GradientType {
-        return L2LossGrad<S>(op: self)
+        return CrossEntropyLossGrad<S>(op: self)
     }
 }

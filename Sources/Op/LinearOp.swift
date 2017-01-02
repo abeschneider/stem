@@ -15,7 +15,7 @@ open class LinearOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
     open var weight:Tensor<S>
     open var bias:Tensor<S>
     
-    open var _input:Tensor<S> { return inputs[0].output() }
+    open var _input:Tensor<S> { return inputs[0].output }
     
     public init() {
         weight = Tensor<S>()
@@ -76,6 +76,7 @@ open class LinearOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
     }
     
     func inputSet(_ label:String, input:[Source<S>]) {
+        setInput(to: input[0])
         let newShape = Extent(output.shape[0], input[0].output.shape[0])
         if weight.shape != newShape {
             weight.resize(newShape)
@@ -108,12 +109,12 @@ open class LinearGrad<S:Storage>: Op<S>, Gradient where S.ElementType:FloatNumer
     open var bias:Tensor<S>
     
     open var linear:LinearOp<S> {
-        let input:InputType<S> = inputs[0]
+        let input:Source<S> = inputs[0]
         return input.op as! LinearOp<S>
     }
     
-    open var _input:Tensor<S> { return inputs[1].output() }
-    open var _gradOutput:Tensor<S> { return inputs[2].output() }
+    open var _input:Tensor<S> { return inputs[1].output }
+    open var _gradOutput:Tensor<S> { return inputs[2].output }
     
     public required init(op:LinearOp<S>) {
         weight = zeros(op.weight.shape)

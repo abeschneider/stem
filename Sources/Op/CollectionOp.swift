@@ -13,6 +13,8 @@ open class CollectionOp<S:Storage>: Op<S>, Sequence {
     open var ops:[Op<S>]
     open var ordering:AnyOrdering<S>
     
+    open var count:Int { return ops.count }
+    
     public init<T:Ordering>(
         ops:[Op<S>],
         inputs:[Op<S>],
@@ -28,8 +30,6 @@ open class CollectionOp<S:Storage>: Op<S>, Sequence {
         }
         
         self.outputs["output"] = outputs.map { $0.output }
-        
-        //        setAction("input", action: self.inputSet)
     }
     
     // required for Copyable
@@ -41,11 +41,7 @@ open class CollectionOp<S:Storage>: Op<S>, Sequence {
         super.init(inputs: ["input"], outputs: ["outputs"])
         outputs["output"] = [Tensor<S>(op.output.shape)]
     }
-    
-    //    func inputSet(_ label:String, value:[Op<S>]) {
-    //        connect(from: value[0], to: ops[0])
-    //    }
-    
+
     open override func apply() {
         for op in ordering.traversal(ops) {
             op.apply()
@@ -63,7 +59,7 @@ open class CollectionOp<S:Storage>: Op<S>, Sequence {
     open override var description: String {
         let className = String(describing: Mirror(reflecting: self).subjectType)
         let inputShapes = inputs["input"]!.map {
-            let output:Tensor<S> = $0.output()
+            let output:Tensor<S> = $0.output
             return String(describing: output.shape.dims)
         }.joined(separator: ", ")
         
@@ -77,8 +73,8 @@ open class CollectionGradient<S:Storage>: Op<S>, Gradient {
     open var ops:[Op<S>] = []
     var ordering:AnyOrdering<S>
     
-    open var _input:Tensor<S> { return inputs[1].output() }
-    open var _gradOutput:Tensor<S> { return inputs[2].output() }
+    open var _input:Tensor<S> { return inputs[1].output }
+    open var _gradOutput:Tensor<S> { return inputs[2].output }
     
     public required init(op:CollectionOp<S>) {
         ordering = op.ordering
@@ -126,7 +122,7 @@ open class CollectionGradient<S:Storage>: Op<S>, Gradient {
         
         // connect all (op1 -> op2) to (op2Gradient -> op1Gradient)
         for op in ops {
-            if let opInputs:[InputType<S>] = op.inputs["input"] {
+            if let opInputs:[Source<S>] = op.inputs["input"] {
                 for input in opInputs {
                     if  let fromOp = gradOps[op.id], let toOp = gradOps[input.op!.id] {
                         connect(from: fromOp, to: toOp, "gradOutput")
@@ -138,7 +134,8 @@ open class CollectionGradient<S:Storage>: Op<S>, Gradient {
     
     func gradOutputSet(_ key:String, value:[Source<S>]) {
 //        connect(from: value, "output", to: ops.first!, "gradOutput")
-        let sourceOps:[Op<S>] = value.map { $0.op }
+        setInput(inputLabel: "gradOutput", to: value)
+        let sourceOps:[Op<S>] = value.map { $0.op! }
         connect(from: sourceOps, "output", to: ops.first!, "gradOutput")
 //        let target = Target<S>(op: op, label: "gradOutput")
 //        connect(from: value, to)
@@ -167,7 +164,6 @@ open class CollectionGradient<S:Storage>: Op<S>, Gradient {
             }
             
             copy(from: op.output, to: output)
-            print("graph: \(output)")
         }
     }
     

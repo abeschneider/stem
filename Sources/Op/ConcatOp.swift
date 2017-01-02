@@ -36,25 +36,26 @@ open class ConcatOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
         // TODO: to make more efficient, calculate size of concat first
         // so no temporary is required
 //        let result = concat(input[0].outputs.map { $0 })
+        setInput(to: input)
         let result = concat(input.map { $0.output })
         output.resize(result.shape)
         copy(from: result, to: output)
     }
     
     open override func apply() {
-        let result = concat(inputs[0].map { $0.output() })
+        let result = concat(inputs[0].map { $0.output })
         output.resize(result.shape)
         copy(from: result, to: output)
     }
 }
 
 open class ConcatGrad<S:Storage>: Op<S>, Gradient where S.ElementType:FloatNumericType {
-    var _op:Tensor<S> { return inputs[0].output() }
-    var _input:[Tensor<S>] { return inputs[1].outputs() }
-    open var _gradOutput:Tensor<S> { return inputs[2].output() }
+    var _op:Tensor<S> { return inputs[0].output }
+    var _input:[Tensor<S>] { return inputs[1].outputs }
+    open var _gradOutput:Tensor<S> { return inputs[2].output }
     
     public required init(op:ConcatOp<S>) {
-        let opInputs:[InputType<S>] = op.inputs["input"]!
+        let opInputs:[Source<S>] = op.inputs["input"]!
         super.init(inputs: ["op", "input", "gradOutput"], outputs: ["output"])
         connect(from: op, "output", to: self, "op")
         connect(from: opInputs.map { $0.op! }, "output", to: self, "input")

@@ -10,7 +10,7 @@ import Foundation
 import Tensor
 
 open class VariableOp<S:Storage>: Op<S> {
-    open var _input:Tensor<S> { return inputs[0].output() }
+    open var _input:Tensor<S> { return inputs[0].output }
     
     public init() {
         super.init(inputs: ["input"], outputs: ["output"])
@@ -31,7 +31,8 @@ open class VariableOp<S:Storage>: Op<S> {
     }
     
     func inputSet(_ label:String, input:[Source<S>]) {
-        outputs["output"] = [Tensor<S>(input[0].output.shape)]
+        setInput(to: input[0])
+        output = Tensor<S>(input[0].output.shape)
     }
     
     open override func apply() {
@@ -40,15 +41,15 @@ open class VariableOp<S:Storage>: Op<S> {
 }
 
 open class VariableGrad<S:Storage>: Op<S>, Gradient {
-    open var _variable:Tensor<S> { return inputs[0].output() }
-    open var _input:Tensor<S> { return inputs[1].output() }
-    open var _gradOutput:Tensor<S> { return inputs[2].output() }
+    open var _variable:Tensor<S> { return inputs[0].output }
+    open var _input:Tensor<S> { return inputs[1].output }
+    open var _gradOutput:Tensor<S> { return inputs[2].output }
     
     
     public required init(op:VariableOp<S>) {
         super.init(inputs: ["op", "input", "gradOutput"], outputs: ["output"])
         
-        let v:InputType<S> = op.inputs[0]
+        let v:Source<S> = op.inputs[0]
         connect(from: op, "output", to: self, "op")
         connect(from: v.op!, "output", to: self, "input")
         outputs["output"] = [Tensor<S>(op.output.shape)]

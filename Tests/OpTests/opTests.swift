@@ -155,9 +155,7 @@ class opTests: XCTestCase {
         
         let tanhGrad = tanh.gradient() as! TanhGrad<D>
         connect(from: gradOutput, to: tanhGrad, "gradOutput")
-        
-        calcForwardGrad(tanh, params: input.output, eps: eps)
-        
+                
         // test gradient wrt the input
         let inputError = checkGradient(tanh, grad: tanhGrad, params: input.output, gradParams: tanhGrad.output, eps: eps)
         XCTAssertLessThan(inputError, eps)
@@ -192,6 +190,17 @@ class opTests: XCTestCase {
         let expected = concat(inputValues)
 
         XCTAssert(isClose(concatOp.output, expected, eps: 10e-3))
+    }
+    
+    func testConcatOp2() {
+        let input:Tensor<D> = uniform(Extent(15))
+        let inputs = [ConstantOp<D>(input[0..<5]), ConstantOp<D>(input[5..<10]), ConstantOp<D>(input[10..<15])]
+        let concatOp = ConcatOp<D>()
+        connect(from: inputs, to: concatOp)
+
+        concatOp.apply()
+        
+        XCTAssert(isClose(concatOp.output, input, eps: 10e-3))
     }
     
     func testConcatGradient() {
@@ -402,10 +411,6 @@ class opTests: XCTestCase {
         // test gradient wrt the parameters
         let kernelError = checkGradient(convOp, grad: convOpGrad, params: convOp.kernels[0, all, all], gradParams: convOpGrad.kernels[0, all, all], eps: eps)
         XCTAssertLessThan(kernelError, eps)
-//
-//        // test gradient wrt the parameters
-//        let weightError = checkGradient(linear, grad: linearGrad, params: linear.weight, gradParams: linearGrad.weight, eps: eps)
-//        XCTAssertLessThan(weightError, eps)
     }
     
     func testMaxPoolingOp() {
@@ -446,7 +451,7 @@ class opTests: XCTestCase {
         
         let gradOutput = ConstantOp<D>(zeros(Extent(5, 5)))
         connect(from: gradOutput, to: poolingGrad, "gradOutput")
-        
+
         let inputError = checkGradient(poolingOp, grad: poolingGrad, params: data, gradParams: poolingGrad.output, eps: eps)
         XCTAssertLessThan(inputError, eps)
     }

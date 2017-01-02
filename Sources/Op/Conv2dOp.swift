@@ -13,7 +13,7 @@ import Tensor
 // TODO:
 // 1. add more parameters (e.g. stride, padding, etc.)
 open class Conv2dOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
-    open var _input:Tensor<S> { return inputs[0].output() }
+    open var _input:Tensor<S> { return inputs[0].output }
     open var kernels:Tensor<S>
     open var padding:[Int]
     open var stride:[Int]
@@ -51,6 +51,7 @@ open class Conv2dOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
         // Currently follows Torch convention
         var shape:Extent
         
+        setInput(to: input[0])
         if input[0].output.shape.count == 2 {
             shape = calculateConv2DSize(input: input[0].output, kernel: kernels[0, all, all], stride: stride, padding: padding)
         } else {
@@ -95,20 +96,20 @@ open class Conv2dOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
 
 open class Conv2dGrad<S:Storage>: Op<S>, Gradient where S.ElementType:FloatNumericType {
     open var conv:Conv2dOp<S> {
-        let input:InputType<S> = inputs[0]
+        let input:Source<S> = inputs[0]
         return input.op as! Conv2dOp<S>
     }
     
     open var kernels:Tensor<S>
     
-    open var _input:Tensor<S> { return inputs[1].output() }
-    open var _gradOutput:Tensor<S> { return inputs[2].output() }
+    open var _input:Tensor<S> { return inputs[1].output }
+    open var _gradOutput:Tensor<S> { return inputs[2].output }
     
     public required init(op:Conv2dOp<S>) {
         kernels = Tensor<S>(op.kernels.shape)
         super.init(inputs: ["op", "input", "gradOutput"], outputs: ["output"])
         
-        let opInputs:[InputType<S>] = op.inputs[0]
+        let opInputs:[Source<S>] = op.inputs[0]
         connect(from: op, "output", to: self, "op")
         connect(from: opInputs.map { $0.op! }, "output", to: self, "input")
         output = Tensor<S>(_input.shape)
@@ -125,7 +126,7 @@ open class Conv2dGrad<S:Storage>: Op<S>, Gradient where S.ElementType:FloatNumer
             iadd(kernels[i, all, all], grad_wrt_kernel)
             
             let grad_wrt_output = conv2d(_gradOutput, kernel: conv.kernels[i, all, all], padding: [1, 1], flip: false)
-            iadd(output, grad_wrt_output)
+	            iadd(output, grad_wrt_output)
         }
     }
     

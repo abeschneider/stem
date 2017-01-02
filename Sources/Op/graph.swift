@@ -149,9 +149,9 @@ open class RecurrentCollectionOp<S:Storage>: CollectionOp<S> {
     
     open override func apply() {
         // copy over input array to recurrentVars
-        if let inputs:[InputType<S>] = self.inputs["input"] {
+        if let inputs:[Source<S>] = self.inputs["input"] {
             for (input, recurrentVar) in zip(inputs, recurrentVars) {
-                copy(from: input.output(), to: recurrentVar.output)
+                copy(from: input.output, to: recurrentVar.output)
             }
         }
         
@@ -185,9 +185,9 @@ open class RecurrentCollectionGrad<S:Storage>: CollectionGradient<S> {
     
     open override func apply() {
         // copy over input array to recurrentVars
-        if let inputs:[InputType<S>] = self.inputs["gradOutput"] {
+        if let inputs:[Source<S>] = self.inputs["gradOutput"] {
             for (input, recurrentVar) in zip(inputs, recurrentVars) {
-                copy(from: input.output(), to: recurrentVar.output)
+                copy(from: input.output, to: recurrentVar.output)
             }
         }
         
@@ -202,5 +202,6 @@ open class RecurrentCollectionGrad<S:Storage>: CollectionGradient<S> {
     
     override func gradOutputSet(_ key:String, value:[Source<S>]) {
         // do nothing
+        setInput(inputLabel: "gradOutput", to: value)
     }
 }

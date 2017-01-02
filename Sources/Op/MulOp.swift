@@ -11,8 +11,8 @@ import Tensor
 
 open class MulOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
     open var _input:[Tensor<S>] {
-        let _in:[InputType<S>] = inputs[0]
-        return _in.map { $0.output() }
+        let _in:[Source<S>] = inputs[0]
+        return _in.map { $0.output }
     }
     
     public init(_ ops:Op<S>...) {
@@ -38,17 +38,17 @@ open class MulOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
 }
 
 open class MulOpGrad<S:Storage>: Op<S>, Gradient where S.ElementType:FloatNumericType {
-    open var _op:Tensor<S> { return inputs[0].output() }
+    open var _op:Tensor<S> { return inputs[0].output }
     open var _input:[Tensor<S>] {
-        let _in:[InputType<S>] = inputs[1]
-        return _in.map { $0.output() }
+        let _in:[Source<S>] = inputs[1]
+        return _in.map { $0.output }
     }
-    open var _gradOutput:Tensor<S> { return inputs[2].output() }
+    open var _gradOutput:Tensor<S> { return inputs[2].output }
     
     public required init(op:MulOp<S>) {
         super.init(inputs: ["op", "input", "gradOutput"], outputs: ["output"])
         
-        let opInputs:[InputType<S>] = op.inputs[0]
+        let opInputs:[Source<S>] = op.inputs[0]
         connect(from: op, "output", to: self, "op")
         connect(from: opInputs.map { $0.op! }, "output", to: self, "input")
         outputs["output"] = [Tensor<S>](repeating: Tensor<S>(_input[0].shape), count: _input.count)

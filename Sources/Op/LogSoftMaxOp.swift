@@ -10,7 +10,7 @@ import Foundation
 import Tensor
 
 open class LogSoftMaxOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
-    var _input:Tensor<S> { return inputs[0].output() }
+    var _input:Tensor<S> { return inputs[0].output }
     
     public init() {
         super.init(inputs: ["input"], outputs: ["output"])
@@ -32,6 +32,7 @@ open class LogSoftMaxOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
     }
     
     func inputSet(_ label:String, input:[Source<S>]) {
+        setInput(to: input[0])
         output.resize(input[0].output.shape)
     }
     
@@ -48,12 +49,12 @@ open class LogSoftMaxOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
 open class LogSoftMaxGrad<S:Storage>: Op<S>, Gradient where S.ElementType:FloatNumericType {
     public typealias OpType = LogSoftMaxOp<S>
     
-    open var _logsoftmax:Tensor<S> { return inputs[0].output() }
-    open var _input:Tensor<S> { return inputs[1].output() }
-    open var _gradOutput:Tensor<S> { return inputs[2].output() }
+    open var _logsoftmax:Tensor<S> { return inputs[0].output }
+    open var _input:Tensor<S> { return inputs[1].output }
+    open var _gradOutput:Tensor<S> { return inputs[2].output }
     
     public required init(op:LogSoftMaxOp<S>) {
-        let s:InputType<S> = op.inputs[0]
+        let s:Source<S> = op.inputs[0]
         super.init(inputs: ["op", "input", "gradOutput"], outputs: ["output"])
         connect(from: op, "output", to: self, "op")
         connect(from: s.op!, "output", to: self, "input")

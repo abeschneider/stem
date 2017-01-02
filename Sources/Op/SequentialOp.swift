@@ -66,8 +66,9 @@ open class SequentialOp<S:Storage>: CollectionOp<S> {
 //            }
 //        }
         
+        setInput(to: input[0])
         if let op = ops.first {
-            let inputValues:[InputType<S>] = inputs["input"]!
+            let inputValues:[Source<S>] = inputs["input"]!
             op.inputs["input"] = inputValues
             if let action = op.inputActions[label] {
                 action(label, input)
@@ -83,7 +84,7 @@ open class SequentialOp<S:Storage>: CollectionOp<S> {
         if let last = lastOp {
             connect(from: last, "output", to: op, "input")
         } else {
-            let input:[InputType<S>] = inputs["input"]!
+            let input:[Source<S>] = inputs["input"]!
             op.inputs["input"] = input
         }
         

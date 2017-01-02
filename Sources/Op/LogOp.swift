@@ -10,7 +10,7 @@ import Foundation
 import Tensor
 
 open class LogOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
-    var _input:Tensor<S> { return inputs[0].output() }
+    var _input:Tensor<S> { return inputs[0].output }
     
     public init(size:Int) {
         super.init(inputs: ["input"], outputs: ["output"])
@@ -29,6 +29,7 @@ open class LogOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
     }
     
     func inputSet(_ label:String, input:[Source<S>]) {
+        setInput(to: input[0])
         output.resize(input[0].output.shape)
     }
     
@@ -48,11 +49,11 @@ extension LogOp: Differentiable {
 }
 
 open class LogGrad<S:Storage>: Op<S>, Gradient where S.ElementType:FloatNumericType {
-    open var _input:Tensor<S> { return inputs[1].output() }
-    open var _gradOutput:Tensor<S> { return inputs[2].output() }
+    open var _input:Tensor<S> { return inputs[1].output }
+    open var _gradOutput:Tensor<S> { return inputs[2].output }
     
     public required init(op:LogOp<S>) {
-        let opInput:InputType<S> = op.inputs[0]
+        let opInput:Source<S> = op.inputs[0]
         super.init(inputs: ["op", "input", "gradOutput"], outputs: ["output"])
         connect(from: op, "output", to: self, "op")
         connect(from: opInput.op!, "output", to: self, "input")

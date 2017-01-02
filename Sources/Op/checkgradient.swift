@@ -46,7 +46,7 @@ func calcBackwardGrad<S:Storage>
     forward.reset()
     forward.apply()
     
-    let gradOutput = ravel(backward.inputs["gradOutput"]![0].output())
+    let gradOutput = ravel(backward.inputs["gradOutput"]![0].output)
     let jacobian:Tensor<S> = zeros(Extent(gradParams.shape.elements, gradOutput.shape.elements))
 
     for i in 0..<gradOutput.shape.elements {

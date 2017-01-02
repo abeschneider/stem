@@ -32,7 +32,7 @@ open class Op<S:Storage>: OpType, Copyable, Hashable, CustomStringConvertible {
     public typealias InputAction = (String, [Source<S>]) -> ()
     
     open var id:Int = createUID()
-    open var inputs:OrderedDictionary<InputType<S>>
+    open var inputs:OrderedDictionary<Source<S>>
     open var outputs:OrderedDictionary<Tensor<S>>
     
     // convenience variable for case when there is only a single output
@@ -44,13 +44,13 @@ open class Op<S:Storage>: OpType, Copyable, Hashable, CustomStringConvertible {
     var inputActions:[String:InputAction] = [:]
     
     public init(inputs:[String], outputs:[String]) {
-        self.inputs = OrderedDictionary<InputType<S>>(inputs.map { ($0, InputType<S>()) })
+        self.inputs = OrderedDictionary<Source<S>>(inputs.map { ($0, Source<S>()) })
         self.outputs = OrderedDictionary<Tensor<S>>(outputs.map { ($0, Tensor<S>()) })
     }
     
     // required for Copyable
     required public init(op:Op<S>, shared:Bool) {
-        inputs = OrderedDictionary<InputType<S>>()
+        inputs = OrderedDictionary<Source<S>>()
         outputs = OrderedDictionary<Tensor<S>>()
         assertionFailure()
     }
@@ -84,27 +84,45 @@ open class Op<S:Storage>: OpType, Copyable, Hashable, CustomStringConvertible {
         return outputs.map { String(describing: $0[0].shape.dims) }.joined(separator: ", ")
     }
     
+    func setInput(inputLabel:String="input", index:Int=0, to:Source<S>) {
+        inputs[inputLabel]![index] = to
+    }
+    
+    func setInput(inputLabel:String="input", to:[Source<S>]) {
+        inputs[inputLabel]! = to
+    }
+    
     func setInput(_ inputLabel:String, to:[Source<S>]) {
-        inputs[inputLabel]![0] = InputType(to[0].op, to[0].label)
+//        inputs[inputLabel]![0] = InputType(to[0].op, to[0].label)
+        
         
         if let action = inputActions[inputLabel] {
             action(inputLabel, to)
+        } else {
+//            setInput(inputLabel: inputLabel, to: to)
+            inputs[inputLabel]![0] = Source(op: to[0].op!, label: to[0].label)
         }
     }
     
     func setInput(_ inputLabel:String, to:Op<S>, _ outputLabel:String="output") {
-        inputs[inputLabel]![0] = InputType(to, outputLabel)
+//        inputs[inputLabel]![0] = InputType(to, outputLabel)
         
         if let action = inputActions[inputLabel] {
             action(inputLabel, [Source(op: to, label: outputLabel)])
+        } else {
+//            setInput(inputLabel: inputLabel, index: 0, to: Source(op: to, label: outputLabel))
+            inputs[inputLabel]![0] = Source(op: to, label: outputLabel)
         }
     }
     
     func setInput(_ inputLabel:String, to:[Op<S>], _ outputLabel:String="output") {
-        inputs[inputLabel] = to.map { InputType($0, outputLabel) }
+//        inputs[inputLabel] = to.map { InputType($0, outputLabel) }
         
         if let action = inputActions[inputLabel] {
             action(inputLabel, to.map { Source(op: $0, label: outputLabel) })
+        } else {
+//            setInput(inputLabel: inputLabel, index: 0, to: Source(op: to[0], label: outputLabel))
+            inputs[inputLabel] = to.map { Source(op: $0, label: outputLabel) }
         }
     }
     

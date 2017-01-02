@@ -38,7 +38,7 @@ public func min<S:Storage>(input:Tensor<S>) -> ([Int], S.ElementType) where S.El
 }
 
 open class PoolingOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
-    open var _input:Tensor<S> { return inputs[0].output() }
+    open var _input:Tensor<S> { return inputs[0].output }
     open var _output:Tensor<S> { return outputs[0] }
     
     var poolingSize:Extent
@@ -67,6 +67,8 @@ open class PoolingOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
         var depth:Int
         var width:Int
         var height:Int
+        
+        setInput(to: input[0])
         
         // TODO: currently following Torch conventions
         if shape.count == 2 {
@@ -137,22 +139,22 @@ open class PoolingOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
 
 open class PoolingGrad<S:Storage>: Op<S>, Gradient where S.ElementType:FloatNumericType {
     open var pooling:PoolingOp<S> {
-        let input:InputType<S> = inputs[0]
+        let input:Source<S> = inputs[0]
         return input.op as! PoolingOp<S>
     }
 
-    open var _input:Tensor<S> { return inputs[1].output() }
-    open var _gradOutput:Tensor<S> { return inputs[2].output() }
+    open var _input:Tensor<S> { return inputs[1].output }
+    open var _gradOutput:Tensor<S> { return inputs[2].output }
 
     public required init(op:PoolingOp<S>) {
         super.init(inputs: ["op", "input", "gradOutput"], outputs: ["output"])
         
-        let opInputs:[InputType<S>] = op.inputs[0]
-        connect(from: op, "output", to: self, "op")
-        connect(from: opInputs.map { $0.op! }, "output", to: self, "input")
-        outputs["output"] = [Tensor<S>(_input.shape)]
+        let opInputs:[Source<S>] = op.inputs[0]
+        connect(from: op, to: self, "op")
+        connect(from: opInputs.map { $0.op! }, to: self, "input")
+        output = Tensor<S>(_input.shape)
         
-        setAction("input", action: self.inputSet)
+//        setAction("input", action: self.inputSet)
     }
     
     required public init(op: Op<S>, shared: Bool) {
@@ -160,13 +162,23 @@ open class PoolingGrad<S:Storage>: Op<S>, Gradient where S.ElementType:FloatNume
     }
     
     func inputSet(_ label:String, input:[Source<S>]) {
-        // TODO
+        setInput(inputLabel: "gradOutput", to: input[0])
     }
     
     open override func apply() {
-        let depth = _input.shape[0]
-        let width = _input.shape[1] / pooling.stride[0]
-        let height = _input.shape[2] / pooling.stride[1]
+        var depth:Int
+        var width:Int
+        var height:Int
+        
+        if _input.shape.count == 2 {
+            depth = 1
+            width = _input.shape[0] / pooling.stride[0]
+            height = _input.shape[1] / pooling.stride[1]
+        } else {
+            depth = _input.shape[0]
+            width = _input.shape[1] / pooling.stride[0]
+            height = _input.shape[2] / pooling.stride[1]
+        }
         
         fill(output, value: 0)
         for d in 0..<depth {

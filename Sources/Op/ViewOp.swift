@@ -35,7 +35,8 @@ open class ViewOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
     
     func inputSet(_ label:String, input:[Source<S>]) {
 //        outputs[0] = [inputs[0].outputs["output"]![0][ranges]]
-        outputs[0] = input[0].output[ranges]
+        setInput(to: input[0])
+        output = input[0].output[ranges]
     }
     
     open override func apply() {}
@@ -44,12 +45,12 @@ open class ViewOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
 open class ViewGrad<S:Storage>: Op<S>, Gradient where S.ElementType:FloatNumericType {
     //    public typealias StorageType = S
     
-    var _op:Tensor<S> { return inputs[0].output() }
-    var _input:Tensor<S> { return inputs[1].output() }
-    var _gradOutput:Tensor<S> { return inputs[2].output() }
+    var _op:Tensor<S> { return inputs[0].output }
+    var _input:Tensor<S> { return inputs[1].output }
+    var _gradOutput:Tensor<S> { return inputs[2].output }
     
     public required init(op:ViewOp<S>) {
-        let input:InputType<S> = op.inputs["input"]![0]
+        let input:Source<S> = op.inputs["input"]![0]
         super.init(inputs: ["op", "input", "gradOutput"], outputs: ["output"])
         connect(from: op, "output", to: self, "op")
         connect(from: input.op!, "output", to: self, "input")

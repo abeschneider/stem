@@ -10,7 +10,7 @@ import Foundation
 import Tensor
 
 open class FlattenOp<S:Storage>: Op<S> {
-    open var _input:Tensor<S> { return inputs[0].output() }
+    open var _input:Tensor<S> { return inputs[0].output }
 
     public init(_ op:Op<S>) {
         super.init(inputs: ["input"], outputs: ["output"])
@@ -31,6 +31,7 @@ open class FlattenOp<S:Storage>: Op<S> {
     }
     
     func inputSet(_ label:String, input:[Source<S>]) {
+        setInput(to: input[0])
         let inputShape = input[0].output.shape
         output.resize(Extent(inputShape.elements))
     }
@@ -46,17 +47,17 @@ open class FlattenOp<S:Storage>: Op<S> {
 }
 
 open class FlattenOpGrad<S:Storage>: Op<S>, Gradient where S.ElementType:FloatNumericType {
-    open var _flatten:Tensor<S> { return inputs[0].output() }
+    open var _flatten:Tensor<S> { return inputs[0].output }
     open var _input:[Tensor<S>] {
-        let _in:[InputType<S>] = inputs[1]
-        return _in.map { $0.output() }
+        let _in:[Source<S>] = inputs[1]
+        return _in.map { $0.output }
     }
-    open var _gradOutput:Tensor<S> { return inputs[2].output() }
+    open var _gradOutput:Tensor<S> { return inputs[2].output }
     
     public required init(op:FlattenOp<S>) {
         super.init(inputs: ["op", "input", "gradOutput"], outputs: ["output"])
         
-        let opInputs:[InputType<S>] = op.inputs[0]
+        let opInputs:[Source<S>] = op.inputs[0]
         connect(from: op, "output", to: self, "op")
         connect(from: opInputs.map { $0.op! }, "output", to: self, "input")
         output = Tensor<S>(_input[0].shape)
