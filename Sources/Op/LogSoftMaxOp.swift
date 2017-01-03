@@ -37,12 +37,7 @@ open class LogSoftMaxOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
     }
     
     open override func apply() {
-        let expInput = exp(_input)
-        let a = sum(expInput)
-        copy(from: expInput, to: output)
-        for i in output.indices() {
-            output[i] = S.ElementType.log(1 / (a*output[i]))
-        }
+        logsoftmax(_input, result: output)
     }
 }
 
@@ -80,11 +75,9 @@ open class LogSoftMaxGrad<S:Storage>: Op<S>, Gradient where S.ElementType:FloatN
     }
     
     open override func apply() {
-        for (i, j) in zip(_input.indices(), output.indices()) {
-            if _input[i] >= 0 {
-                output[j] += S.ElementType(0)
-            }
-        }
+        // provide derivation
+        let s = sum(_gradOutput)
+        sub(_gradOutput, exp(_logsoftmax)*s, result: output)
     }
     
     open override func reset() {

@@ -298,14 +298,14 @@ public func -=<StorageType:Storage>
 //
 
 public func div<StorageType:Storage>
-    (_ lhs:Tensor<StorageType>, rhs:Tensor<StorageType>, result:Tensor<StorageType>) where StorageType.ElementType:NumericType
+    (_ lhs:Tensor<StorageType>, _ rhs:Tensor<StorageType>, result:Tensor<StorageType>) where StorageType.ElementType:NumericType
 {
     elementwiseBinaryOp(lhs, rhs, result: result, op: { return $0 / $1 })
 }
 
 
 public func div<StorageType:Storage>
-    (_ lhs:Tensor<StorageType>, rhs:StorageType.ElementType, result:Tensor<StorageType>) where StorageType.ElementType:NumericType
+    (_ lhs:Tensor<StorageType>, _ rhs:StorageType.ElementType, result:Tensor<StorageType>) where StorageType.ElementType:NumericType
 {
     elementwiseBinaryOp(lhs, rhs, result: result, op: { return $0 / $1 })
 }
@@ -333,7 +333,7 @@ public func /<StorageType:Storage>
 {
     let shape = max(lhs.shape, rhs.shape)
     let result = Tensor<StorageType>(shape)
-    div(lhs, rhs: rhs, result: result)
+    div(lhs, rhs, result: result)
     return result
 }
 
@@ -961,4 +961,15 @@ public func log<S:Storage>
     }
 }
 
+// TODO: should employ inputMax trick to make sure no 0s occur
+public func logsoftmax<S:Storage>
+    (_ input:Tensor<S>, result:Tensor<S>) where S.ElementType:FloatNumericType
+{
+    // log[ exp(input) / sum(exp(input)) ]
+    // = log(exp(input)) - log(sum(exp(input)))
+    // = input - log(sum(exp(input)))
+    let s = Tensor<S>([sum(exp(input))])
+    let logsum = log(s)
+    sub(input, logsum, result: result)
+}
 

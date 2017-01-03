@@ -161,7 +161,23 @@ class opTests: XCTestCase {
         XCTAssertLessThan(inputError, eps)
     }
     
-    func testLossGradient() {
+    func testLogSoftMaxOp() {
+        let eps:Double = 10e-6
+        let input = ConstantOp<D>(uniform(Extent(10)))
+        let gradOutput = ConstantOp<D>(zeros(Extent(10)))
+        
+        let lsm = LogSoftMaxOp<D>()
+        connect(from: input, to: lsm)
+        
+        let lsmGrad = lsm.gradient() as! LogSoftMaxGrad<D>
+        connect(from: gradOutput, to: lsmGrad, "gradOutput")
+        
+        // test gradient wrt the input
+        let inputError = checkGradient(lsm, grad: lsmGrad, params: input.output, gradParams: lsmGrad.output, eps: eps)
+        XCTAssertLessThan(inputError, eps)
+    }
+
+    func testL2LossGradient() {
         let eps:Double = 10e-6
         let input = ConstantOp<D>(uniform(Extent(10)))
         let target = ConstantOp<D>(uniform(Extent(10)))
@@ -180,6 +196,30 @@ class opTests: XCTestCase {
 
         XCTAssertLessThan(inputError, eps)
     }
+    
+//    func testCrossEntropyLoss() {
+//        let eps:Double = 10e-6
+//        let input = ConstantOp<D>(uniform(Extent(10)))
+////        let target = ConstantOp<D>(uniform(Extent(10)))
+//        let target = ConstantOp<D>(Tensor([2]))
+//        
+//        let loss = CrossEntropyLoss<D>()
+//        connect(from: input, to: loss, "input")
+//        connect(from: target, to: loss, "target")
+//        
+//        let lossGrad = loss.gradient() as! CrossEntropyLossGrad<D>
+//        connect(from: loss, to: lossGrad, "op")
+//        connect(from: input, to: lossGrad, "input")
+//        connect(from: target, to: lossGrad, "target")
+//        
+////        loss.apply()
+////        lossGrad.apply()
+//        
+//        // test gradient wrt to the input
+//        let inputError = checkGradient(loss, grad: lossGrad, input: input.output, eps: 10e-4)
+//        XCTAssertLessThan(inputError, eps)
+//    }
+
     
     func testConcatOp() {
         let inputValues:[Tensor<D>] = [uniform(Extent(5)), uniform(Extent(5)), uniform(Extent(5))]

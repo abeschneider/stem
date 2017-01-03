@@ -21,6 +21,8 @@ public protocol NumericType: AbsoluteValuable, Comparable {
     
     static var infinity:Self { get }
     
+    static func trunc(_ value: Self) -> Int
+    
     init(_ v:Int)
 }
 
@@ -77,7 +79,11 @@ extension Int: NumericType {
         return lhs < rhs ? lhs : rhs
     }
     
-    public static var infinity:Int{ return Int.infinity }    
+    public static var infinity:Int{ return Int.infinity }
+    
+    // This is needed to allow any Numeric type to be used as an index. However,
+    // this isn't a great way to do this. Need to come up with a better strategy.
+    public static func trunc(_ value:Int) -> Int { return value }
 }
 
 extension UInt8: AbsoluteValuable {
@@ -105,6 +111,8 @@ extension UInt8: NumericType {
     }
     
     public static var infinity:UInt8{ return UInt8.infinity }
+    
+    public static func trunc(_ value:UInt8) -> Int { return Int(value) }
 }
 
 extension Float: FloatNumericType {
