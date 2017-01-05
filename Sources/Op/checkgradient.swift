@@ -111,7 +111,7 @@ public func checkGradient<S:Storage, OpT:Op<S>>
         let numerical_diff = (pvalue - nvalue) / S.ElementType(2.0*eps)
         
         // TODO: Look into alternate formulations (e.g. either norm of both, or max of denom.)
-        result[i] = abs((numerical_diff - analytical_diff[i])/analytical_diff[i])
+        result[i] = abs((numerical_diff - analytical_diff[i])/(analytical_diff[i] + S.ElementType(eps)))
     }
     
     return max(abs(result))
