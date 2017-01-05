@@ -1,4 +1,4 @@
-//
+
 //  opTests.swift
 //  stem
 //
@@ -187,9 +187,6 @@ class opTests: XCTestCase {
         connect(from: target, to: loss, "target")
         
         let lossGrad = loss.gradient() as! L2LossGrad<D>
-        connect(from: loss, to: lossGrad, "op")
-        connect(from: input, to: lossGrad, "input")
-        connect(from: target, to: lossGrad, "target")
 
         // test gradient wrt to the input
         let inputError = checkGradient(loss, grad: lossGrad, input: input.output, eps: 10e-4)
@@ -197,28 +194,41 @@ class opTests: XCTestCase {
         XCTAssertLessThan(inputError, eps)
     }
     
-//    func testCrossEntropyLoss() {
-//        let eps:Double = 10e-6
-//        let input = ConstantOp<D>(uniform(Extent(10)))
-////        let target = ConstantOp<D>(uniform(Extent(10)))
-//        let target = ConstantOp<D>(Tensor([2]))
-//        
-//        let loss = CrossEntropyLoss<D>()
-//        connect(from: input, to: loss, "input")
-//        connect(from: target, to: loss, "target")
-//        
-//        let lossGrad = loss.gradient() as! CrossEntropyLossGrad<D>
-//        connect(from: loss, to: lossGrad, "op")
-//        connect(from: input, to: lossGrad, "input")
-//        connect(from: target, to: lossGrad, "target")
-//        
-////        loss.apply()
-////        lossGrad.apply()
-//        
-//        // test gradient wrt to the input
-//        let inputError = checkGradient(loss, grad: lossGrad, input: input.output, eps: 10e-4)
-//        XCTAssertLessThan(inputError, eps)
-//    }
+    func testClassNLLLossGradient() {
+        let eps:Double = 10e-6
+        let input = ConstantOp<D>(uniform(Extent(10)))
+        let target = ConstantOp<D>(Tensor([2]))
+        
+        let loss = ClassNLLLoss<D>()
+        connect(from: input, to: loss, "input")
+        connect(from: target, to: loss, "target")
+        
+        let lossGrad = loss.gradient() as! ClassNLLLossGrad<D>
+        
+        // test gradient wrt to the input
+        let inputError = checkGradient(loss, grad: lossGrad, input: input.output, eps: eps)
+        XCTAssertLessThan(inputError, eps)
+    }
+    
+    func testCrossEntropyLoss() {
+        let eps:Double = 10e-6
+//        let input = ConstantOp<D>(Tensor([1,2,3,4,5]))
+        let input = ConstantOp<D>(uniform(Extent(10)))
+//        let target = ConstantOp<D>(uniform(Extent(10)))
+        
+        // two class target
+        let target = ConstantOp<D>(Tensor([2]))
+        
+        let loss = CrossEntropyLoss<D>()
+        connect(from: input, to: loss, "input")
+        connect(from: target, to: loss, "target")
+        
+        let lossGrad = loss.gradient() as! CrossEntropyLossGrad<D>
+        
+        // test gradient wrt to the input
+        let inputError = checkGradient(loss, grad: lossGrad, input: input.output, eps: 10e-4)
+        XCTAssertLessThan(inputError, eps)
+    }
 
     
     func testConcatOp() {
@@ -721,8 +731,8 @@ backward:
         connect(from: linearGrad, to: concatGrad, "gradOutput")
         
         // currently this has no effect (regardless of index or if this is commented out)
-        connect(Source(op: concatGrad, label: "output", index: 0),
-                Target(op: prevOutputGrad, label: "gradOutput"))
+        connect(from: Source(op: concatGrad, label: "output", index: 0),
+                to: Target(op: prevOutputGrad, label: "gradOutput"))
         
         // want:
         // collection[gradOutput] -> sigmoid[gradOutput]
@@ -845,8 +855,8 @@ backward:
         connect(from: linearGrad, to: concatGrad, "gradOutput")
         
         // currently this has no effect (regardless of index or if this is commented out)
-        connect(Source(op: concatGrad, label: "output", index: 0),
-                Target(op: prevOutputGrad, label: "gradOutput"))
+        connect(from: Source(op: concatGrad, label: "output", index: 0),
+                to: Target(op: prevOutputGrad, label: "gradOutput"))
 
         let gradOutput = ConstantOp<D>(zeros(Extent(size)))
         let rnnGrad = RecurrentCollectionGrad<D>(ops: [sigmoidGrad, linearGrad, concatGrad, prevOutputGrad],
