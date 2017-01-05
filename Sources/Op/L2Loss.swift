@@ -73,9 +73,9 @@ open class L2LossGrad<S:Storage>: Op<S>, Gradient where S.ElementType:FloatNumer
         
         super.init(inputs: ["op", "input", "target"], outputs: ["output"])
         connect(from: op, "output", to: self, "op")
-        connect(Source(op: loss.op!), Target(op: self, label: "input"))
+        connect(from: Source(op: loss.op!), to: Target(op: self, label: "input"))
         
-        connect(Source(op: target.op!, label: target.label), Target(op: self, label: "target"))
+        connect(from: Source(op: target.op!, label: target.label), to: Target(op: self, label: "target"))
         outputs["output"] = [Tensor<S>(Extent(op._input.shape))]
     }
     
