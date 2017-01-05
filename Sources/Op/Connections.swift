@@ -55,6 +55,6 @@ public func connect<S:Storage>(from:[Op<S>], _ outputLabel:String="output", to:O
     to.setInput(inputLabel, to: from, outputLabel)
 }
 
-public func connect<S:Storage>(_ source:Source<S>, _ target:Target<S>) {
+public func connect<S:Storage>(from source:Source<S>, to target:Target<S>) {
     target.op.setInput(target.label, to: source.op!, source.label)
 }
