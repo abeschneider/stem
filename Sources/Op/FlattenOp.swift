@@ -46,7 +46,7 @@ open class FlattenOp<S:Storage>: Op<S> {
     }
 }
 
-open class FlattenOpGrad<S:Storage>: Op<S>, Gradient where S.ElementType:FloatNumericType {
+open class FlattenOpGrad<S:Storage>: Op<S>, Gradient {
     open var _flatten:Tensor<S> { return inputs[0].output }
     open var _input:[Tensor<S>] {
         let _in:[Source<S>] = inputs[1]
@@ -68,10 +68,21 @@ open class FlattenOpGrad<S:Storage>: Op<S>, Gradient where S.ElementType:FloatNu
     }
     
     open override func apply() {
-        copy(from: _gradOutput, to: output)
+//        copy(from: _gradOutput, to: output)
+        var k = 0
+        for i in output.indices() {
+            output[i] = _gradOutput[k]
+            k += 1
+        }
     }
     
     open override func reset() {
         fill(output, value: 0)
+    }
+}
+
+extension FlattenOp:Differentiable {
+    public func gradient() -> GradientType {
+        return FlattenOpGrad<S>(op: self)
     }
 }

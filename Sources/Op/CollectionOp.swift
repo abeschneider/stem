@@ -58,13 +58,23 @@ open class CollectionOp<S:Storage>: Op<S>, Sequence {
     
     open override var description: String {
         let className = String(describing: Mirror(reflecting: self).subjectType)
-        let inputShapes = inputs["input"]!.map {
-            let output:Tensor<S> = $0.output
-            return String(describing: output.shape.dims)
-        }.joined(separator: ", ")
+        var inputDescription:String
+        
+        if let inputOps:[Source<S>] = inputs["input"] {
+            inputDescription = inputOps.map {
+                if let op = $0.op {
+                    let output:Tensor<S> = $0.output
+                    return String(describing: output.shape.dims)
+                } else {
+                    return "[]"
+                }
+            }.joined(separator: ", ")
+        } else {
+            inputDescription = "<empty>"
+        }
         
         let value = ops.map { String(describing: $0) }.joined(separator: "\n\t")
-        return "<\(className): inputs:\(inputShapes), outputs:\(output.shape.dims)> {\n\t\(value)\n}"
+        return "<\(className): inputs:\(inputDescription), outputs:\(output.shape.dims)> {\n\t\(value)\n}"
     }
 }
 

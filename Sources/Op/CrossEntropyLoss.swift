@@ -28,9 +28,10 @@ open class CrossEntropyLoss<S:Storage>: Op<S>, Loss where S.ElementType:FloatNum
     }
     
     public required init(op:Op<S>, shared:Bool) {
-        super.init(inputs: ["input", "target"], outputs: ["output"])
-        output = zeros(Extent(1))
-        setAction("input", action: self.inputSet)
+        fatalError("init(op:shared:) has not been implemented")
+//        super.init(inputs: ["input", "target"], outputs: ["output"])
+//        output = zeros(Extent(1))
+//        setAction("input", action: self.inputSet)
     }
     
     func inputSet(_ label:String, input:[Source<S>]) {
@@ -40,8 +41,7 @@ open class CrossEntropyLoss<S:Storage>: Op<S>, Loss where S.ElementType:FloatNum
         // softmax -> nll
         connect(from: softmax, to: nll)
         
-        // nll -> self
-        setInput(inputLabel: "input", to: Source(op: nll))
+        setInput(inputLabel: "input", to: input[0])
     }
     
     func targetSet(_ label:String, target:[Source<S>]) {
@@ -73,12 +73,15 @@ open class CrossEntropyLossGrad<S:Storage>: Op<S>, Gradient where S.ElementType:
         nllGrad = op.nll.gradient() as! ClassNLLLossGrad<S>
         
         super.init(inputs: ["op", "input", "target"], outputs: ["output"])
+        
         connect(from: op, "output", to: self, "op")
         connect(from: Source(op: loss.op!), to: Target(op: self, label: "input"))
+        connect(from: Source(op: target.op!, label: target.label),
+                to: Target(op: self, label: "target"))
         
-        connect(from: Source(op: target.op!, label: target.label), to: Target(op: self, label: "target"))
         output = Tensor<S>(Extent(op._input.shape))
         
+        // TODO: double check why this is necessary .. shouldn't .gradient() already do this?
         connect(from: nllGrad, to: softmaxGrad, "gradOutput")
     }
     
