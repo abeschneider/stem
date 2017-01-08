@@ -968,8 +968,10 @@ public func logsoftmax<S:Storage>
     // log[ exp(input) / sum(exp(input)) ]
     // = log(exp(input)) - log(sum(exp(input)))
     // = input - log(sum(exp(input)))
-    let s = Tensor<S>([sum(exp(input))])
-    let logsum = log(s)
+    // maxInput scales all values so we don't get Inf due to the exp
+    let maxInput = Tensor<S>([max(input)])
+    let s = Tensor<S>([sum(exp(input - maxInput))])
+    let logsum = maxInput + log(s)
     sub(input, logsum, result: result)
 }
 
