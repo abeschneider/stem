@@ -13,7 +13,6 @@ open class SequentialOp<S:Storage>: CollectionOp<S> {
     public init(_ ops:[Op<S>], modify:Bool=true) {
         if modify  {
             for i in 0..<ops.count-1 {
-                print("Connecting \(ops[i].id) to \(ops[i+1].id)")
                 connect(from: ops[i], to: ops[i+1])
             }
         }

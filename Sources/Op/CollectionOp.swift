@@ -76,6 +76,12 @@ open class CollectionOp<S:Storage>: Op<S>, Sequence {
         let value = ops.map { String(describing: $0) }.joined(separator: "\n\t")
         return "<\(className): inputs:\(inputDescription), outputs:\(output.shape.dims)> {\n\t\(value)\n}"
     }
+    
+    open override func params() -> [Tensor<S>] {
+        return ops.reduce([]) {
+            $0 + $1.params()
+        }
+    }
 }
 
 open class CollectionGradient<S:Storage>: Op<S>, Gradient {
@@ -187,6 +193,12 @@ open class CollectionGradient<S:Storage>: Op<S>, Gradient {
         
         let value = ops.map { String(describing: $0) }.joined(separator: "\n\t")
         return "<\(className): inputs=?, outputs=\(output.shape.dims)> {\n\t\(value)\n}"
+    }
+    
+    open override func params() -> [Tensor<S>] {
+        return ops.reduce([]) {
+            $0 + $1.params()
+        }
     }
 }
 

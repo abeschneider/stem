@@ -45,15 +45,20 @@ open class L2Loss<S:Storage>: Op<S>, Loss where S.ElementType:FloatNumericType {
         outputs["output"] = [Tensor<S>(op.output.shape)]
     }
     
+    func inputSet(_ label:String, input:[Source<S>]) {
+        setInput(to: input[0])
+        output.resize(input[0].op!.output.shape)
+    }
+    
     open override func apply() {
-        // TODO: change to setAction
-        if output.shape != _input.shape {
-            output.resize(_input.shape)
-        }
-        
         sub(_input, _target, result: output)
         pow(output, 2, result: output)
         value = sum(output)
+    }
+    
+    open override func reset() {
+        fill(output, value: 0)
+        value = 0
     }
 }
 

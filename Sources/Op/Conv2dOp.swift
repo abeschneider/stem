@@ -64,19 +64,8 @@ open class Conv2dOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
     }
     
     open override func apply() {
-//        if output.shape != _input.shape {
-//            output.resize(_input.shape)
-//        }
+        fill(output, value: 0)
         
-//        let kernel = kernels[0, all, all]
-//        let outputShape = calculateConv2DSize(input: _input, kernel: kernel, stride: stride, padding: padding)
-//        let result = Tensor<S>(outputShape)
-//        output.resize(outputShape)
-        
-        // TODO: conv2d should take a Tensor to store results
-//        let result = conv2d(_input, kernel: filter, padding: [1, 1])
-        
-        // TODO: need to allow for batch mode
         if _input.shape.count == 2 {
             for i in 0..<kernels.shape[0] {
                 let kernel = kernels[i, all, all]
@@ -90,8 +79,9 @@ open class Conv2dOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
                 }
             }
         }
-//        copy(from: result, to: output)
     }
+    
+    open override func params() -> [Tensor<S>] { return [ravel(kernels)] }
 }
 
 open class Conv2dGrad<S:Storage>: Op<S>, Gradient where S.ElementType:FloatNumericType {
@@ -133,6 +123,10 @@ open class Conv2dGrad<S:Storage>: Op<S>, Gradient where S.ElementType:FloatNumer
     open override func reset() {
         fill(kernels, value: 0)
         fill(output, value: 0)
+    }
+    
+    open override func params() -> [Tensor<S>] {
+        return [ravel(kernels)]
     }
 }
 

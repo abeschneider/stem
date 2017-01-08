@@ -100,7 +100,7 @@ open class LinearOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
     }
     
     open override func params() -> [Tensor<S>] {
-        return [weight, bias]
+        return [ravel(weight), ravel(bias)]
     }
 }
 
@@ -143,6 +143,8 @@ open class LinearGrad<S:Storage>: Op<S>, Gradient where S.ElementType:FloatNumer
     
     // need to separate apply into accumulate and apply
     open override func apply() {
+        fill(output, value: 0)
+        
         if _input.dims == 1 {
             outer(_gradOutput, _input, addTo: weight)
             bias += _gradOutput
@@ -161,7 +163,7 @@ open class LinearGrad<S:Storage>: Op<S>, Gradient where S.ElementType:FloatNumer
     }
     
     open override func params() -> [Tensor<S>] {
-        return [weight, bias]
+        return [ravel(weight), ravel(bias)]
     }
     
     open override func reset() {
