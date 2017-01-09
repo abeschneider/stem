@@ -27,11 +27,17 @@ open class CrossEntropyLoss<S:Storage>: Op<S>, Loss where S.ElementType:FloatNum
         setAction("target", action: self.targetSet)
     }
     
+    public init(target: Source<S>) {
+        super.init(inputs: ["input", "target"], outputs: ["output"])
+        output = zeros(Extent(1))
+        setAction("input", action: self.inputSet)
+        setAction("target", action: self.targetSet)
+        
+        connect(from: target, to: Target<S>(op: self, label: "target"))
+    }
+    
     public required init(op:Op<S>, shared:Bool) {
         fatalError("init(op:shared:) has not been implemented")
-//        super.init(inputs: ["input", "target"], outputs: ["output"])
-//        output = zeros(Extent(1))
-//        setAction("input", action: self.inputSet)
     }
     
     func inputSet(_ label:String, input:[Source<S>]) {
