@@ -599,8 +599,7 @@ public func copy<StorageType:Storage>(from:[[StorageType.ElementType]], to:Tenso
 public func copy<StorageType:Storage>(from:Tensor<StorageType>, to:Tensor<StorageType>) {
     precondition(to.shape == from.shape, "Destination and source must be the same size")
     
-    let zippedIndices = zip(from.indices(), to.indices())
-    for (i, j) in zippedIndices {
+    for (i, j) in zip(from.indices(), to.indices()) {
         to[j] = from[i]
     }
 }
