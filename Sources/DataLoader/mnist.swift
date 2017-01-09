@@ -199,7 +199,7 @@ public class MNISTData: Sequence, IteratorProtocol, Shuffable, SupervisedData {
     public func next() -> (Tensor<NativeStorage<Float>>, Tensor<NativeStorage<Float>>)? {
         let start:Int = index
         let end:Int = index+batchSize
-        let sz:Int = end >= self.count ? self.count-1 : end
+        let sz:Int = (end - start) >= self.count ? self.count-1 : (end-start)
         
         let image = Tensor<I>(imageSize)
         let label = Tensor<I>(labelSize)
