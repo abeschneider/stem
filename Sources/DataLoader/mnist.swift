@@ -163,11 +163,16 @@ public class MNISTData: Sequence, IteratorProtocol, Shuffable, SupervisedData {
     public var labels:Tensor<I>
     public var indices:[Int]
     public var index:Int
+    public var batchSize:Int
     
     public var imageSize:Extent { return Extent(28, 28) }
     public var labelSize:Extent { return Extent(1) }
     
-    public init(imageData:URL, labelData:URL, cache:String="mnist.bin") {
+    public var count:Int { return images.shape[0] }
+    
+    public init(imageData:URL, labelData:URL, batchSize:Int, cache:String="mnist.bin") {
+        self.batchSize = batchSize
+        
         if !FileManager.default.fileExists(atPath: cache) {
             images = readImageData(url: imageData)!
             labels = readLabelData(url: labelData)!
@@ -192,15 +197,33 @@ public class MNISTData: Sequence, IteratorProtocol, Shuffable, SupervisedData {
     }
     
     public func next() -> (Tensor<NativeStorage<Float>>, Tensor<NativeStorage<Float>>)? {
-        let image = images[indices[index], all, all]
-        let label = labels[indices[index]]
-        index += 1
-        if index >= indices.count { return nil }
+        let start:Int = index
+        let end:Int = index+batchSize
+        let sz:Int = end >= self.count ? self.count-1 : end
+        
+        let image = Tensor<I>(Extent(sz, imageSize[0], imageSize[1]))
+        let label = Tensor<I>(Extent(sz))
+        for i in 0..<sz {
+            let index = indices[i]
+            image[i, all, all] = images[index, all, all]
+            label[i] = labels[index]
+        }
+        
+//        let image = images[indices[start..<end], all, all]
+//        let label = labels[indices[start..<end]]
+        index += batchSize
+        if index >= indices.count {
+            // reset for next time
+            index = 0
+            shuffle()
+            
+            return nil
+        }
         
         let floatImage:Tensor<StorageType> = asType(image)
 //        let floatLabel:Tensor<StorageType> = asType(label)
-        let labelValue = Float(label)
-        let floatLabel = Tensor<NativeStorage<Float>>([labelValue])
+        let floatLabel:Tensor<StorageType> = asType(label)
+//        let floatLabel = Tensor<NativeStorage<Float>>([labelValue])
         return (floatImage, floatLabel)
     }
 }
