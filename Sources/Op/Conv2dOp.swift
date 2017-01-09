@@ -55,7 +55,8 @@ open class Conv2dOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
         if input[0].output.shape.count == 2 {
             shape = calculateConv2DSize(input: input[0].output, kernel: kernels[0, all, all], stride: stride, padding: padding)
         } else {
-            shape = calculateConv2DSize(input: input[0].output[0, all, all], kernel: kernels[0, all, all], stride: stride, padding: padding)
+            let convShape = calculateConv2DSize(input: input[0].output[0, all, all], kernel: kernels[0, all, all], stride: stride, padding: padding)
+            shape = Extent(input[0].output.shape[0], convShape[0], convShape[1])
         }
         
         if output.shape != shape {
@@ -72,10 +73,10 @@ open class Conv2dOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
                 conv2d(_input, kernel: kernel, padding: [1, 1], addTo: output)
             }
         } else {
-            for batch in 0..<_input.shape[0] {
+            for b in 0..<_input.shape[0] {
                 for i in 0..<kernels.shape[0] {
                     let kernel = kernels[i, all, all]
-                    conv2d(_input[batch, all, all], kernel: kernel, padding: [1, 1], addTo: output)
+                    conv2d(_input[b, all, all], kernel: kernel, padding: [1, 1], addTo: output[b, all, all])
                 }
             }
         }
@@ -110,13 +111,43 @@ open class Conv2dGrad<S:Storage>: Op<S>, Gradient where S.ElementType:FloatNumer
         fatalError("init(op:shared:) has not been implemented")
     }
     
+    /*open override func apply() {
+        fill(output, value: 0)
+        
+        if _input.shape.count == 2 {
+            for i in 0..<kernels.shape[0] {
+                let kernel = kernels[i, all, all]
+                conv2d(_input, kernel: kernel, padding: [1, 1], addTo: output)
+            }
+        } else {
+            for batch in 0..<_input.shape[0] {
+                for i in 0..<kernels.shape[0] {
+                    let kernel = kernels[i, all, all]
+                    conv2d(_input[batch, all, all], kernel: kernel, padding: [1, 1], addTo: output)
+                }
+            }
+        }
+    }*/
+
     open override func apply() {
-        for i in 0..<kernels.shape[0] {            
-            let grad_wrt_kernel = conv2d(_gradOutput, kernel: _input, padding: [1, 1], flip: false)
-            iadd(kernels[i, all, all], grad_wrt_kernel)
-            
-            let grad_wrt_output = conv2d(_gradOutput, kernel: conv.kernels[i, all, all], padding: [1, 1], flip: false)
-	            iadd(output, grad_wrt_output)
+        if _input.shape.count == 2 {
+            for i in 0..<kernels.shape[0] {
+                let grad_wrt_kernel = conv2d(_gradOutput, kernel: _input, padding: [1, 1], flip: false)
+                iadd(kernels[i, all, all], grad_wrt_kernel)
+                
+                let grad_wrt_output = conv2d(_gradOutput, kernel: conv.kernels[i, all, all], padding: [1, 1], flip: false)
+                iadd(output, grad_wrt_output)
+            }
+        } else {
+            for b in 0..<_input.shape[0] {
+                for i in 0..<kernels.shape[0] {
+                    let grad_wrt_kernel = conv2d(_gradOutput[b, all, all], kernel: _input[b, all, all], padding: [1, 1], flip: false)
+                    iadd(kernels[i, all, all], grad_wrt_kernel)
+                    
+                    let grad_wrt_output = conv2d(_gradOutput[b, all, all], kernel: conv.kernels[i, all, all], padding: [1, 1], flip: false)
+                    iadd(output[b, all, all], grad_wrt_output)
+                }
+            }
         }
     }
     

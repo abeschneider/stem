@@ -163,8 +163,6 @@ open class CollectionGradient<S:Storage>: Op<S>, Gradient {
     }
     
     open override func apply() {
-//        print("CollectionGrad: \(_gradOutput)")
-        
         var lastOp:Op<S>?
         for op in ordering.traversal(ops) {
             op.apply()
@@ -196,7 +194,7 @@ open class CollectionGradient<S:Storage>: Op<S>, Gradient {
     }
     
     open override func params() -> [Tensor<S>] {
-        return ops.reduce([]) {
+        return ops.reversed().reduce([]) {
             $0 + $1.params()
         }
     }

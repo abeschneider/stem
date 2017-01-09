@@ -20,17 +20,20 @@ open class L2Loss<S:Storage>: Op<S>, Loss where S.ElementType:FloatNumericType {
     public init() {
         super.init(inputs: ["input", "target"], outputs: ["output"])
         outputs["output"] = [Tensor<S>()]
+        setAction("input", action: inputSet)
     }
     
     public init(size:Int) {
         super.init(inputs: ["input", "target"], outputs: ["output"])
         outputs["output"] = [zeros(Extent(size))]
+        setAction("input", action: inputSet)
     }
     
     public init(target t:Op<S>) {
         super.init(inputs: ["input", "target"], outputs: ["output"])
         connect(from: t, "output", to: self, "target")
         outputs["output"] = [zeros(t.output.shape)]
+        setAction("input", action: inputSet)
     }
     
     public init(value:Op<S>, target t:Op<S>) {
@@ -38,11 +41,13 @@ open class L2Loss<S:Storage>: Op<S>, Loss where S.ElementType:FloatNumericType {
         connect(from: value, "output", to: self, "input")
         connect(from: t, "output", to: self, "target")
         outputs["output"] = [Tensor<S>(value.output.shape)]
+        setAction("input", action: inputSet)
     }
     
     public required init(op:Op<S>, shared:Bool) {
         super.init(inputs: ["input", "target"], outputs: ["output"])
         outputs["output"] = [Tensor<S>(op.output.shape)]
+        setAction("input", action: inputSet)
     }
     
     func inputSet(_ label:String, input:[Source<S>]) {

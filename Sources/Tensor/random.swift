@@ -166,15 +166,15 @@ public func uniform() -> Int {
     return Int(globalRng.next())
 }
 
-public func randint(range:Range<Int>) -> Int {
-    let width = range.upperBound - range.lowerBound
-    let value = (Int(globalRng.next()) / width) + range.lowerBound
+public func randInt(range:Range<Int>) -> Int {
+    let width = UInt64(range.upperBound - range.lowerBound)
+    let value = Int(globalRng.next() % width) + range.lowerBound
     return value
 }
 
-public func randint(range:ClosedRange<Int>) -> Int {
-    let width = range.upperBound - range.lowerBound + 1
-    let value = (Int(globalRng.next()) / width) + range.lowerBound
+public func randInt(range:ClosedRange<Int>) -> Int {
+    let width = UInt64(range.upperBound - range.lowerBound)
+    let value = Int(globalRng.next() % width) + range.lowerBound
     return value
 }
 
@@ -183,7 +183,7 @@ extension Array where Element:ExpressibleByIntegerLiteral {
     public func shuffle() -> Array<Element> {
         var result = Array<Element>(repeating: 0, count: self.count)
         for i in 0..<self.count-1 {
-            let j = randint(range: 0...i)
+            let j = randInt(range: 0...i)
             if j != i { result[i] = result[j] }
 
             result[i] = self[i]
@@ -195,7 +195,7 @@ extension Array where Element:ExpressibleByIntegerLiteral {
     // Fisher-Yates shuffle
     public mutating func shuffled() {
         for i in 0..<self.count-2 {
-            let j = randint(range: i..<self.count)
+            let j = randInt(range: i..<self.count)
             swap(&self[i], &self[j])
         }
     }
