@@ -13,24 +13,13 @@ import DataLoader
 
 typealias F = NativeStorage<Float>
 
-func makeConvLayer(numFilters:Int, filterSize:Extent) -> Op<F> {
-    let conv = Conv2dOp<F>(numFilters: numFilters, filterSize: filterSize)
-    let relu = ReLUOp<F>()
-    let pool = PoolingOp<F>(poolingSize: Extent(2, 2), stride: Extent(2, 2), evalFn: max)
-
-    return SequentialOp<F>(conv, relu, pool)
-}
-
-func nextImage(data:inout MNISTData) -> (Tensor<F>, Tensor<F>) {
-    let tuple = data.next()!
-    let image:Tensor<F> = tuple.0
-    image /= 255.0
-    
-    let label:Tensor<F> = tuple.1
-    label /= 255.0
-    
-    return (image, label)
-}
+//func makeConvLayer(numFilters:Int, filterSize:Extent) -> Op<F> {
+//    let conv = Conv2dOp<F>(numFilters: numFilters, filterSize: filterSize)
+//    let relu = ReLUOp<F>()
+//    let pool = PoolingOp<F>(poolingSize: Extent(2, 2), stride: Extent(2, 2), evalFn: max)
+//
+//    return SequentialOp<F>(conv, relu, pool)
+//}
 
 func createNetwork<DataType>(data:DataType) -> SequentialOp<F> where DataType:SupervisedData, DataType.StorageType==F {
     let model = SequentialOp<F>()
