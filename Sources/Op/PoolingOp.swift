@@ -192,6 +192,10 @@ open class PoolingGrad<S:Storage>: Op<S>, Gradient where S.ElementType:FloatNume
             }
         }
     }
+    
+    open override func reset() {
+        fill(output, value: 0)
+    }
 }
 
 extension PoolingOp: Differentiable {

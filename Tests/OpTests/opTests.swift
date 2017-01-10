@@ -534,10 +534,10 @@ class opTests: XCTestCase {
         let eps = 10e-6
         let poolingOp = PoolingOp<D>(poolingSize: Extent(2, 2), stride: Extent(2, 2), evalFn: max)
         
-        let data:Tensor<D> = zeros(Extent(10, 10))
+        let data:Tensor<D> = zeros(Extent(1, 10, 10))
         for i in 0..<10 {
             for j in 0..<10 {
-                data[i, j] = Double(i)*Double(j)
+                data[0, i, j] = Double(i)*Double(j)
             }
         }
         
@@ -548,9 +548,12 @@ class opTests: XCTestCase {
 
         let poolingGrad = poolingOp.gradient() as! PoolingGrad<D>
         
-        let gradOutput = ConstantOp<D>(uniform(Extent(5, 5)))
+        let gradOutput = ConstantOp<D>(uniform(Extent(1, 5, 5)))
         connect(from: gradOutput, to: poolingGrad, "gradOutput")
 
+        poolingOp.apply()
+        print(poolingOp.output)
+        
         let inputError = checkGradient(poolingOp, grad: poolingGrad, params: data, gradParams: poolingGrad.output, eps: eps)
         XCTAssertLessThan(inputError, eps)
     }
