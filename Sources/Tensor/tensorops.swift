@@ -974,3 +974,26 @@ public func logsoftmax<S:Storage>
     sub(input, logsum, result: result)
 }
 
+public func toeplitzTransform<S:Storage>
+    (_ tensor:Tensor<S>) -> Tensor<S>
+{
+    // flatten tensor input
+    let flattenedTensor = ravel(tensor)
+    let result = Tensor<S>(Extent(flattenedTensor.shape[0], flattenedTensor.shape[0]))
+    
+    var k = 0
+    for j in 0..<flattenedTensor.shape[0] {
+        var offset = k
+        for i in 0..<flattenedTensor.shape[0] {
+            result[i, j] = flattenedTensor[offset]
+            
+            offset += 1
+            if offset >= flattenedTensor.shape[0] { offset = 0 }
+        }
+        
+        k += 1
+    }
+    
+    return result
+}
+

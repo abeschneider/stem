@@ -1060,37 +1060,19 @@ class stemTests: XCTestCase {
         XCTAssertEqual(raveledData.fixedDims, [-1])
     }
     
-//    func testConv2DWithStride() {
-//        let image = Tensor<F>([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
-//        let kernel = Tensor<F>([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
-//        let result = conv2d(image, kernel: kernel, padding: [3, 3], stride: [2, 2])
-//        print(result)
-////        let expected = Tensor<F>([[-13, -20, -17], [-18, -24, -18], [13, 20, 17]])
-////        XCTAssert(isClose(result, expected, eps: 10e-4))
-//    }
 
-    /*
-    
-    func testBenchmarkCBlas() {
-        let v1 = CDVector(rows: 1000000)
-        
-        self.measureBlock {
-            let _ = v1 + v1
-        }
+    func testToeplitzTransform() {
+        let kernel = Tensor<F>([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+        let toeplitzMatrix = toeplitzTransform(kernel)
+        let expected = Tensor<F>([  [1.0,	2.0,	3.0,	4.0,	5.0,	6.0,	7.0,	8.0,	9.0],
+                                    [2.0,	3.0,	4.0,	5.0,	6.0,	7.0,	8.0,	9.0,	1.0],
+                                    [3.0,	4.0,	5.0,	6.0,	7.0,	8.0,	9.0,	1.0,	2.0],
+                                    [4.0,	5.0,	6.0,	7.0,	8.0,	9.0,	1.0,	2.0,	3.0],
+                                    [5.0,	6.0,	7.0,	8.0,	9.0,	1.0,	2.0,	3.0,	4.0],
+                                    [6.0,	7.0,	8.0,	9.0,	1.0,	2.0,	3.0,	4.0,	5.0],
+                                    [7.0,	8.0,	9.0,	1.0,	2.0,	3.0,	4.0,	5.0,	6.0],
+                                    [8.0,	9.0,	1.0,	2.0,	3.0,	4.0,	5.0,	6.0,	7.0],
+                                    [9.0,	1.0,	2.0,	3.0,	4.0,	5.0,	6.0,	7.0,	8.0]])
+        XCTAssert(isClose(toeplitzMatrix, expected, eps: 10e-4))
     }
-
-    func testBenchmarkNative() {
-        let v1 = DVector(rows: 10000)
-        
-        self.measureBlock {
-            let _ = v1 + v1
-        }
-    }
-
-    //    func testPerformanceExample() {
-//        // This is an example of a performance test case.
-//        self.measureBlock {
-//            // Put the code you want to measure the time of here.
-//        }
-//    }*/
 }
