@@ -12,6 +12,18 @@ infix operator ** { associativity left precedence 200 }
 infix operator ⊗ {associativity left precedence 100 }
 infix operator ⊙ {associativity left precedence 100 }
 
+public func isVector<S:Storage>(_ tensor:Tensor<S>) -> Bool {
+    return tensor.type == .vector || tensor.type == .rowVector || tensor.type == .columnVector
+}
+
+public func isMatrix<S:Storage>(_ tensor:Tensor<S>) -> Bool {
+    return tensor.type == .matrix
+}
+
+public func isCube<S:Storage>(_ tensor:Tensor<S>) -> Bool {
+    return tensor.type == .cube
+}
+
 /**
  Performs binary operation on `lhs` and `rhs`, storing results in `result`.
  
@@ -484,18 +496,6 @@ public func matmul<S:Storage>
 // dot product
 //
 
-public func isVector(_ type:TensorType) -> Bool {
-    return type == .vector || type == .rowVector || type == .columnVector
-}
-
-public func isMatrix(_ type:TensorType) -> Bool {
-    return type == .matrix
-}
-
-public func isCube(_ type:TensorType) -> Bool {
-    return type == .cube
-}
-
 
 // TODO: benchmark this against specific cases .. not sure
 // the specific cases are faster (and therefore should potentially
@@ -539,7 +539,7 @@ public func dot<S:Storage>
 public func dot<S:Storage>
     (_ lhs:Tensor<S>, _ rhs:Tensor<S>) -> S.ElementType where S.ElementType:NumericType
 {
-    precondition(isVector(lhs.type) && isVector(rhs.type))
+    precondition(isVector(lhs) && isVector(rhs))
     precondition(lhs.shape.elements == rhs.shape.elements, "Number of elements must match")
 
     var result:S.ElementType = 0
@@ -560,7 +560,6 @@ public func ⊙<S:Storage>
 public func ⊙<S:Storage>
     (lhs:Tensor<S>, rhs:Tensor<S>) -> Tensor<S> where S.ElementType:FloatNumericType
 {
-//    let result = Tensor<S>(shape: Extent(left.shape[0], 1))
     let result = Tensor<S>(Extent(lhs.shape[0], rhs.shape[1]))
     dot(lhs, rhs, result: result)
     return result
@@ -573,8 +572,8 @@ public func ⊙<S:Storage>
 public func outer<StorageType:Storage>
     (_ lhs:Tensor<StorageType>, _ rhs:Tensor<StorageType>, result:Tensor<StorageType>) where StorageType.ElementType:NumericType
 {
-    precondition(isVector(lhs.type))
-    precondition(isVector(rhs.type))
+    precondition(isVector(lhs))
+    precondition(isVector(rhs))
     
     let indexLeft = lhs.indices()
     let indexRight = rhs.indices()
@@ -591,8 +590,8 @@ public func outer<StorageType:Storage>
 public func outer<StorageType:Storage>
     (_ lhs:Tensor<StorageType>, _ rhs:Tensor<StorageType>, addTo result:Tensor<StorageType>) where StorageType.ElementType:NumericType
 {
-    precondition(isVector(lhs.type))
-    precondition(isVector(rhs.type))
+    precondition(isVector(lhs))
+    precondition(isVector(rhs))
     precondition(result.shape.elements == lhs.shape.elements*rhs.shape.elements)
     
     let indexLeft = lhs.indices()

@@ -63,7 +63,7 @@ func add(
     result:Tensor<CBlasStorage<Double>>)
 {
     // use accelerated methods if they're both vectors
-    if left.shape.span == 1 && right.shape.span == 1 {
+    if isVector(left) && isVector(right) {
         let v1Ptr = UnsafePointer<Double>(left.storage.array.memory) + left.calculateOffset()
         let v2Ptr = UnsafePointer<Double>(right.storage.array.memory) + right.calculateOffset()
         let resultPtr = UnsafeMutablePointer<Double>(mutating: result.storage.array.memory) + result.calculateOffset()
@@ -114,32 +114,51 @@ func +=(left:Tensor<CBlasStorage<Double>>,
 }
 
 func dot(
-    left:Tensor<CBlasStorage<Double>>, // Matrix
-    right:Tensor<CBlasStorage<Double>>,     // Vector
-    result:Tensor<CBlasStorage<Double>>,    // Vector
+    _ left:Tensor<CBlasStorage<Double>>,
+    _ right:Tensor<CBlasStorage<Double>>,
+    result:Tensor<CBlasStorage<Double>>,
     alpha:Double=1.0,
     beta:Double=1.0)
 {
-    precondition(isMatrix(left.type))
-    precondition(isVector(right.type))
-    precondition(isVector(result.type))
+    // inner dimensions must match
     precondition(left.shape[1] == right.shape[0])
     
-    // TODO: check if this is correct (or should it be .RowVector)?
-    let leftTransposed = (left.type == .columnVector)
-    
-    cblas_dgemv(CblasColMajor,
-                leftTransposed ? CblasTrans : CblasNoTrans,
-                Int32(left.shape[0]),
-                Int32(left.shape[1]),
-                alpha,
-                UnsafePointer<Double>(left.storage.array.memory) + left.calculateOffset(),
-                Int32(left.stride[0]),
-                UnsafePointer<Double>(right.storage.array.memory) + right.calculateOffset(),
-                Int32(right.stride[0]),
-                beta,
-                UnsafeMutablePointer<Double>(mutating: result.storage.array.memory) + result.calculateOffset(),
-                Int32(result.stride[0]))
+    if isVector(right) {
+        precondition(isVector(result))
+
+        // TODO: check if this is correct (or should it be .RowVector)?
+        let leftTransposed = (left.type == .columnVector)
+        
+        cblas_dgemv(CblasColMajor,
+                    leftTransposed ? CblasTrans : CblasNoTrans,
+                    Int32(left.shape[0]),
+                    Int32(left.shape[1]),
+                    alpha,
+                    UnsafePointer<Double>(left.storage.array.memory) + left.calculateOffset(),
+                    Int32(left.stride[0]),
+                    UnsafePointer<Double>(right.storage.array.memory) + right.calculateOffset(),
+                    Int32(right.stride[0]),
+                    beta,
+                    UnsafeMutablePointer<Double>(mutating: result.storage.array.memory) + result.calculateOffset(),
+                    Int32(result.stride[0]))
+    } else if isMatrix(right) {
+        precondition(isMatrix(result))
+        
+        cblas_dgemm(CblasColMajor,
+                    CblasNoTrans,
+                    CblasNoTrans,
+                    Int32(left.shape[0]),
+                    Int32(left.shape[1]),
+                    Int32(right.shape[0]),
+                    alpha,
+                    UnsafePointer<Double>(left.storage.array.memory) + left.calculateOffset(),
+                    Int32(left.shape[0]),
+                    UnsafePointer<Double>(right.storage.array.memory) + right.calculateOffset(),
+                    Int32(right.shape[0]),
+                    beta,
+                    UnsafeMutablePointer<Double>(mutating: result.storage.array.memory) + result.calculateOffset(),
+                    Int32(result.shape[0]))
+    }
 }
 
 public func outer(
@@ -147,8 +166,8 @@ public func outer(
     right:Tensor<CBlasStorage<Double>>,     // Vector
     result:Tensor<CBlasStorage<Double>>)
 {
-    precondition(isVector(left.type))
-    precondition(isVector(right.type))
+    precondition(isVector(left))
+    precondition(isVector(right))
     precondition(left.shape[0] == result.shape[0])
     precondition(right.shape[0] == result.shape[1])
     
