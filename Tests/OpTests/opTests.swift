@@ -300,7 +300,7 @@ class opTests: XCTestCase {
         
         
         let view = ViewOp<D>(input: input, ranges: [1..<4, 2..<4])
-        let inputView = ravel(inputValue[1..<4, 2..<4])
+        let inputView = inputValue[1..<4, 2..<4]
         
         let viewGrad = view.gradient() as! ViewGrad<D>
         connect(from: gradOutput, to: viewGrad, "gradOutput")
