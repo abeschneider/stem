@@ -1061,18 +1061,136 @@ class stemTests: XCTestCase {
     }
     
 
-    func testToeplitzTransform() {
-        let kernel = Tensor<F>([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
-        let toeplitzMatrix = toeplitzTransform(kernel)
-        let expected = Tensor<F>([  [1.0,	2.0,	3.0,	4.0,	5.0,	6.0,	7.0,	8.0,	9.0],
-                                    [2.0,	3.0,	4.0,	5.0,	6.0,	7.0,	8.0,	9.0,	1.0],
-                                    [3.0,	4.0,	5.0,	6.0,	7.0,	8.0,	9.0,	1.0,	2.0],
-                                    [4.0,	5.0,	6.0,	7.0,	8.0,	9.0,	1.0,	2.0,	3.0],
-                                    [5.0,	6.0,	7.0,	8.0,	9.0,	1.0,	2.0,	3.0,	4.0],
-                                    [6.0,	7.0,	8.0,	9.0,	1.0,	2.0,	3.0,	4.0,	5.0],
-                                    [7.0,	8.0,	9.0,	1.0,	2.0,	3.0,	4.0,	5.0,	6.0],
-                                    [8.0,	9.0,	1.0,	2.0,	3.0,	4.0,	5.0,	6.0,	7.0],
-                                    [9.0,	1.0,	2.0,	3.0,	4.0,	5.0,	6.0,	7.0,	8.0]])
-        XCTAssert(isClose(toeplitzMatrix, expected, eps: 10e-4))
+//    func testToeplitzTransform() {
+//        let kernel = Tensor<F>([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+//        let toeplitzMatrix = toeplitzTransform(kernel, padding: [0, 0])
+//        let expected = Tensor<F>([  [1.0,	2.0,	3.0,	4.0,	5.0,	6.0,	7.0,	8.0,	9.0],
+//                                    [2.0,	3.0,	4.0,	5.0,	6.0,	7.0,	8.0,	9.0,	1.0],
+//                                    [3.0,	4.0,	5.0,	6.0,	7.0,	8.0,	9.0,	1.0,	2.0],
+//                                    [4.0,	5.0,	6.0,	7.0,	8.0,	9.0,	1.0,	2.0,	3.0],
+//                                    [5.0,	6.0,	7.0,	8.0,	9.0,	1.0,	2.0,	3.0,	4.0],
+//                                    [6.0,	7.0,	8.0,	9.0,	1.0,	2.0,	3.0,	4.0,	5.0],
+//                                    [7.0,	8.0,	9.0,	1.0,	2.0,	3.0,	4.0,	5.0,	6.0],
+//                                    [8.0,	9.0,	1.0,	2.0,	3.0,	4.0,	5.0,	6.0,	7.0],
+//                                    [9.0,	1.0,	2.0,	3.0,	4.0,	5.0,	6.0,	7.0,	8.0]])
+//        XCTAssert(isClose(toeplitzMatrix, expected, eps: 10e-4))
+//    }
+//    
+//    func testToeplitzConvolution() {
+//        let image = Tensor<F>([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+//        let kernel = Tensor<F>([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
+//        let result = conv2d(image, kernel: kernel, padding: [1, 1])
+//        print(result)
+//        
+//        let toeplitzMatrix = toeplitzTransform(kernel, padding: [1, 1])
+//        let imageMatrix = toeplitzTransform(image, padding: [1, 1])
+////        print(toeplitzMatrix.shape)
+////        print(toeplitzMatrix)
+//        let result2 = toeplitzMatrix*imageMatrix
+//        print(result2)
+//    }
+    
+    func testUnrollKernel() {
+        let kernels = Tensor<F>(Extent(2, 2, 3, 3))
+        kernels[0, 0, all, all] = Tensor<F>([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
+        kernels[0, 1, all, all] = Tensor<F>([[-2, -4, -2], [0, 0, 0], [2, 4, 2]])
+        kernels[1, 0, all, all] = Tensor<F>([[1, 2, 1], [0, 0, 0], [-1, -2, -1]])
+        kernels[1, 1, all, all] = Tensor<F>([[2, 4, 2], [0, 0, 0], [-2, -4, -2]])
+
+        let unrolled = unroll(kernels: kernels)
+        
+        let expected = Tensor<F>(
+            [[-1.0,	1.0],
+            [-2.0,	2.0],
+            [-1.0,	1.0],
+            [0.0,	0.0],
+            [0.0,	0.0],
+            [0.0,	0.0],
+            [1.0,	-1.0],
+            [2.0,	-2.0],
+            [1.0,	-1.0],
+            [-2.0,	2.0],
+            [-4.0,	4.0],
+            [-2.0,	2.0],
+            [0.0,	0.0],
+            [0.0,	0.0],
+            [0.0,	0.0],
+            [2.0,	-2.0],
+            [4.0,	-4.0],
+            [2.0,	-2.0]])
+        
+        XCTAssert(isClose(unrolled, expected, eps: 10-4))
+    }
+    
+    func testUnrollInput() {
+        let image:Tensor<F> = uniform(Extent(1, 5, 5))
+        image[0, all, all] = Tensor<F>([[1, 2, 3, 4, 5],
+                                        [6, 7, 8, 9, 10],
+                                        [11, 12, 13, 14, 15],
+                                        [16, 17, 18, 19, 20],
+                                        [21, 22, 23, 24, 25]])
+        
+        let unrolled = unroll(tensor: image, kernelShape: Extent(3, 3))
+        
+        let expected = Tensor<F>(
+            [[1.0,	2.0,	3.0,	6.0,	7.0,	8.0,	11.0,	12.0,	13.0],
+            [2.0,	3.0,	4.0,	7.0,	8.0,	9.0,	12.0,	13.0,	14.0],
+            [3.0,	4.0,	5.0,	8.0,	9.0,	10.0,	13.0,	14.0,	15.0],
+            [6.0,	7.0,	8.0,	11.0,	12.0,	13.0,	16.0,	17.0,	18.0],
+            [7.0,	8.0,	9.0,	12.0,	13.0,	14.0,	17.0,	18.0,	19.0],
+            [8.0,	9.0,	10.0,	13.0,	14.0,	15.0,	18.0,	19.0,	20.0],
+            [11.0,	12.0,	13.0,	16.0,	17.0,	18.0,	21.0,	22.0,	23.0],
+            [12.0,	13.0,	14.0,	17.0,	18.0,	19.0,	22.0,	23.0,	24.0],
+            [13.0,	14.0,	15.0,	18.0,	19.0,	20.0,	23.0,	24.0,	25.0]])
+
+        print(unrolled.shape)
+        XCTAssert(isClose(unrolled, expected, eps: 10e-4))
+    }
+    
+    func testUnrolledConv() {
+        // copied from: Chellapilla, Puri, and Simard 2006
+        let kernels = Tensor<F>(Extent(2, 3, 2, 2))
+        kernels[0, 0, all, all] = Tensor<F>([[1, 1],
+                                             [2, 2]])
+        
+        kernels[0, 1, all, all] = Tensor<F>([[1, 1],
+                                             [1, 1]])
+        
+        kernels[0, 2, all, all] = Tensor<F>([[0, 1],
+                                             [1, 0]])
+        
+        kernels[1, 0, all, all] = Tensor<F>([[1, 0],
+                                             [0, 1]])
+
+        kernels[1, 1, all, all] = Tensor<F>([[2, 1],
+                                             [2, 1]])
+        
+        kernels[1, 2, all, all] = Tensor<F>([[1, 2],
+                                             [2, 0]])
+
+        let image:Tensor<F> = uniform(Extent(3, 3, 3))
+        image[0, all, all] = Tensor<F>([[1, 2, 0],
+                                        [1, 1, 3],
+                                        [0, 2, 2]])
+        
+        image[1, all, all] = Tensor<F>([[0, 2, 1],
+                                        [0, 3, 2],
+                                        [1, 1, 0]])
+        
+        image[2, all, all] = Tensor<F>([[1, 2, 1],
+                                        [0, 1, 3],
+                                        [3, 3, 2]])
+        
+        let unrolledKernel = unroll(kernels: kernels)
+        let unrolledImage = unroll(tensor: image, kernelShape: Extent(2, 2))
+        
+        print(unrolledKernel.shape)
+        print(unrolledImage.shape)
+        
+        let unrolledResult = unrolledImage ⊙ unrolledKernel
+        
+        
+        let expected = Tensor<F>([[14, 12], [20, 24], [15, 17], [24, 26]])
+        XCTAssert(isClose(unrolledResult, expected, eps: 10e-4))
     }
 }

@@ -974,26 +974,53 @@ public func logsoftmax<S:Storage>
     sub(input, logsum, result: result)
 }
 
-public func toeplitzTransform<S:Storage>
-    (_ tensor:Tensor<S>) -> Tensor<S>
+/*
+ kernels is: (numOutputs x numFilters x width x height)
+                 N             M          W      H
+ output is:
+ [[k00] [k10] ... [kN0]]
+ [[k01] [k11] ... [kN1]]
+ [       ...           ]
+ [[k0M] [k1M] ... [kNM]]
+ */
+public func unroll<S:Storage>
+    (kernels:Tensor<S>) -> Tensor<S>
 {
-    // flatten tensor input
-    let flattenedTensor = ravel(tensor)
-    let result = Tensor<S>(Extent(flattenedTensor.shape[0], flattenedTensor.shape[0]))
+    let numOutputs = kernels.shape[0]
+    let numKernels = kernels.shape[1]
+    let width = kernels.shape[2]
+    let height = kernels.shape[3]
+    let kernelSize = width*height
     
-    var k = 0
-    for j in 0..<flattenedTensor.shape[0] {
-        var offset = k
-        for i in 0..<flattenedTensor.shape[0] {
-            result[i, j] = flattenedTensor[offset]
-            
-            offset += 1
-            if offset >= flattenedTensor.shape[0] { offset = 0 }
+    let result = Tensor<S>(Extent(numKernels*width*height, numOutputs))
+    
+    for n in 0..<numOutputs {
+        for m in 0..<numKernels {
+            let first = m*kernelSize
+            let last = first+kernelSize
+            result[first..<last, n] = ravel(kernels[n, m, all, all])
         }
-        
-        k += 1
     }
     
     return result
 }
 
+public func unroll<S:Storage>
+    (tensor:Tensor<S>, kernelShape:Extent) -> Tensor<S>
+{
+    let channels = tensor.shape[0]
+    let height = tensor.shape[1] - kernelShape[0] + 1
+    let width = tensor.shape[2] - kernelShape[1] + 1
+
+    let result = Tensor<S>(Extent(width*height, kernelShape[0]*kernelShape[1]*channels))
+    
+    var c = 0
+    for i in 0..<height {
+        for j in 0..<width {
+            result[c, all] = ravel(tensor[all, i..<(i+kernelShape[0]), j..<(j+kernelShape[1])])
+            c += 1
+        }
+    }
+    
+    return result
+}
