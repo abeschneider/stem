@@ -56,7 +56,8 @@ open class Op<S:Storage>: OpType, Copyable, Hashable, CustomStringConvertible {
     }
     
     open func apply() { assertionFailure() }
-    open func reset() { fill(output, value: 0) }
+//    open func reset() { fill(output, value: 0) }
+    open func reset() { }
     
     open func setAction(_ key:String, action:@escaping (String, [Source<S>]) -> ()) { inputActions[key] = action }
     open func params() -> [Tensor<S>] { return [] }

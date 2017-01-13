@@ -48,4 +48,6 @@ open class ConstantOp<S:Storage>: Op<S> {
     }
     
     open override func apply() {}
+    
+    open override func reset() {}
 }
