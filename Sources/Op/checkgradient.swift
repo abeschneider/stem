@@ -15,7 +15,9 @@ func calcForwardGrad<S:Storage>
 {
     let jacobian:Tensor<S> = zeros(Extent(params.shape.elements, op.output.shape.elements))
 
-    for i in 0..<params.shape.elements {
+//    for i in 0..<params.shape.elements {
+    var k = 0
+    for i in params.indices() {
         let old_value:S.ElementType = params[i]
         
         // positive direction
@@ -34,7 +36,8 @@ func calcForwardGrad<S:Storage>
         params[i] = old_value
         
         let diff:Tensor<S> = (pvalue - nvalue) * S.ElementType(1.0/(2.0*eps))
-        jacobian[i, all] = ravel(diff)
+        jacobian[k, all] = ravel(diff)
+        k += 1
     }
     
     return jacobian
@@ -46,17 +49,21 @@ func calcBackwardGrad<S:Storage>
     forward.reset()
     forward.apply()
     
-    let gradOutput = ravel(backward.inputs["gradOutput"]![0].output)
+//    let gradOutput = ravel(backward.inputs["gradOutput"]![0].output)
+    let gradOutput = backward.inputs["gradOutput"]![0].output
     let jacobian:Tensor<S> = zeros(Extent(gradParams.shape.elements, gradOutput.shape.elements))
 
-    for i in 0..<gradOutput.shape.elements {
+//    for i in 0..<gradOutput.shape.elements {
+    var k = 0
+    for i in gradOutput.indices() {
         fill(gradOutput, value: 0)
         gradOutput[i] = 1
         
         (backward as! GradientType).reset()
         backward.apply()
         let din = ravel(gradParams)
-        jacobian[all, i] = din
+        jacobian[all, k] = din
+        k += 1
     }
     
     return jacobian
@@ -65,12 +72,13 @@ func calcBackwardGrad<S:Storage>
 public func checkGradient<S:Storage>
     (_ op:Op<S>, grad:Op<S>, params:Tensor<S>, gradParams:Tensor<S>, eps:Double) -> S.ElementType where S.ElementType:FloatNumericType
 {
+    
     op.reset()
     op.apply()
     grad.apply()
     
-    let fgrad = calcForwardGrad(op, params: ravel(params), eps: eps)
-    let bgrad = calcBackwardGrad(op, grad, gradParams: ravel(gradParams))
+    let fgrad = calcForwardGrad(op, params: params, eps: eps)
+    let bgrad = calcBackwardGrad(op, grad, gradParams: gradParams)
     
     let error:Tensor<S> = zeros(fgrad.shape)
     sub(fgrad, bgrad, result: error)
