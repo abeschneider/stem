@@ -160,6 +160,8 @@ open class Tensor<StorageType:Storage> {
 
     open var fixedDims:[Int]
     
+    open var contiguous:Bool
+    
     // convenience variable to access the shape of the view
     open var shape:Extent {
         get { return view.shape }
@@ -261,11 +263,12 @@ open class Tensor<StorageType:Storage> {
     public init(storage:StorageType, shape:Extent, offset:[Int]?=nil, dimIndex:[Int]?=nil, stride:[Int]?=nil, fixedDims:[Int]?=nil) {
         self.storage = storage
         self.view = StorageView(shape: shape, offset: offset)
-        let stride = stride ?? calculateStride(Extent(storage.calculateOrder(shape.dims)))
+        let calculatedStride = calculateStride(Extent(storage.calculateOrder(shape.dims)))
+        let stride = stride ?? calculatedStride
         self.dimIndex = dimIndex ?? storage.calculateOrder(shape.count)
-//        self.singletons = [Int](repeating: 0, count: shape.count)
         self.fixedDims = fixedDims ?? [Int](repeating: -1, count: stride.count)
         self.stride = stride
+        contiguous = (stride == calculatedStride)
     }
     
     public init(_ shape:Extent, value:StorageType.ElementType=0) {
@@ -273,8 +276,8 @@ open class Tensor<StorageType:Storage> {
         self.stride = calculateStride(Extent(storage.calculateOrder(shape.dims)))
         dimIndex = storage.calculateOrder(shape.count)
         view = ViewType(shape: shape, offset: Array<Int>(repeating: 0, count: shape.count))
-//        self.singletons = [Int](repeating: 0, count: shape.count)
         self.fixedDims = [Int](repeating: -1, count: stride.count)
+        contiguous = true
     }
         
     init(array:[StorageType.ElementType], shape:Extent, view:StorageView<StorageType>?=nil) {
@@ -282,8 +285,8 @@ open class Tensor<StorageType:Storage> {
         self.stride = calculateStride(Extent(storage.calculateOrder(shape.dims)))
         dimIndex = storage.calculateOrder(shape.count)
         self.view = view ?? ViewType(shape: shape, offset: Array<Int>(repeating: 0, count: shape.count))
-//        self.singletons = [Int](repeating: 0, count: shape.count)
         self.fixedDims = [Int](repeating: -1, count: stride.count)
+        contiguous = true
     }
     
     init(_ tensor:Tensor, window:[CountableRange<Int>]) {
@@ -308,6 +311,9 @@ open class Tensor<StorageType:Storage> {
                 
         dimIndex = tensor.storage.calculateOrder(stride.count)
         view = ViewType(shape: viewShape, offset: window.map { $0.first != nil ? $0.first! : 0})
+        
+        let calculatedStride = calculateStride(Extent(storage.calculateOrder(view.shape.dims)))
+        contiguous = (stride == calculatedStride)
     }
     
     init(_ tensor:Tensor, view:StorageView<StorageType>?=nil, dimIndex:[Int]?=nil, stride:[Int]?=nil, fixedDims:[Int]?=nil, copy:Bool=false) {
@@ -330,11 +336,15 @@ open class Tensor<StorageType:Storage> {
         
         self.dimIndex = dimIndex ?? tensor.dimIndex
         self.stride = stride ?? tensor.stride
+        
+        let calculatedStride = calculateStride(Extent(storage.calculateOrder(self.view.shape.dims)))
+        contiguous = (self.stride == calculatedStride)
     }
     
     init(tensor:Tensor, shape:Extent, stride:[Int]?=nil) {
         storage = tensor.storage
-        self.stride = stride ?? calculateStride(shape)
+        let calculatedStride = calculateStride(shape)
+        self.stride = stride ?? calculatedStride
         
         // check if we need to increase the size of tensor.view.offset
         if tensor.view.offset.count < shape.count {
@@ -344,10 +354,11 @@ open class Tensor<StorageType:Storage> {
             }
         }
         
-        self.fixedDims = [Int](repeating: -1, count: self.stride.count)
+        fixedDims = [Int](repeating: -1, count: self.stride.count)
         
         dimIndex = storage.calculateOrder(shape.count)
-        self.view = ViewType(shape: shape, offset: tensor.view.offset)
+        view = ViewType(shape: shape, offset: tensor.view.offset)
+        contiguous = (self.stride == calculatedStride)
     }
 
     // FIXME: currently does not match other version of calculateOffset
@@ -428,15 +439,19 @@ open class Tensor<StorageType:Storage> {
     open func reshape(_ newShape:Extent) -> Tensor {
         precondition(newShape.elements == shape.elements, "Cannot change number of elements in Tensor.")
         
-        let copy = Tensor(self, view: view, copy: true)
-        copy.stride = calculateStride(Extent(storage.calculateOrder(newShape.dims)))
+        if contiguous {
+             return Tensor(storage: storage, shape: newShape)
+        } else {
+            let copy = Tensor(self, view: view, copy: true)
+            copy.stride = calculateStride(Extent(storage.calculateOrder(newShape.dims)))
 
-        copy.view = StorageView<StorageType>(shape: newShape, offset:[Int](repeating: 0, count: copy.stride.count))
-        copy.dimIndex = storage.calculateOrder(copy.stride.count)
+            copy.view = StorageView<StorageType>(shape: newShape, offset:[Int](repeating: 0, count: copy.stride.count))
+            copy.dimIndex = storage.calculateOrder(copy.stride.count)
 
-        copy.fixedDims = [Int](repeating: -1, count: copy.stride.count)
-        
-        return copy
+            copy.fixedDims = [Int](repeating: -1, count: copy.stride.count)
+            
+            return copy
+        }
 //        return Tensor(storage: storage, shape: newShape)
     }
     
@@ -702,15 +717,15 @@ public func map<StorageType:Storage>(
 public func ravel<StorageType:Storage>(_ tensor:Tensor<StorageType>) -> Tensor<StorageType> {
     // FIXME: using reshape is causing all the problems right now because checkgradient relies on
     // the old behavior of reshape (which pointed to the same storage)
-//    return tensor.reshape(Extent(tensor.shape.elements))
-    let newShape = Extent(tensor.shape.elements)
-    let stride = calculateStride(Extent(tensor.storage.calculateOrder(newShape.dims)))
-    let view = StorageView<StorageType>(shape: newShape, offset:[Int](repeating: 0, count: stride.count))
-    
-    let copy = Tensor(tensor, view: view, copy: false)
-    copy.stride = stride
-    copy.dimIndex = tensor.storage.calculateOrder(copy.stride.count)
-    copy.fixedDims = [Int](repeating: -1, count: copy.stride.count)
-    
-    return copy
+    return tensor.reshape(Extent(tensor.shape.elements))
+//    let newShape = Extent(tensor.shape.elements)
+//    let stride = calculateStride(Extent(tensor.storage.calculateOrder(newShape.dims)))
+//    let view = StorageView<StorageType>(shape: newShape, offset:[Int](repeating: 0, count: stride.count))
+//    
+//    let copy = Tensor(tensor, view: view, copy: false)
+//    copy.stride = stride
+//    copy.dimIndex = tensor.storage.calculateOrder(copy.stride.count)
+//    copy.fixedDims = [Int](repeating: -1, count: copy.stride.count)
+//    
+//    return copy
 }
