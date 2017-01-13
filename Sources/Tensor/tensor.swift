@@ -295,13 +295,14 @@ open class Tensor<StorageType:Storage> {
                 return tensor.shape[$0.0]
             }
             
-            return $0.1.last! - $0.1.first! + 1
+            let width = $0.1.last! - $0.1.first! + 1
+            return width == 1 ? -1 : width
         }.filter {
-            return $0 > 1
+            return $0 >= 1
         })
         
         fixedDims = window.enumerated().map {
-            let singleton = Bool($0.1.first == $0.1.last && $0.1.first != nil)
+            let singleton = Bool($0.1.first != nil && $0.1.first == $0.1.last) // && $0.1.first != nil
             return singleton ? Int($0.element.lowerBound) : -1
         }
                 
