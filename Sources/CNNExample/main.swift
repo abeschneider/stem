@@ -27,7 +27,7 @@ func createNetwork<DataType>(data:DataType) -> SequentialOp<F> where DataType:Su
     // layer 1
     let input = SupervisedDataOp<F, DataType>(data: data)
     model.append(input)
-    model.append(Conv2dOp(numFilters: 1, filterSize: Extent(3, 3)))
+    model.append(Conv2dOp(numInputs: 1, numOutputs: 5, kernelSize: Extent(3, 3)))
     model.append(ReLUOp())
     model.append(PoolingOp(poolingSize: Extent(2, 2), stride: Extent(2, 2), evalFn: max))
     // output size is now (14, 14)

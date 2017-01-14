@@ -18,8 +18,13 @@ open class Conv2dOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
     open var padding:[Int]
     open var stride:[Int]
     
-    public init(input: Op<S>, numFilters:Int, filterSize:Extent, stride:[Int] = [1, 1], padding:[Int]=[1, 1]) {
-        let size = Extent(numFilters, filterSize[0], filterSize[1])
+    open var _numOutputs:Int { return kernels.shape[0] }
+    open var _numInputs:Int { return kernels.shape[1] }
+    
+    public init(input: Op<S>, numInputs:Int, numOutputs:Int, kernelSize:Extent, stride:[Int] = [1, 1], padding:[Int]=[1, 1]) {
+        let size = Extent(numOutputs, numInputs, kernelSize[0], kernelSize[1])
+        
+        // pretty sure kernels should be stored in unfolded state
         kernels = uniform(size)
 
         self.stride = stride
@@ -32,8 +37,8 @@ open class Conv2dOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
         connect(from: input, "output", to: self, "input")
     }
     
-    public init(numFilters:Int, filterSize:Extent, stride:[Int]=[1, 1], padding:[Int]=[1, 1]) {
-        let size = Extent(numFilters, filterSize[0], filterSize[1])
+    public init(numInputs:Int, numOutputs:Int, kernelSize:Extent, stride:[Int]=[1, 1], padding:[Int]=[1, 1]) {
+        let size = Extent(numOutputs, numInputs, kernelSize[0], kernelSize[1])
         kernels = uniform(size)
         
         self.stride = stride
@@ -52,19 +57,15 @@ open class Conv2dOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
         var shape:Extent
         
         setInput(to: input[0])
-        if input[0].output.shape.count == 2 {
-            shape = calculateConv2DSize(input: input[0].output, kernel: kernels[0, all, all], stride: stride, padding: padding)
-        } else {
-            let convShape = calculateConv2DSize(input: input[0].output[0, all, all], kernel: kernels[0, all, all], stride: stride, padding: padding)
-            shape = Extent(input[0].output.shape[0], convShape[0], convShape[1])
-        }
+        let convShape = calculateConv2DSize(input: input[0].output[0, all, all],
+                                            kernel: kernels[0, 0, all, all],
+                                            stride: stride,
+                                            padding: padding)
         
-        if output.shape != shape {
-            output.resize(shape)
-        }
+        output.resize(Extent(_numOutputs, convShape[0], convShape[1]))
     }
     
-    open override func apply() {
+    /*open override func apply() {
         fill(output, value: 0)
         
         if _input.shape.count == 2 {
@@ -79,6 +80,18 @@ open class Conv2dOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
                     conv2d(_input[b, all, all], kernel: kernel, padding: [1, 1], addTo: output[b, all, all])
                 }
             }
+        }
+    }*/
+    
+    
+    open override func apply() {
+        let unfoldedKernel = unroll(kernels: kernels)
+        let unfoldedInput = unroll(tensor: _input, kernelShape: Extent(kernels.shape[2], kernels.shape[3]))
+        let result = Tensor<S>(Extent(unfoldedInput.shape[0], unfoldedKernel.shape[1]))
+        dot(unfoldedInput, unfoldedKernel, result: result)
+        
+        for i in 0..<_numOutputs {
+            output[i, all, all] = result[all, i].reshape(Extent(output.shape[1], output.shape[2]))
         }
     }
     
