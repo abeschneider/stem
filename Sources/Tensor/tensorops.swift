@@ -1005,19 +1005,25 @@ public func unroll<S:Storage>
     return result
 }
 
+// TODO: add padding
 public func unroll<S:Storage>
-    (tensor:Tensor<S>, kernelShape:Extent) -> Tensor<S>
+    (tensor:Tensor<S>, kernelShape:Extent, padding:[Int] = [0, 0]) -> Tensor<S>
 {
     let channels = tensor.shape[0]
-    let height = tensor.shape[1] - kernelShape[0] + 1
-    let width = tensor.shape[2] - kernelShape[1] + 1
+    let inputWidth = tensor.shape[1] + 2*padding[0]
+    let inputHeight = tensor.shape[2] + 2*padding[1]
+    let paddedInput = Tensor<S>(Extent(channels, inputWidth, inputHeight))
+    paddedInput[all, padding[0]..<(padding[0] + tensor.shape[1]), padding[1]..<(padding[1] + tensor.shape[2])] = tensor
+    
+    let height = paddedInput.shape[1] - kernelShape[0] + 1
+    let width = paddedInput.shape[2] - kernelShape[1] + 1
 
     let result = Tensor<S>(Extent(width*height, kernelShape[0]*kernelShape[1]*channels))
     
     var c = 0
     for i in 0..<height {
         for j in 0..<width {
-            result[c, all] = ravel(tensor[all, i..<(i+kernelShape[0]), j..<(j+kernelShape[1])])
+            result[c, all] = ravel(paddedInput[all, i..<(i+kernelShape[0]), j..<(j+kernelShape[1])])
             c += 1
         }
     }

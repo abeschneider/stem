@@ -410,47 +410,64 @@ class opTests: XCTestCase {
         XCTAssert(isClose(convOp.output, expected, eps: 10e-4))
     }
     
-//    func testConvOp2() {
-//        let input = ConstantOp(Tensor<D>([[1, 2, 3], [4, 5, 6], [7, 8, 9]]))
-//        
-//        let convOp = Conv2dOp<D>(input: input, numFilters: 2, kernelSize: Extent(3, 3))
-//        convOp.kernels[0, all, all] = Tensor<D>([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
-//        convOp.kernels[1, all, all] = Tensor<D>([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
-//        convOp.apply()
-//        
-//        let expected = 2*Tensor<D>([[-13, -20, -17], [-18, -24, -18], [13, 20, 17]])
-//        XCTAssert(isClose(convOp.output, expected, eps: 10e-4))
-//    }
-//    
-//    func testConvOp3() {
-//        let inputData = Tensor<D>(Extent(2, 3, 3))
-//        inputData[0, all, all] = Tensor<D>([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
-//        inputData[1, all, all] = Tensor<D>([[10,11,12],[13,14,15],[16,17,18]])
-//        
-//        let input = ConstantOp(inputData)
-//
-//        let convOp = Conv2dOp<D>(input: input, numFilters: 1, filterSize: Extent(3, 3))
-//        convOp.kernels[0, all, all] = Tensor<D>([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
-//        convOp.apply()
-//        
-//        let input2 = ConstantOp(inputData[0, all, all])
-//        let convOp2 = Conv2dOp<D>(input: input2, numFilters: 1, filterSize: Extent(3, 3))
-//        convOp2.kernels[0, all, all] = Tensor<D>([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
-//        convOp2.apply()
-//        
-//        let input3 = ConstantOp(inputData[1, all, all])
-//        let convOp3 = Conv2dOp<D>(input: input3, numFilters: 1, filterSize: Extent(3, 3))
-//        convOp3.kernels[0, all, all] = Tensor<D>([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
-//        convOp3.apply()
-//        
-//        let combined = Tensor<D>(Extent(2, 3, 3))
-//        combined[0, all, all] = convOp2.output
-//        combined[1, all, all] = convOp3.output
-//        
-//        XCTAssert(isClose(convOp.output, combined, eps: 10e-4))
-//    }
-//    
-//    // test basic functionality
+    func testConvOp2() {
+        let data:Tensor<D> = uniform(Extent(3, 3, 3))
+        data[0, all, all] = Tensor<D>([[1, 2, 0],
+                                       [1, 1, 3],
+                                       [0, 2, 2]])
+        
+        data[1, all, all] = Tensor<D>([[0, 2, 1],
+                                       [0, 3, 2],
+                                       [1, 1, 0]])
+        
+        data[2, all, all] = Tensor<D>([[1, 2, 1],
+                                       [0, 1, 3],
+                                       [3, 3, 2]])
+        
+        let input = ConstantOp(data)
+        let convOp = Conv2dOp<D>(input: input, numInputs: 3, numOutputs: 2, kernelSize: Extent(3, 3), padding: [1, 1])
+        
+        convOp.kernels[0, 0, all, all] = Tensor([[1, 1, 1], [2, 2, 1], [3, 3, 1]])
+        convOp.kernels[0, 1, all, all] = Tensor([[1, 1, 1], [1, 1, 1], [4, 5, 1]])
+        convOp.kernels[0, 2, all, all] = Tensor([[0, 1, 2], [1, 0, 2], [6, 7, 2]])
+        convOp.kernels[1, 0, all, all] = Tensor([[1, 0, 2], [0, 1, 2], [3, 3, 2]])
+        convOp.kernels[1, 1, all, all] = Tensor([[2, 1, 3], [2, 1, 3], [4, 5, 3]])
+        convOp.kernels[1, 2, all, all] = Tensor([[1, 2, 3], [2, 0, 3], [0, 2, 3]])
+        
+        convOp.apply()
+        
+        let expected = Tensor<D>(Extent(2, 3, 3))
+        expected[0, all, all] = Tensor<D>([[19.0,	51.0,	70.0], [53.0,	88.0,	68.0], [17.0,	32.0,	24.0]])
+        expected[1, all, all] = Tensor<D>([[34.0,	56.0,	49.0], [60.0,	70.0,	44.0], [31.0,	48.0,	26.0]])
+
+        XCTAssert(isClose(convOp.output, expected, eps: 10e-4))
+    }
+    
+    func testConvOp3() {
+        let data:Tensor<D> = uniform(Extent(1, 3, 3))
+        data[0, all, all] = Tensor<D>([[1, 2, 0],
+                                       [1, 1, 3],
+                                       [0, 2, 2]])
+        
+        let input = ConstantOp(data)
+        
+        let convOp = Conv2dOp<D>(input: input, numInputs: 1, numOutputs: 2, kernelSize: Extent(3, 3))
+        convOp.kernels[0, 0, all, all] = Tensor<D>([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
+        convOp.kernels[1, 0, all, all] = Tensor<D>([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
+        convOp.apply()
+        
+        let expected = Tensor<D>(Extent(2, 3, 3))
+        expected[0, all, all] = Tensor<D>([[3.0,	6.0,	7.0],
+                                           [-2.0,	1.0,	4.0],
+                                           [-3.0,	-6.0,	-7.0]])
+        
+        expected[1, all, all] = Tensor<D>([[3.0,	6.0,	7.0],
+                                           [-2.0,	1.0,	4.0],
+                                           [-3.0,	-6.0,	-7.0]])
+        
+        XCTAssert(isClose(convOp.output, expected, eps: 10e-4))
+    }
+
 //    func testConvOpGradient1() {
 //        let eps = 10e-6
 //        let values = Tensor<D>([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
@@ -467,7 +484,7 @@ class opTests: XCTestCase {
 //        let inputError = checkGradient(convOp, grad: convOpGrad, params: input.output, gradParams: convOpGrad.output, eps: eps)
 //        XCTAssertLessThan(inputError, eps)
 //    }
-//    
+    
 //    // test with more than one filter
 //    func testConvOpGradient2() {
 //        let eps = 10e-6

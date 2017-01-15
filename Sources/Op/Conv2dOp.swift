@@ -53,9 +53,6 @@ open class Conv2dOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
     }
     
     func inputSet(_ label:String, input:[Source<S>]) {
-        // Currently follows Torch convention
-        var shape:Extent
-        
         setInput(to: input[0])
         let convShape = calculateConv2DSize(input: input[0].output[0, all, all],
                                             kernel: kernels[0, 0, all, all],
@@ -65,28 +62,9 @@ open class Conv2dOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
         output.resize(Extent(_numOutputs, convShape[0], convShape[1]))
     }
     
-    /*open override func apply() {
-        fill(output, value: 0)
-        
-        if _input.shape.count == 2 {
-            for i in 0..<kernels.shape[0] {
-                let kernel = kernels[i, all, all]
-                conv2d(_input, kernel: kernel, padding: [1, 1], addTo: output)
-            }
-        } else {
-            for b in 0..<_input.shape[0] {
-                for i in 0..<kernels.shape[0] {
-                    let kernel = kernels[i, all, all]
-                    conv2d(_input[b, all, all], kernel: kernel, padding: [1, 1], addTo: output[b, all, all])
-                }
-            }
-        }
-    }*/
-    
-    
     open override func apply() {
         let unfoldedKernel = unroll(kernels: kernels)
-        let unfoldedInput = unroll(tensor: _input, kernelShape: Extent(kernels.shape[2], kernels.shape[3]))
+        let unfoldedInput = unroll(tensor: _input, kernelShape: Extent(kernels.shape[2], kernels.shape[3]), padding: padding)        
         let result = Tensor<S>(Extent(unfoldedInput.shape[0], unfoldedKernel.shape[1]))
         dot(unfoldedInput, unfoldedKernel, result: result)
         
