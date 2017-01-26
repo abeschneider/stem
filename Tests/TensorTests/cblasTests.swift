@@ -122,25 +122,6 @@ class cblasTests: XCTestCase {
         }
     }
     
-    func testCBlasTensorReshape() {
-        // TODO: check this is correct
-        let array = asColumnMajor((0..<20).map { Double($0) }, rows: 4, cols: 5)
-        let tensor1 = Tensor<CD>(array: array, shape: Extent(2, 10))
-        let tensor2 = tensor1.reshape(Extent(4, 5))
-        
-        // verify dimensions are correct
-        XCTAssertEqual(tensor2.shape, Extent(4, 5))
-        
-        let expected = (0..<20).map { Double($0) }
-        
-        // verify contents are still valid
-        var k = 0
-        for i in tensor2.indices(.columnMajor) {
-            XCTAssertEqual(tensor2[i], expected[k])
-            k += 1
-        }
-    }
-    
     func testCBlasVectorAdd() {
         let m1 = Tensor<CD>(colvector: [1, 2, 3, 4, 5, 6, 7, 8])
         let m2 = Tensor<CD>(colvector: [8, 7, 6, 5, 4, 3, 2, 1])
@@ -206,6 +187,45 @@ class cblasTests: XCTestCase {
         let result = m1 - m2
         
         let expected = Tensor<CD>(colvector: [-7, -5, -3, -1, 1, 3, 5, 7])
+        XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
+    }
+    
+    func testDotProductVectorVector1() {
+        let m = Tensor<CD>([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+        let v = Tensor<CD>(colvector: [1, 2, 3])
+        
+        // 3x3*3x1 - > 3x1
+        let result = Tensor<CD>(Extent(3, 1))
+        dot(m, v, result: result)
+        
+        let expected = Tensor<CD>([1, 2, 3])
+        XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
+    }
+    
+    func testDotProductVectorVector2() {
+        let v1 = Tensor<CD>(colvector: [1, 2, 3, 4])
+        let v2 = Tensor<CD>(rowvector: [2, 2, 2, 2])
+        let v3 = v1+v1
+        
+        let result:Double = v2 ⊙ v3
+        XCTAssertEqual(result, 40)
+    }
+    
+    func testDotProductMatrixVector() {
+        let m = Tensor<CD>([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+        let v = Tensor<CD>(colvector: [1, 2, 3])
+        
+        let result:Tensor<CD> = m ⊙ v
+        
+        let expected = Tensor<CD>([1, 2, 3])
+        XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
+    }
+    
+    func testDotProductMatrixMatrix() {
+        let m = Tensor<CD>([[1, 2, 3], [3, 4, 5]])
+        let result:Tensor<CD> = m ⊙ m.T
+        
+        let expected = Tensor<CD>([[14, 26], [26, 50]])
         XCTAssert(isClose(result, expected, eps: 10e-4), "Not close")
     }
     

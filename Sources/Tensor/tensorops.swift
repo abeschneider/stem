@@ -551,6 +551,14 @@ public func dot<S:Storage>
     return result
 }
 
+public func dot<S:Storage>
+    (_ lhs:Tensor<S>, _ rhs:Tensor<S>) -> Tensor<S> where S.ElementType:FloatNumericType
+{
+    let result = Tensor<S>(Extent(lhs.shape[0], rhs.shape[1]))
+    dot(lhs, rhs, result: result)
+    return result
+}
+
 public func ⊙<S:Storage>
     (lhs:Tensor<S>, rhs:Tensor<S>) -> S.ElementType where S.ElementType:NumericType
 {
@@ -748,40 +756,39 @@ public func sum<StorageType:Storage>(_ tensor:Tensor<StorageType>) -> StorageTyp
  w0=(w+2pW−kW)/sX+1
  */
 // currently only supports 'valid' mode; the kernel cannot exceed the bounds of the image
-public func calculateConv2DSize<S:Storage>(input:Tensor<S>, kernel:Tensor<S>, stride:[Int], padding:[Int]) -> Extent {
-    var rows = (input.shape[0] - kernel.shape[0] + 2*padding[0]) + 1
+public func calculateConv2DSize<S:Storage>(
+    input:Tensor<S>,
+    kernels:Tensor<S>,
+    stride:[Int],
+    padding:[Int]) -> Extent
+{
+    let numOutputs = kernels.shape[0]
+    var rows = (input.shape[1] - kernels.shape[2] + 2*padding[0]) + 1
     rows /= stride[0]
-    var cols = (input.shape[1] - kernel.shape[1] + 2*padding[1]) + 1
+    var cols = (input.shape[2] - kernels.shape[3] + 2*padding[1]) + 1
     cols /= stride[1]
-    return Extent(rows, cols)
+    
+    return Extent(numOutputs, rows, cols)
 }
 
-public func conv2d<S:Storage>(_ input:Tensor<S>,
-                                kernel:Tensor<S>,
-                                stride:[Int]=[1, 1],
-                                padding:[Int]=[0, 0],
-                                paddingValue:S.ElementType=0,
-                                flip:Bool=true,
-                                addTo:Tensor<S>)
+public func conv2dSingle<S:Storage>(
+    input:Tensor<S>,
+    kernels:Tensor<S>,
+    stride:[Int]=[1, 1],
+    padding:[Int]=[1, 1],
+    paddingValue:S.ElementType=0,
+    flip:Bool=true,
+    result:Tensor<S>)
 {
-    let centerX = kernel.shape[1] / 2
-    let centerY = kernel.shape[0] / 2
+    let centerX = kernels.shape[1] / 2
+    let centerY = kernels.shape[0] / 2
     
-//    var rows = (input.shape[0] - kernel.shape[0] + 2*padding[0]) + 1
-//    rows /= stride[0]
-//    var cols = (input.shape[1] - kernel.shape[1] + 2*padding[1]) + 1
-//    cols /= stride[1]
-    let outputShape = calculateConv2DSize(input: input, kernel: kernel, stride: stride, padding: padding)
-    
-//    let outputShape = Extent(rows, cols)
-//    let out = Tensor<S>(outputShape)
-    
-    for i in 0..<outputShape[0] {
-        for j in 0..<outputShape[1] {
-            for k in 0..<kernel.shape[0] {                
-                let kflipped = flip ? kernel.shape[0] - k - 1 : k
-                for l in 0..<kernel.shape[1] {
-                    let lflipped = flip ? kernel.shape[1] - l - 1 : l
+    for i in 0..<result.shape[0] {
+        for j in 0..<result.shape[1] {
+            for k in 0..<kernels.shape[0] {
+                let kflipped = flip ? kernels.shape[0] - k - 1 : k
+                for l in 0..<kernels.shape[1] {
+                    let lflipped = flip ? kernels.shape[1] - l - 1 : l
                     
                     let m = (i + (k - centerY) - padding[0])*stride[0] + centerY
                     let n = (j + (l - centerX) - padding[1])*stride[1] + centerX
@@ -791,36 +798,69 @@ public func conv2d<S:Storage>(_ input:Tensor<S>,
                     
                     if (m >= 0 && m < input.shape[0] && n >= 0 && n < input.shape[1]) {
                         let input_mn:S.ElementType = input[m, n]
-                        let kernel_kl:S.ElementType = kernel[kflipped, lflipped]
+                        let kernel_kl:S.ElementType = kernels[kflipped, lflipped]
 
-                        // FIXME: addTo.+= dispatches incorrectly .. this is caused by an unknown
-                        // interaction of the generics and the dispatch system (needs investigation)
-                        addTo[o, p] = addTo[o, p] + input_mn*kernel_kl
+                        result[o, p] = result[o, p] + input_mn*kernel_kl
                     } else {
-                        addTo[o, p] = addTo[o, p] + paddingValue * kernel[kflipped, lflipped]
+                        result[o, p] = result[o, p] + paddingValue * kernels[kflipped, lflipped]
                     }
                 }
             }
         }
     }
     
-//    return out
 }
 
 public func conv2d<S:Storage>(_ input:Tensor<S>,
-                   kernel:Tensor<S>,
+                   kernels:Tensor<S>,
                    stride:[Int]=[1, 1],
-                   padding:[Int]=[0, 0],
+                   padding:[Int]=[1, 1],
                    paddingValue:S.ElementType=0,
                    flip:Bool=true) -> Tensor<S> where S.ElementType:NumericType
 {
-    let outputShape = calculateConv2DSize(input: input, kernel: kernel, stride: stride, padding: padding)
+    precondition(input.shape[0] == kernels.shape[1])
+    
+    let numOutputs = kernels.shape[0]
+    let numInputs = kernels.shape[1]
+    let outputShape = calculateConv2DSize(input: input, kernels: kernels, stride: stride, padding: padding)
     let out = Tensor<S>(outputShape)
     
-    conv2d(input, kernel:kernel, stride:stride, padding:padding, paddingValue:paddingValue, flip:flip, addTo:out)
+    for i in 0..<numOutputs {
+        for j in 0..<numInputs {
+            conv2dSingle(input: input[j, all, all],
+                         kernels: kernels[i, j, all, all],
+                         stride: stride,
+                         padding: padding,
+                         paddingValue: paddingValue,
+                         flip: flip,
+                         result: out[i, all, all])
+        }
+    }
+    
     return out
 }
 
+public func conv2d<S:Storage>(
+                    _ input:Tensor<S>,
+                   kernels:Tensor<S>,
+                   stride:[Int]=[1, 1],
+                   padding:[Int]=[0, 0],
+                   paddingValue:S.ElementType=0,
+                   flip:Bool=true,
+                   result:Tensor<S>)
+{
+    let numOutputs = kernels.shape[0]
+    
+    for i in 0..<numOutputs {
+        conv2dSingle(input: input,
+                     kernels: kernels[i, all, all, all],
+                     stride: stride,
+                     padding: padding,
+                     paddingValue: paddingValue,
+                     flip: flip,
+                     result: result[i, all, all])
+    }
+}
 
 public func max<StorageType:Storage>
     (_ tensor:Tensor<StorageType>, axis:Int) -> Tensor<StorageType> where StorageType.ElementType:NumericType
@@ -974,6 +1014,23 @@ public func logsoftmax<S:Storage>
     sub(input, logsum, result: result)
 }
 
+public func rotate180<S:Storage>(tensor:Tensor<S>) -> Tensor<S>
+{
+    precondition(tensor.shape.count == 2)
+    
+    let result = Tensor<S>(tensor.shape)
+    let h = tensor.shape[0]
+    let w = tensor.shape[1]
+    
+    for i in 0..<h {
+        for j in 0..<w {
+            result[i, j] = tensor[h-i-1, w-j-1]
+        }
+    }
+    
+    return result
+}
+
 /*
  kernels is: (numOutputs x numFilters x width x height)
                  N             M          W      H
@@ -984,7 +1041,7 @@ public func logsoftmax<S:Storage>
  [[k0M] [k1M] ... [kNM]]
  */
 public func unroll<S:Storage>
-    (kernels:Tensor<S>) -> Tensor<S>
+    (kernels:Tensor<S>, flip:Bool=false) -> Tensor<S>
 {
     let numOutputs = kernels.shape[0]
     let numKernels = kernels.shape[1]
@@ -998,14 +1055,20 @@ public func unroll<S:Storage>
         for m in 0..<numKernels {
             let first = m*kernelSize
             let last = first+kernelSize
-            result[first..<last, n] = ravel(kernels[n, m, all, all])
+            
+            if flip {
+                // TODO: look into more efficient methods of rotating kernel
+                let rotated = rotate180(tensor: kernels[n, m, all, all])
+                result[first..<last, n] = ravel(rotated)
+            } else {
+                result[first..<last, n] = ravel(kernels[n, m, all, all])
+            }
         }
     }
-    
+
     return result
 }
 
-// TODO: add padding
 public func unroll<S:Storage>
     (tensor:Tensor<S>, kernelShape:Extent, padding:[Int] = [0, 0]) -> Tensor<S>
 {
@@ -1023,7 +1086,8 @@ public func unroll<S:Storage>
     var c = 0
     for i in 0..<height {
         for j in 0..<width {
-            result[c, all] = ravel(paddedInput[all, i..<(i+kernelShape[0]), j..<(j+kernelShape[1])])
+            let view = paddedInput[all, i..<(i+kernelShape[0]), j..<(j+kernelShape[1])]
+            result[c, all] = ravel(view)
             c += 1
         }
     }

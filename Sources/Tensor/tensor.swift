@@ -316,29 +316,33 @@ open class Tensor<StorageType:Storage> {
         contiguous = (stride == calculatedStride)
     }
     
-    init(_ tensor:Tensor, view:StorageView<StorageType>?=nil, dimIndex:[Int]?=nil, stride:[Int]?=nil, fixedDims:[Int]?=nil, copy:Bool=false) {
-        if copy {
+    // TODO: get rid of 'makeCopy'. Should either make as two separate constructors, or just remove copy functionality
+    init(_ tensor:Tensor, view:StorageView<StorageType>?=nil, dimIndex:[Int]?=nil, stride:[Int]?=nil, fixedDims:[Int]?=nil, copy makeCopy:Bool=false) {
+        if makeCopy {
             storage = StorageType(size: tensor.shape.elements, value: 0)
-            var j = 0
-            for i in tensor.indices() {
-                storage[j] = tensor[i]
-                j += 1
-            }
             
             // NB: If making a copy, previously defined offset is no longer valid
-            self.view = ViewType(shape: view == nil ? tensor.shape : view!.shape)
+            self.view = ViewType(shape: tensor.shape)
+            self.stride = calculateStride(Extent(tensor.storage.calculateOrder(tensor.view.shape.dims)))
+            self.dimIndex = tensor.storage.calculateOrder(tensor.view.shape.count)
+            self.fixedDims = [Int](repeating: -1, count: tensor.stride.count)
+
         } else {
             self.view = view ?? ViewType(shape: tensor.shape, offset: tensor.view.offset)
             storage = tensor.storage
+            self.fixedDims = fixedDims ?? tensor.fixedDims
+            self.dimIndex = dimIndex ?? tensor.dimIndex
+            self.stride = stride ?? tensor.stride
         }
         
-        self.fixedDims = fixedDims ?? tensor.fixedDims
-        
-        self.dimIndex = dimIndex ?? tensor.dimIndex
-        self.stride = stride ?? tensor.stride
         
         let calculatedStride = calculateStride(Extent(storage.calculateOrder(self.view.shape.dims)))
         contiguous = (self.stride == calculatedStride)
+        
+        // NB: Have to delay doing this until all variables have been initialized
+        if makeCopy {
+            copy(from: tensor, to: self)
+        }
     }
     
     init(tensor:Tensor, shape:Extent, stride:[Int]?=nil) {
@@ -361,12 +365,15 @@ open class Tensor<StorageType:Storage> {
         contiguous = (self.stride == calculatedStride)
     }
 
-    // FIXME: currently does not match other version of calculateOffset
     open func calculateOffset() -> Int {
+        let expandedIndices = (0..<stride.count).map {
+            return fixedDims[$0] == -1 ? view.offset[$0] : fixedDims[$0]
+        }
+
         var pos = 0
         for i in 0..<shape.count {
-            let di = dimIndex[i]
-            pos += view.offset[di]*stride[i]
+            let j = dimIndex[i]
+            pos += expandedIndices[j]*stride[i]
         }
         
         return pos
@@ -439,20 +446,18 @@ open class Tensor<StorageType:Storage> {
     open func reshape(_ newShape:Extent) -> Tensor {
         precondition(newShape.elements == shape.elements, "Cannot change number of elements in Tensor.")
         
-        if contiguous {
-             return Tensor(storage: storage, shape: newShape)
-        } else {
-            let copy = Tensor(self, view: view, copy: true)
-            copy.stride = calculateStride(Extent(storage.calculateOrder(newShape.dims)))
-
-            copy.view = StorageView<StorageType>(shape: newShape, offset:[Int](repeating: 0, count: copy.stride.count))
-            copy.dimIndex = storage.calculateOrder(copy.stride.count)
-
-            copy.fixedDims = [Int](repeating: -1, count: copy.stride.count)
+//        if contiguous {
+//            return Tensor(storage: storage, shape: newShape)
+//        } else {
+            let copy = Tensor(newShape)
+            
+            // force indics to always be column major for copying
+            for (i, j) in zip(self.indices(.columnMajor), copy.indices(.columnMajor)) {
+                copy[j] = self[i]
+            }
             
             return copy
-        }
-//        return Tensor(storage: storage, shape: newShape)
+//        }
     }
     
     open func resize(_ newShape:Extent) {
@@ -471,7 +476,7 @@ open class Tensor<StorageType:Storage> {
     open func indices(_ order:DimensionOrder?=nil) -> IteratorSequence<IndexGenerator> {
         let o = order ?? storage.order
         return IteratorSequence<IndexGenerator>(IndexGenerator(shape, order: o))
-    }
+    }    
 }
 
 extension Tensor {
@@ -604,7 +609,7 @@ public func copy<StorageType:Storage>(from:[[StorageType.ElementType]], to:Tenso
     precondition(to.shape[0] != from.count || to.shape[1] != from[0].count,
                  "Destination and source must be the same size")
 
-    var toIndices = to.indices()
+    var toIndices = to.indices(.columnMajor)
     for i in 0..<from.count {
         for j in 0..<from[i].count {
             to[toIndices.next()!] = from[i][j]
@@ -615,7 +620,15 @@ public func copy<StorageType:Storage>(from:[[StorageType.ElementType]], to:Tenso
 public func copy<StorageType:Storage>(from:Tensor<StorageType>, to:Tensor<StorageType>) {
     precondition(to.shape == from.shape, "Destination and source must be the same size")
     
-    for (i, j) in zip(from.indices(), to.indices()) {
+    for (i, j) in zip(from.indices(.columnMajor), to.indices(.columnMajor)) {
+        to[j] = from[i]
+    }
+}
+
+public func copyByAnotherName<StorageType:Storage>(from:Tensor<StorageType>, to:Tensor<StorageType>) {
+    precondition(to.shape == from.shape, "Destination and source must be the same size")
+    
+    for (i, j) in zip(from.indices(.columnMajor), to.indices(.columnMajor)) {
         to[j] = from[i]
     }
 }
@@ -717,7 +730,16 @@ public func map<StorageType:Storage>(
 public func ravel<StorageType:Storage>(_ tensor:Tensor<StorageType>) -> Tensor<StorageType> {
     // FIXME: using reshape is causing all the problems right now because checkgradient relies on
     // the old behavior of reshape (which pointed to the same storage)
-    return tensor.reshape(Extent(tensor.shape.elements))
+    let result = tensor.reshape(Extent(tensor.shape.elements))
+    
+//    let shape = Extent(tensor.shape.elements)
+//    let stride = calculateStride(Extent((0..<shape.count).map { shape.count-$0-1 }))
+//    let dimIndex = (0..<shape.count).map { shape.count-$0-1 }
+//    let result = Tensor(storage: tensor.storage, shape: shape)
+    
+    return result
+    
+    
 //    let newShape = Extent(tensor.shape.elements)
 //    let stride = calculateStride(Extent(tensor.storage.calculateOrder(newShape.dims)))
 //    let view = StorageView<StorageType>(shape: newShape, offset:[Int](repeating: 0, count: stride.count))

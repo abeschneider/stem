@@ -15,7 +15,7 @@ typealias F = NativeStorage<Float>
 typealias D = NativeStorage<Double>
 
 class optimTests: XCTestCase {
-    func testSimple() {
+    /*func testSimple() {
         let alpha = 10e-5
         let input = ConstantOp<D>(Tensor(Extent(28, 28)))
         let target = ConstantOp<D>(Tensor(Extent(28, 28)))
@@ -61,5 +61,5 @@ class optimTests: XCTestCase {
         // Given random initialization, we don't know the exact
         // values, but we should expect this to be lower than before.
         XCTAssertLessThan(loss.value, initialLoss)
-    }
+    }*/
 }

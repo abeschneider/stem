@@ -54,20 +54,21 @@ open class Conv2dOp<S:Storage>: Op<S> where S.ElementType:FloatNumericType {
     
     func inputSet(_ label:String, input:[Source<S>]) {
         setInput(to: input[0])
-        let convShape = calculateConv2DSize(input: input[0].output[0, all, all],
-                                            kernel: kernels[0, 0, all, all],
+        let convShape = calculateConv2DSize(input: input[0].output,
+                                            kernels: kernels,
                                             stride: stride,
                                             padding: padding)
         
-        output.resize(Extent(_numOutputs, convShape[0], convShape[1]))
+        output.resize(convShape)
     }
     
     open override func apply() {
         let unfoldedKernel = unroll(kernels: kernels)
-        let unfoldedInput = unroll(tensor: _input, kernelShape: Extent(kernels.shape[2], kernels.shape[3]), padding: padding)        
+        let unfoldedInput = unroll(tensor: _input, kernelShape: Extent(kernels.shape[2], kernels.shape[3]), padding: padding)
+        
         let result = Tensor<S>(Extent(unfoldedInput.shape[0], unfoldedKernel.shape[1]))
         dot(unfoldedInput, unfoldedKernel, result: result)
-        
+
         for i in 0..<_numOutputs {
             output[i, all, all] = result[all, i].reshape(Extent(output.shape[1], output.shape[2]))
         }
@@ -121,7 +122,7 @@ open class Conv2dGrad<S:Storage>: Op<S>, Gradient where S.ElementType:FloatNumer
     }*/
 
     open override func apply() {
-        if _input.shape.count == 2 {
+        /*if _input.shape.count == 2 {
             for i in 0..<kernels.shape[0] {
                 let grad_wrt_kernel = conv2d(_gradOutput, kernel: _input, padding: [1, 1], flip: false)
                 iadd(kernels[i, all, all], grad_wrt_kernel)
@@ -139,7 +140,7 @@ open class Conv2dGrad<S:Storage>: Op<S>, Gradient where S.ElementType:FloatNumer
                     iadd(output[b, all, all], grad_wrt_output)
                 }
             }
-        }
+        }*/
     }
     
     open override func reset() {

@@ -1,4 +1,4 @@
-//
+
 //  stemTests.swift
 //  stemTests
 //
@@ -37,6 +37,15 @@ class stemTests: XCTestCase {
             XCTAssertEqual(t[index], array[k])
             k += 1
         }
+    }
+    
+    func testTensorStorageIndex() {
+        let tensor = Tensor<D>(Extent(3, 3))
+        for i in 0..<tensor.shape.elements {
+            tensor.storage[i] = D.ElementType(i)
+        }
+        
+        print(tensor)
     }
     
     func testTensorView1() {
@@ -1020,35 +1029,213 @@ class stemTests: XCTestCase {
         print(r)
     }
     
-    func testConv2D() {
-        let image = Tensor<D>([[0, 0, 0, 0, 0], [0, 1, 2, 3, 0], [0, 4, 5, 6, 0], [0, 7, 8, 9, 0], [0, 0, 0, 0, 0]])
-        let kernel = Tensor<D>([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
+    func testConv2d1() {
+        let image = Tensor<D>(Extent(1, 5, 5))
+        image[0, all, all] = Tensor([[0, 0, 0, 0, 0], [0, 1, 2, 3, 0], [0, 4, 5, 6, 0], [0, 7, 8, 9, 0], [0, 0, 0, 0, 0]])
         
-        let result = conv2d(image, kernel: kernel)
+        let kernels = Tensor<D>(Extent(1, 1, 3, 3))
+        kernels[0, 0, all, all] = Tensor([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
+        
+        let result = conv2d(image, kernels: kernels, padding: [0, 0])
 
-        let expected = Tensor<D>([[-13, -20, -17], [-18, -24, -18], [13, 20, 17]])
+        let expected = Tensor<D>(Extent(1, 3, 3))
+        expected[0, all, all] = Tensor<D>([[-13, -20, -17], [-18, -24, -18], [13, 20, 17]])
+        XCTAssert(isClose(result, expected, eps: 10e-4))
+    }
+    
+    func testConv2d1_CBlas() {
+        typealias CD = CBlasStorage<Double>
+        let image = Tensor<CD>(Extent(1, 5, 5))
+        image[0, all, all] = Tensor<CD>([[0, 0, 0, 0, 0], [0, 1, 2, 3, 0], [0, 4, 5, 6, 0], [0, 7, 8, 9, 0], [0, 0, 0, 0, 0]])
+        
+        let kernels = Tensor<CD>(Extent(1, 1, 3, 3))
+        kernels[0, 0, all, all] = Tensor([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
+        
+        let result = conv2d(image, kernels: kernels, padding: [0, 0])
+        
+        let expected = Tensor<CD>(Extent(1, 3, 3))
+        expected[0, all, all] = Tensor([[-13, -20, -17], [-18, -24, -18], [13, 20, 17]])
+        
+        print(result[0, all, all])
+        XCTAssert(isClose(result, expected, eps: 10e-4))
+    }
+    
+    func testConv2d2() {
+        let image = Tensor<D>(Extent(2, 5, 5))
+        image[0, all, all] = Tensor([[0, 0, 0, 0, 0], [0, 1, 2, 3, 0], [0, 4, 5, 6, 0], [0, 7, 8, 9, 0], [0, 0, 0, 0, 0]])
+        image[1, all, all] = Tensor([[0, 0, 0, 0, 0], [0, 1, 2, 3, 0], [0, 4, 5, 6, 0], [0, 7, 8, 9, 0], [0, 0, 0, 0, 0]])
+        
+        let kernels = Tensor<D>(Extent(1, 2, 3, 3))
+        kernels[0, 0, all, all] = Tensor([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
+        kernels[0, 1, all, all] = Tensor([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
+        
+        let result = conv2d(image, kernels: kernels, padding: [0, 0])
+        print(result)
+
+        let expected = Tensor<D>(Extent(1, 3, 3))
+        expected[0, all, all] = 2*Tensor<D>([[-13, -20, -17], [-18, -24, -18], [13, 20, 17]])
+        XCTAssert(isClose(result, expected, eps: 10e-4))
+    }
+    
+    func testConv2d2_CBlas() {
+        typealias CD = CBlasStorage<Double>
+        let image = Tensor<CD>(Extent(2, 5, 5))
+        image[0, all, all] = Tensor([[0, 0, 0, 0, 0], [0, 1, 2, 3, 0], [0, 4, 5, 6, 0], [0, 7, 8, 9, 0], [0, 0, 0, 0, 0]])
+        image[1, all, all] = Tensor([[0, 0, 0, 0, 0], [0, 1, 2, 3, 0], [0, 4, 5, 6, 0], [0, 7, 8, 9, 0], [0, 0, 0, 0, 0]])
+        
+        let kernels = Tensor<CD>(Extent(1, 2, 3, 3))
+        kernels[0, 0, all, all] = Tensor([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
+        kernels[0, 1, all, all] = Tensor([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
+        
+        let result = conv2d(image, kernels: kernels, padding: [0, 0])
+        print(result)
+        
+        let expected = Tensor<CD>(Extent(1, 3, 3))
+        expected[0, all, all] = 2*Tensor<CD>([[-13, -20, -17], [-18, -24, -18], [13, 20, 17]])
+        XCTAssert(isClose(result, expected, eps: 10e-4))
+    }
+    
+    func testConv2d3() {
+        let image = Tensor<D>(Extent(1, 5, 5))
+        image[0, all, all] = Tensor<D>([[0, 0, 0, 0, 0], [0, 1, 2, 3, 0], [0, 4, 5, 6, 0], [0, 7, 8, 9, 0], [0, 0, 0, 0, 0]])
+        
+        let kernels = Tensor<D>(Extent(2, 1, 3, 3))
+        kernels[0, 0, all, all] = Tensor([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
+        kernels[1, 0, all, all] = Tensor([[2, 4, 2], [0, 0, 0], [-1, -2, -1]])
+        
+        let result = conv2d(image, kernels: kernels, padding: [0, 0])
+        print(result)
+
+        let expected = Tensor<D>(Extent(2, 3, 3))
+        expected[0, all, all] = Tensor([[-13, -20, -17], [-18, -24, -18], [13, 20, 17]])
+        expected[1, all, all] = Tensor([[26, 40, 34], [40, 56, 44], [-13, -20, -17]])
+        XCTAssert(isClose(result, expected, eps: 10e-4))
+    }
+    
+    func testConv2d4() {
+        let image = Tensor<D>(Extent(2, 5, 5))
+        image[0, all, all] = Tensor<D>([[0, 0, 0, 0, 0], [0, 1, 2, 3, 0], [0, 4, 5, 6, 0], [0, 7, 8, 9, 0], [0, 0, 0, 0, 0]])
+        image[1, all, all] = Tensor<D>([[0, 0, 0, 0, 0], [0, 1, 2, 3, 0], [0, 4, 5, 6, 0], [0, 7, 8, 9, 0], [0, 0, 0, 0, 0]])
+        
+        let kernels = Tensor<D>(Extent(2, 2, 3, 3))
+        kernels[0, 0, all, all] = Tensor<D>([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
+        kernels[0, 1, all, all] = Tensor<D>([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
+        kernels[1, 0, all, all] = Tensor<D>([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
+        kernels[1, 1, all, all] = Tensor<D>([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
+        
+        let result = conv2d(image, kernels: kernels, padding: [0, 0])
+        
+        let expected = Tensor<D>(Extent(2, 3, 3))
+        expected[0, all, all] = 2*Tensor<D>([[-13, -20, -17], [-18, -24, -18], [13, 20, 17]])
+        expected[1, all, all] = 2*Tensor<D>([[-13, -20, -17], [-18, -24, -18], [13, 20, 17]])
+        XCTAssert(isClose(result, expected, eps: 10e-4))
+    }
+    
+    func testConv2d5() {
+        let image = Tensor<D>(Extent(1, 5, 5))
+        image[0, all, all] = Tensor<D>([[0, 0, 0, 0, 0], [0, 1, 2, 3, 0], [0, 4, 5, 6, 0], [0, 7, 8, 9, 0], [0, 0, 0, 0, 0]])
+        
+        let kernels = Tensor<D>(Extent(2, 1, 3, 3))
+        kernels[0, 0, all, all] = Tensor<D>([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
+        kernels[1, 0, all, all] = Tensor<D>([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
+        
+        let result = conv2d(image, kernels: kernels, padding: [0, 0])
+        print(result)
+        
+        let expected = Tensor<D>(Extent(2, 3, 3))
+        expected[0, all, all] = Tensor<D>([[-13, -20, -17], [-18, -24, -18], [13, 20, 17]])
+        expected[1, all, all] = Tensor<D>([[-13, -20, -17], [-18, -24, -18], [13, 20, 17]])
+        XCTAssert(isClose(result, expected, eps: 10e-4))
+    }
+    
+    func testConv2d_ChellapillaEtAl1_CBlas() {
+        typealias CD = CBlasStorage<Double>
+        
+        let image:Tensor<CD> = zeros(Extent(3, 3, 3))
+        image[0, all, all] = Tensor<CD>([[1, 2, 0],
+                                         [1, 1, 3],
+                                         [0, 2, 2]])
+        
+        image[1, all, all] = Tensor<CD>([[0, 2, 1],
+                                         [0, 3, 2],
+                                         [1, 1, 0]])
+        
+        image[2, all, all] = Tensor<CD>([[1, 2, 1],
+                                         [0, 1, 3],
+                                         [3, 3, 2]])
+
+        let kernels = Tensor<CD>(Extent(2, 3, 2, 2))
+        kernels[0, 0, all, all] = Tensor([[1, 1], [2, 2]])
+        kernels[0, 1, all, all] = Tensor([[1, 1], [1, 1]])
+        kernels[0, 2, all, all] = Tensor([[0, 1], [1, 0]])
+        kernels[1, 0, all, all] = Tensor([[1, 0], [0, 1]])
+        kernels[1, 1, all, all] = Tensor([[2, 1], [2, 1]])
+        kernels[1, 2, all, all] = Tensor([[1, 2], [2, 0]])
+        
+        // original paper actually use correlation instead of convolution
+        let result = conv2d(image, kernels: kernels, padding: [0, 0], flip: false)
+        
+        let expected = Tensor<CD>(Extent(2, 2, 2))
+        expected[0, all, all] = Tensor([[14, 20], [15, 24]])
+        expected[1, all, all] = Tensor([[12, 24], [17, 26]])
+        
+        XCTAssert(isClose(result, expected, eps: 10e-4))
+    }
+    
+    func testConv2d_ChellapillaEtAl2_CBlas() {
+        typealias CD = CBlasStorage<Double>
+        
+        let kernels = Tensor<CD>(Extent(1, 3, 2, 2))
+        kernels[0, 0, all, all] = Tensor([[1, 1], [2, 2]])
+        kernels[0, 1, all, all] = Tensor([[1, 1], [1, 1]])
+        kernels[0, 2, all, all] = Tensor([[0, 1], [1, 0]])
+        
+        let image:Tensor<CD> = uniform(Extent(3, 3, 3))
+        image[0, all, all] = Tensor<CD>([[1, 2, 0],
+                                         [1, 1, 3],
+                                         [0, 2, 2]])
+        
+        image[1, all, all] = Tensor<CD>([[0, 2, 1],
+                                         [0, 3, 2],
+                                         [1, 1, 0]])
+        
+        image[2, all, all] = Tensor<CD>([[1, 2, 1],
+                                         [0, 1, 3],
+                                         [3, 3, 2]])
+        
+        let result = conv2d(image, kernels: kernels, padding: [0, 0], flip: false)
+        
+        let expected = Tensor<CD>(Extent(1, 2, 2))
+        expected[0, all, all] = Tensor([[14, 20], [15, 24]])
         XCTAssert(isClose(result, expected, eps: 10e-4))
     }
     
     func testCorr2D() {
-        let image = Tensor<F>([[0, 0, 0, 0, 0], [0, 1, 2, 3, 0], [0, 4, 5, 6, 0], [0, 7, 8, 9, 0], [0, 0, 0, 0, 0]])
-        let kernel = Tensor<F>([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
-        let result = conv2d(image, kernel: kernel, flip: false)
+        let image = Tensor<F>(Extent(1, 5, 5))
+        image[0, all, all] = Tensor([[0, 0, 0, 0, 0], [0, 1, 2, 3, 0], [0, 4, 5, 6, 0], [0, 7, 8, 9, 0], [0, 0, 0, 0, 0]])
+        let kernels = Tensor<F>(Extent(1, 1, 3, 3))
+        kernels[0, 0, all, all] = Tensor<F>([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
+        let result = conv2d(image, kernels: kernels, padding: [0, 0], flip: false)
         
-        let expected = Tensor<F>([[13, 20, 17], [18, 24, 18], [-13, -20, -17]])
+        let expected = Tensor<F>(Extent(1, 3, 3))
+        expected[0, all, all] = Tensor<F>([[13, 20, 17], [18, 24, 18], [-13, -20, -17]])
         XCTAssert(isClose(result, expected, eps: 10e-4))
     }
 
     
     func testConv2DWithPadding() {
-        let image = Tensor<F>([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
-        let kernel = Tensor<F>([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
-        let result = conv2d(image, kernel: kernel, padding: [1, 1])
+        let image = Tensor<F>(Extent(1, 3, 3))
+        image[0, all, all] = Tensor([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+        let kernels = Tensor<F>(Extent(1, 1, 3, 3))
+        kernels[0, 0, all, all] = Tensor<F>([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
+        let result = conv2d(image, kernels: kernels, padding: [1, 1])
         
-        let expected = Tensor<F>([[-13, -20, -17], [-18, -24, -18], [13, 20, 17]])
+        let expected = Tensor<F>(Extent(1, 3, 3))
+        expected[0, all, all] = Tensor<F>([[-13, -20, -17], [-18, -24, -18], [13, 20, 17]])
         XCTAssert(isClose(result, expected, eps: 10e-4))
     }
     
+    // TODO: test with contiguous and non-contiguous case
     func testRavel() {
         let data = Tensor<F>([[1, 2, 3, 4, 5], [6, 7, 8, 9, 10], [11, 12, 13, 14, 15]])
         let raveledData = ravel(data)
@@ -1060,36 +1247,17 @@ class stemTests: XCTestCase {
         XCTAssertEqual(raveledData.fixedDims, [-1])
     }
     
+    func testRavel2() {
+        let data = Tensor<CBlasStorage<Double>>(Extent(3, 2, 2))
+        data[0, all, all] = Tensor([[1, 2], [1, 1]])
+        data[1, all, all] = Tensor([[0, 2], [0, 3]])
+        data[2, all, all] = Tensor([[1, 2], [0, 1]])
+        let raveledData = ravel(data)
 
-//    func testToeplitzTransform() {
-//        let kernel = Tensor<F>([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
-//        let toeplitzMatrix = toeplitzTransform(kernel, padding: [0, 0])
-//        let expected = Tensor<F>([  [1.0,	2.0,	3.0,	4.0,	5.0,	6.0,	7.0,	8.0,	9.0],
-//                                    [2.0,	3.0,	4.0,	5.0,	6.0,	7.0,	8.0,	9.0,	1.0],
-//                                    [3.0,	4.0,	5.0,	6.0,	7.0,	8.0,	9.0,	1.0,	2.0],
-//                                    [4.0,	5.0,	6.0,	7.0,	8.0,	9.0,	1.0,	2.0,	3.0],
-//                                    [5.0,	6.0,	7.0,	8.0,	9.0,	1.0,	2.0,	3.0,	4.0],
-//                                    [6.0,	7.0,	8.0,	9.0,	1.0,	2.0,	3.0,	4.0,	5.0],
-//                                    [7.0,	8.0,	9.0,	1.0,	2.0,	3.0,	4.0,	5.0,	6.0],
-//                                    [8.0,	9.0,	1.0,	2.0,	3.0,	4.0,	5.0,	6.0,	7.0],
-//                                    [9.0,	1.0,	2.0,	3.0,	4.0,	5.0,	6.0,	7.0,	8.0]])
-//        XCTAssert(isClose(toeplitzMatrix, expected, eps: 10e-4))
-//    }
-//    
-//    func testToeplitzConvolution() {
-//        let image = Tensor<F>([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
-//        let kernel = Tensor<F>([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
-//        let result = conv2d(image, kernel: kernel, padding: [1, 1])
-//        print(result)
-//        
-//        let toeplitzMatrix = toeplitzTransform(kernel, padding: [1, 1])
-//        let imageMatrix = toeplitzTransform(image, padding: [1, 1])
-////        print(toeplitzMatrix.shape)
-////        print(toeplitzMatrix)
-//        let result2 = toeplitzMatrix*imageMatrix
-//        print(result2)
-//    }
-    
+        let expected = Tensor<CBlasStorage<Double>>([1.0, 2.0, 1.0, 1.0, 0.0, 2.0, 0.0, 3.0, 1.0, 2.0, 0.0, 1.0])
+        XCTAssert(isClose(raveledData, expected, eps: 10e-4))
+    }
+        
     func testUnrollKernel() {
         let kernels = Tensor<F>(Extent(2, 2, 3, 3))
         kernels[0, 0, all, all] = Tensor<F>([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
@@ -1143,7 +1311,6 @@ class stemTests: XCTestCase {
             [12.0,	13.0,	14.0,	17.0,	18.0,	19.0,	22.0,	23.0,	24.0],
             [13.0,	14.0,	15.0,	18.0,	19.0,	20.0,	23.0,	24.0,	25.0]])
 
-        print(unrolled.shape)
         XCTAssert(isClose(unrolled, expected, eps: 10e-4))
     }
     

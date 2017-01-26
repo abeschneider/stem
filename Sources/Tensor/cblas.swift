@@ -113,6 +113,17 @@ func +=(left:Tensor<CBlasStorage<Double>>,
     return left
 }
 
+//func dot<T:NumericType>(
+//    _ left:Tensor<CBlasStorage<T>>,
+//    _ right:Tensor<CBlasStorage<T>>,
+//    result:Tensor<CBlasStorage<T>>,
+//    alpha:Double=1.0,
+//    beta:Double=1.0)
+//{
+//    // specializations provided below
+//    assertionFailure("No implemention for given type")
+//}
+
 func dot(
     _ left:Tensor<CBlasStorage<Double>>,
     _ right:Tensor<CBlasStorage<Double>>,
@@ -135,7 +146,7 @@ func dot(
                     Int32(left.shape[1]),
                     alpha,
                     UnsafePointer<Double>(left.storage.array.memory) + left.calculateOffset(),
-                    Int32(left.stride[0]),
+                    Int32(left.shape[0]),
                     UnsafePointer<Double>(right.storage.array.memory) + right.calculateOffset(),
                     Int32(right.stride[0]),
                     beta,
@@ -147,22 +158,23 @@ func dot(
         cblas_dgemm(CblasColMajor,
                     CblasNoTrans,
                     CblasNoTrans,
-                    Int32(left.shape[0]),
-                    Int32(left.shape[1]),
-                    Int32(right.shape[0]),
+                    Int32(left.shape[0]),   // M: A.rows
+                    Int32(right.shape[1]),  // N: B.cols
+                    Int32(right.shape[0]),  // K: B.rows
                     alpha,
-                    UnsafePointer<Double>(left.storage.array.memory) + left.calculateOffset(),
-                    Int32(left.shape[0]),
-                    UnsafePointer<Double>(right.storage.array.memory) + right.calculateOffset(),
-                    Int32(right.shape[0]),
+                    UnsafePointer<Double>(left.storage.array.memory) + left.calculateOffset(),  // A
+                    Int32(left.shape[0]),   // A.rows
+                    UnsafePointer<Double>(right.storage.array.memory) + right.calculateOffset(),// B
+                    Int32(right.shape[0]),  // B.rows
                     beta,
-                    UnsafeMutablePointer<Double>(mutating: result.storage.array.memory) + result.calculateOffset(),
-                    Int32(result.shape[0]))
+                    UnsafeMutablePointer<Double>(mutating: result.storage.array.memory)
+                        + result.calculateOffset(),                                             // C
+                    Int32(left.shape[0]))   // C.rows
     }
 }
 
 public func outer(
-    left:Tensor<CBlasStorage<Double>>, // Vector
+    left:Tensor<CBlasStorage<Double>>,      // Vector
     right:Tensor<CBlasStorage<Double>>,     // Vector
     result:Tensor<CBlasStorage<Double>>)
 {
@@ -181,6 +193,43 @@ public func outer(
                 Int32(right.stride[0]),
                 UnsafeMutablePointer<Double>(mutating: result.storage.array.memory),
                 Int32(result.stride[0]))
+}
+
+public func conv2d
+    (_ input:Tensor<CBlasStorage<Double>>,
+     kernels:Tensor<CBlasStorage<Double>>,
+     stride:[Int]=[1, 1],
+     padding:[Int]=[0, 0],
+     paddingValue:Double=0,
+     flip:Bool=true,
+     result:Tensor<CBlasStorage<Double>>)
+{
+    typealias T = Tensor<CBlasStorage<Double>>
+    
+    let unfoldedKernel = unroll(kernels: kernels, flip: flip)
+    let unfoldedInput = unroll(tensor: input, kernelShape: Extent(kernels.shape[2], kernels.shape[3]), padding: padding)
+    
+    let output = T(Extent(unfoldedInput.shape[0], unfoldedKernel.shape[1]))
+    dot(unfoldedInput, unfoldedKernel, result: output)
+    
+    for i in 0..<kernels.shape[0] {
+        result[i, all, all] = output[all, i].reshape(Extent(result.shape[1], result.shape[2]))
+    }
+}
+
+public func conv2d(
+    _ input:Tensor<CBlasStorage<Double>>,
+    kernels:Tensor<CBlasStorage<Double>>,
+    stride:[Int]=[1, 1],
+    padding:[Int]=[0, 0],
+    paddingValue:Double=0,
+    flip:Bool=true) -> Tensor<CBlasStorage<Double>>
+{
+    let outputShape = calculateConv2DSize(input: input, kernels: kernels, stride: stride, padding: padding)
+    let out = Tensor<CBlasStorage<Double>>(outputShape)
+    
+    conv2d(input, kernels: kernels, stride: stride, padding: padding, flip: flip, result: out)
+    return out
 }
 
 //func addvv(

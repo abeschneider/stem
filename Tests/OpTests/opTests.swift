@@ -378,21 +378,22 @@ class opTests: XCTestCase {
     }
     
     func testConvOp1() {
-        let data:Tensor<D> = uniform(Extent(3, 3, 3))
-        data[0, all, all] = Tensor<D>([[1, 2, 0],
-                                        [1, 1, 3],
-                                        [0, 2, 2]])
+        typealias CD = CBlasStorage<Double>
+        let data:Tensor<CD> = uniform(Extent(3, 3, 3))
+        data[0, all, all] = Tensor([[1, 2, 0],
+                                    [1, 1, 3],
+                                    [0, 2, 2]])
         
-        data[1, all, all] = Tensor<D>([[0, 2, 1],
-                                        [0, 3, 2],
-                                        [1, 1, 0]])
+        data[1, all, all] = Tensor([[0, 2, 1],
+                                    [0, 3, 2],
+                                    [1, 1, 0]])
         
-        data[2, all, all] = Tensor<D>([[1, 2, 1],
-                                        [0, 1, 3],
-                                        [3, 3, 2]])
+        data[2, all, all] = Tensor([[1, 2, 1],
+                                    [0, 1, 3],
+                                    [3, 3, 2]])
         
         let input = ConstantOp(data)
-        let convOp = Conv2dOp<D>(input: input, numInputs: 3, numOutputs: 2, kernelSize: Extent(2, 2), padding: [0, 0])
+        let convOp = Conv2dOp<CD>(input: input, numInputs: 3, numOutputs: 2, kernelSize: Extent(2, 2), padding: [0, 0])
         
         convOp.kernels[0, 0, all, all] = Tensor([[1, 1], [2, 2]])
         convOp.kernels[0, 1, all, all] = Tensor([[1, 1], [1, 1]])
@@ -403,13 +404,13 @@ class opTests: XCTestCase {
         
         convOp.apply()
         
-        let expected = Tensor<D>(Extent(2, 2, 2))
-        expected[0, all, all] = Tensor<D>([[14, 20], [15, 24]])
-        expected[1, all, all] = Tensor<D>([[12, 24], [17, 26]])
+        let expected = Tensor<CD>(Extent(2, 2, 2))
+        expected[0, all, all] = Tensor<CD>([[14, 20], [15, 24]])
+        expected[1, all, all] = Tensor<CD>([[12, 24], [17, 26]])
         
         XCTAssert(isClose(convOp.output, expected, eps: 10e-4))
     }
-    
+        
     func testConvOp2() {
         let data:Tensor<D> = uniform(Extent(3, 3, 3))
         data[0, all, all] = Tensor<D>([[1, 2, 0],
